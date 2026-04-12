@@ -1,0 +1,58 @@
+/* InfluMatch.jo — Custom Streamlit Styles */
+/* Arabic RTL Support + Jordan Brand Colors */
+
+/* RTL Support for Arabic */
+[lang="ar"], .rtl {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+
+/* Brand Colors */
+:root {
+    --primary: #1a237e;
+    --accent: #d4a017;
+    --success: #2e7d32;
+    --danger: #c62828;
+    --bg-card: #f8f9fa;
+    --text-main: #212121;
+}
+
+/* Main container padding */
+.main .block-container {
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+}
+
+/* Metric cards */
+[data-testid="metric-container"] {
+    background: var(--bg-card);
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+/* Primary buttons */
+.stButton > button[kind="primary"] {
+    background-color: var(--primary);
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* Divider */
+hr {
+    margin: 0.5rem 0;
+    border-color: #e0e0e0;
+}
+
+/* Score badge */
+.score-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    border-radius: 20px;
+    padding: 2px 12px;
+    font-size: 0.85em;
+    font-weight: bold;
+}

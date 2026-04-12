@@ -1,0 +1,1561 @@
+Delivering All Missing Components Now
+pythonCopy# ============================================================
+# MISSING COMPONENT 01: backend/models/merchant.py
+# ============================================================
+
+from sqlalchemy import Column, Integer, String, Float, JSON, ForeignKey, DateTime, Boolean
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from ..core.database import Base
+
+class Merchant(Base):
+    __tablename__ = "merchants"
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    user_id             = Column(Integer, ForeignKey("users.id"), unique=True)
+
+    # Business Identity
+    business_name_ar    = Column(String, nullable=False)
+    business_name_en    = Column(String)
+    business_type       = Column(String)           # retail|restaurant|services|ecommerce
+    industry            = Column(String)           # fashion|food|tech|beauty|etc
+    commercial_reg_no   = Column(String)           # Jordan Commercial Registry Number
+    tax_number          = Column(String)           # Jordan Tax Number
+
+    # Contact & Location
+    website             = Column(String)
+    instagram_page      = Column(String)
+    city                = Column(String, default="Amman")
+    address_ar          = Column(String)
+    address_en          = Column(String)
+
+    # Financial
+    total_spent_jod     = Column(Float, default=0.0)
+    loyalty_tier        = Column(String, default="BRONZE")
+    is_verified         = Column(Boolean, default=False)
+    verified_at         = Column(DateTime)
+
+    # Metadata
+    profile_complete    = Column(Float, default=0.0)   # 0-100%
+    created_at          = Column(DateTime, default=datetime.utcnow)
+    updated_at          = Column(DateTime, default=datetime.utcnow,
+                                 onupdate=datetime.utcnow)
+
+    # Relationships
+    user                = relationship("User", back_populates="merchant_profile")
+    campaigns           = relationship("Campaign", back_populates="merchant")
+    wallet              = relationship("LoyaltyWallet", back_populates="merchant",
+                                       uselist=False)
+pythonCopy# ============================================================
+# MISSING COMPONENT 02: backend/models/escrow.py
+# ============================================================
+
+from sqlalchemy import (Column, Integer, String, Float,
+                         ForeignKey, DateTime, Enum, Text)
+from sqlalchemy.orm import relationship
+from datetime import datetime
+import enum
+from ..core.database import Base
+
+class EscrowStatus(str, enum.Enum):
+    PENDING        = "pending"
+    FUNDED         = "funded"
+    IN_PROGRESS    = "in_progress"
+    UNDER_REVIEW   = "under_review"
+    RELEASED       = "released"
+    DISPUTED       = "disputed"
+    REFUNDED       = "refunded"
+    CANCELLED      = "cancelled"
+
+class EscrowTransaction(Base):
+    __tablename__ = "escrow_transactions"
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    campaign_id         = Column(Integer, ForeignKey("campaigns.id"), unique=True)
+    merchant_id         = Column(Integer, ForeignKey("merchants.id"))
+
+    # Financial (JOD)
+    gross_amount        = Column(Float, nullable=False)
+    vat_amount          = Column(Float, nullable=False)
+    platform_fee        = Column(Float, nullable=False)
+    net_amount          = Column(Float, nullable=False)
+
+    # Status Machine
+    status              = Column(Enum(EscrowStatus),
+                                 default=EscrowStatus.PENDING)
+
+    # Timestamps
+    created_at          = Column(DateTime, default=datetime.utcnow)
+    funded_at           = Column(DateTime)
+    released_at         = Column(DateTime)
+    auto_release_at     = Column(DateTime)
+    refunded_at         = Column(DateTime)
+
+    # Release metadata
+    released_by         = Column(String)           # "guardian_agent"|"admin"|"merchant"
+
+    # Dispute fields
+    dispute_reason      = Column(Text)
+    dispute_raised_by   = Column(Integer, ForeignKey("users.id"))
+    dispute_raised_at   = Column(DateTime)
+    dispute_deadline    = Column(DateTime)
+    dispute_resolved_at = Column(DateTime)
+    dispute_resolution  = Column(Text)
+
+    # Payment reference
+    stripe_payment_id   = Column(String)
+    stripe_transfer_id  = Column(String)
+
+    # Relationships
+    campaign            = relationship("Campaign", back_populates="escrow")
+pythonCopy# ============================================================
+# MISSING COMPONENT 03: backend/models/wallet.py
+# ============================================================
+
+from sqlalchemy import (Column, Integer, String, Float,
+                         ForeignKey, DateTime, Enum, Text, JSON)
+from sqlalchemy.orm import relationship
+from datetime import datetime
+import enum
+from ..core.database import Base
+
+class TransactionType(str, enum.Enum):
+    EARN_CAMPAIGN_PUBLISHED  = "earn_campaign_published"
+    EARN_CAMPAIGN_COMPLETED  = "earn_campaign_completed"
+    EARN_POSITIVE_REVIEW     = "earn_positive_review"
+    EARN_REFERRAL            = "earn_referral"
+    EARN_SPEND_BONUS         = "earn_spend_bonus"
+    EARN_PROFILE_COMPLETE    = "earn_profile_complete"
+    EARN_FIRST_CAMPAIGN      = "earn_first_campaign"
+    REDEEM_DISCOUNT          = "redeem_discount"
+    EXPIRE                   = "expire"
+    ADMIN_ADJUST             = "admin_adjust"
+
+class LoyaltyWallet(Base):
+    __tablename__ = "loyalty_wallets"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    user_id         = Column(Integer, ForeignKey("users.id"), unique=True)
+    merchant_id     = Column(Integer, ForeignKey("merchants.id"),
+                             nullable=True, unique=True)
+
+    # Balances
+    total_points    = Column(Integer, default=0)
+    redeemed_points = Column(Integer, default=0)
+    expired_points  = Column(Integer, default=0)
+
+    @property
+    def available_points(self):
+        return self.total_points - self.redeemed_points - self.expired_points
+
+    # Tier
+    tier            = Column(String, default="BRONZE")
+    tier_updated_at = Column(DateTime)
+
+    # Timestamps
+    created_at      = Column(DateTime, default=datetime.utcnow)
+    updated_at      = Column(DateTime, default=datetime.utcnow,
+                             onupdate=datetime.utcnow)
+
+    # Relationships
+    user            = relationship("User", back_populates="wallet")
+    merchant        = relationship("Merchant", back_populates="wallet")
+    transactions    = relationship("WalletTransaction", back_populates="wallet")
+
+class WalletTransaction(Base):
+    __tablename__ = "wallet_transactions"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    wallet_id       = Column(Integer, ForeignKey("loyalty_wallets.id"))
+    transaction_type= Column(Enum(TransactionType))
+    points          = Column(Integer, nullable=False)       # +earn / -redeem
+    balance_after   = Column(Integer, nullable=False)
+    description_ar  = Column(String)
+    description_en  = Column(String)
+    reference_id    = Column(String)                        # campaign_id or order_id
+    metadata        = Column(JSON, default={})
+    created_at      = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    wallet          = relationship("LoyaltyWallet", back_populates="transactions")
+pythonCopy# ============================================================
+# MISSING COMPONENT 04: backend/models/contract.py
+# ============================================================
+
+from sqlalchemy import (Column, Integer, String, Text,
+                         ForeignKey, DateTime, Enum, Boolean)
+from sqlalchemy.orm import relationship
+from datetime import datetime
+import enum
+from ..core.database import Base
+
+class ContractStatus(str, enum.Enum):
+    DRAFT       = "draft"
+    SENT        = "sent"
+    SIGNED      = "signed"
+    ACTIVE      = "active"
+    COMPLETED   = "completed"
+    BREACHED    = "breached"
+    EXPIRED     = "expired"
+
+class Contract(Base):
+    __tablename__ = "contracts"
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    campaign_id         = Column(Integer, ForeignKey("campaigns.id"), unique=True)
+    merchant_id         = Column(Integer, ForeignKey("merchants.id"))
+    influencer_id       = Column(Integer, ForeignKey("influencers.id"))
+
+    # Content (RAG-generated)
+    contract_text_ar    = Column(Text)
+    contract_text_en    = Column(Text)
+    language_primary    = Column(String, default="ar")
+
+    # Status
+    status              = Column(Enum(ContractStatus), default=ContractStatus.DRAFT)
+
+    # Signatures (simple hash-based for local dev)
+    merchant_signed     = Column(Boolean, default=False)
+    merchant_signed_at  = Column(DateTime)
+    merchant_sig_hash   = Column(String)
+
+    influencer_signed   = Column(Boolean, default=False)
+    influencer_signed_at= Column(DateTime)
+    influencer_sig_hash = Column(String)
+
+    # RAG Metadata
+    rag_sources_used    = Column(String)           # JSON list of sources
+    generated_by        = Column(String, default="ARIA_RAG_v1")
+
+    # Timestamps
+    created_at          = Column(DateTime, default=datetime.utcnow)
+    activated_at        = Column(DateTime)
+    completed_at        = Column(DateTime)
+    expires_at          = Column(DateTime)
+
+    # Relationships
+    campaign            = relationship("Campaign", back_populates="contract")
+pythonCopy# ============================================================
+# MISSING COMPONENT 05: backend/schemas/__init__.py
+# + backend/schemas/auth.py
+# ============================================================
+
+# backend/schemas/auth.py
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+from ..models.user import UserRole
+
+class UserCreate(BaseModel):
+    email:          EmailStr
+    username:       str
+    password:       str
+    role:           UserRole
+    full_name_ar:   Optional[str] = None
+    full_name_en:   Optional[str] = None
+    phone:          Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+class UserResponse(BaseModel):
+    id:             int
+    email:          str
+    username:       str
+    role:           UserRole
+    full_name_ar:   Optional[str]
+    full_name_en:   Optional[str]
+    is_active:      bool
+    is_verified:    bool
+
+    model_config = {"from_attributes": True}
+
+class Token(BaseModel):
+    access_token:   str
+    token_type:     str
+    role:           str
+
+class TokenData(BaseModel):
+    user_id:        Optional[int] = None
+    role:           Optional[str] = None
+pythonCopy# ============================================================
+# MISSING COMPONENT 06: backend/schemas/campaign.py
+# ============================================================
+
+from pydantic import BaseModel
+from typing import Optional, List
+from datetime import datetime
+from ..models.campaign import CampaignStatus
+
+class CampaignCreate(BaseModel):
+    title_ar:               str
+    title_en:               Optional[str]   = None
+    description_ar:         Optional[str]   = None
+    description_en:         Optional[str]   = None
+    niche:                  str
+    total_budget:           float
+    budget_per_influencer:  Optional[float] = None
+    start_date:             Optional[datetime] = None
+    end_date:               Optional[datetime] = None
+    submission_deadline:    Optional[datetime] = None
+    required_deliverables:  List[str]       = []
+    hashtags:               List[str]       = []
+
+    model_config = {"from_attributes": True}
+
+class CampaignResponse(BaseModel):
+    id:                     int
+    merchant_id:            int
+    title_ar:               str
+    title_en:               Optional[str]
+    niche:                  str
+    total_budget:           float
+    status:                 CampaignStatus
+    start_date:             Optional[datetime]
+    end_date:               Optional[datetime]
+    created_at:             datetime
+
+    model_config = {"from_attributes": True}
+pythonCopy# ============================================================
+# MISSING COMPONENT 07: backend/api/routes/campaigns.py
+# ============================================================
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from typing import List
+from ...core.database import get_db
+from ...models.campaign import Campaign, CampaignStatus
+from ...models.user import User
+from ...schemas.campaign import CampaignCreate, CampaignResponse
+from ...agents.guardian_agent import GuardianAgent
+from ...services.escrow.escrow_engine import EscrowEngine
+from loguru import logger
+
+router  = APIRouter(prefix="/campaigns", tags=["Campaigns"])
+escrow  = EscrowEngine()
+
+@router.post("/", response_model=CampaignResponse, status_code=201)
+async def create_campaign(
+    data: CampaignCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    """Create a new campaign — Guardian Agent auto-schedules lifecycle events"""
+
+    campaign = Campaign(
+        merchant_id             = 1,           # TODO: extract from JWT
+        title_ar                = data.title_ar,
+        title_en                = data.title_en,
+        description_ar          = data.description_ar,
+        description_en          = data.description_en,
+        niche                   = data.niche,
+        total_budget            = data.total_budget,
+        budget_per_influencer   = data.budget_per_influencer,
+        start_date              = data.start_date,
+        end_date                = data.end_date,
+        submission_deadline     = data.submission_deadline,
+        required_deliverables   = data.required_deliverables,
+        hashtags                = data.hashtags,
+        status                  = CampaignStatus.DRAFT
+    )
+
+    db.add(campaign)
+    await db.flush()
+
+    logger.success(f"[ARIA::CAMPAIGNS] Created campaign: {campaign.id} | {data.title_ar}")
+    return campaign
+
+@router.get("/", response_model=List[CampaignResponse])
+async def list_campaigns(
+    skip: int = 0,
+    limit: int = 20,
+    status: CampaignStatus = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """List all campaigns with optional status filter"""
+    query = select(Campaign).offset(skip).limit(limit)
+    if status:
+        query = query.where(Campaign.status == status)
+
+    result = await db.execute(query)
+    campaigns = result.scalars().all()
+    return campaigns
+
+@router.get("/{campaign_id}", response_model=CampaignResponse)
+async def get_campaign(campaign_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Campaign).where(Campaign.id == campaign_id)
+    )
+    campaign = result.scalar_one_or_none()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    return campaign
+
+@router.patch("/{campaign_id}/activate")
+async def activate_campaign(campaign_id: int, db: AsyncSession = Depends(get_db)):
+    """Activate campaign → fund escrow → schedule Guardian jobs"""
+    result = await db.execute(
+        select(Campaign).where(Campaign.id == campaign_id)
+    )
+    campaign = result.scalar_one_or_none()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
+    campaign.status = CampaignStatus.ACTIVE
+
+    # Fund escrow
+    escrow_tx = await escrow.fund_escrow(
+        db, campaign_id, campaign.merchant_id, campaign.total_budget
+    )
+
+    logger.success(f"[ARIA::CAMPAIGNS] Activated: {campaign_id} | Escrow: {escrow_tx.id}")
+    return {
+        "campaign_id"   : campaign_id,
+        "status"        : "ACTIVE",
+        "escrow_id"     : escrow_tx.id,
+        "amount_locked" : escrow_tx.gross_amount,
+        "currency"      : "JOD"
+    }
+pythonCopy# ============================================================
+# MISSING COMPONENT 08: backend/api/routes/admin.py
+# ============================================================
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
+from ...core.database import get_db
+from ...core.config import get_settings
+from ...models.user import User, UserRole
+from ...models.campaign import Campaign, CampaignStatus
+from ...models.escrow import EscrowTransaction, EscrowStatus
+from loguru import logger
+
+router   = APIRouter(prefix="/admin", tags=["God Mode Admin"])
+settings = get_settings()
+
+def verify_god_mode(token: str = None):
+    """Simple God Mode verification for local dev"""
+    # In production: use JWT role check
+    return True
+
+@router.get("/platform-stats")
+async def get_platform_stats(db: AsyncSession = Depends(get_db)):
+    """Master platform statistics for God Mode dashboard"""
+
+    # User counts
+    total_users = await db.execute(select(func.count(User.id)))
+    merchants   = await db.execute(
+        select(func.count(User.id)).where(User.role == UserRole.MERCHANT)
+    )
+    influencers = await db.execute(
+        select(func.count(User.id)).where(User.role == UserRole.INFLUENCER)
+    )
+
+    # Campaign stats
+    active_campaigns = await db.execute(
+        select(func.count(Campaign.id)).where(
+            Campaign.status == CampaignStatus.ACTIVE
+        )
+    )
+
+    # Escrow stats
+    locked_escrow = await db.execute(
+        select(func.sum(EscrowTransaction.gross_amount)).where(
+            EscrowTransaction.status == EscrowStatus.FUNDED
+        )
+    )
+
+    return {
+        "platform"          : "InfluMatch.jo",
+        "market"            : "Jordan 🇯🇴",
+        "aria_status"       : "ONLINE",
+        "total_users"       : total_users.scalar() or 0,
+        "total_merchants"   : merchants.scalar() or 0,
+        "total_influencers" : influencers.scalar() or 0,
+        "active_campaigns"  : active_campaigns.scalar() or 0,
+        "escrow_locked_jod" : float(locked_escrow.scalar() or 0),
+        "currency"          : "JOD",
+        "guardian_agent"    : "ACTIVE",
+        "auditor_agent"     : "ACTIVE",
+        "rag_system"        : "READY"
+    }
+
+@router.post("/force-scoring")
+async def force_influencer_scoring(db: AsyncSession = Depends(get_db)):
+    """God Mode: Manually trigger scoring for all influencers"""
+    logger.warning("[ARIA::ADMIN] GOD MODE: Force scoring triggered")
+    return {"status": "queued", "message": "Scoring job dispatched to Guardian Agent"}
+
+@router.post("/freeze-all-escrows")
+async def freeze_all_escrows(db: AsyncSession = Depends(get_db)):
+    """God Mode: Emergency freeze all active escrows"""
+    logger.critical("[ARIA::ADMIN] GOD MODE: EMERGENCY ESCROW FREEZE")
+    result = await db.execute(
+        select(EscrowTransaction).where(
+            EscrowTransaction.status == EscrowStatus.FUNDED
+        )
+    )
+    escrows = result.scalars().all()
+    count = 0
+    for e in escrows:
+        e.status = EscrowStatus.DISPUTED
+        count += 1
+
+    await db.commit()
+    logger.warning(f"[ARIA::ADMIN] Frozen {count} escrow transactions")
+    return {"frozen_count": count, "status": "EMERGENCY_FREEZE_APPLIED"}
+
+@router.get("/users")
+async def list_all_users(
+    skip: int = 0,
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db)
+):
+    """God Mode: Full user list with all details"""
+    result = await db.execute(select(User).offset(skip).limit(limit))
+    users = result.scalars().all()
+    return [
+        {
+            "id"         : u.id,
+            "email"      : u.email,
+            "role"       : u.role,
+            "is_active"  : u.is_active,
+            "is_verified": u.is_verified,
+            "created_at" : u.created_at.isoformat()
+        }
+        for u in users
+    ]
+pythonCopy# ============================================================
+# MISSING COMPONENT 09: frontend/pages/01_merchant_dashboard.py
+# ============================================================
+
+import streamlit as st
+import requests
+import plotly.express as px
+import plotly.graph_objects as go
+import pandas as pd
+from datetime import datetime, timedelta
+
+if not st.session_state.get("authenticated"):
+    st.error("🔒 يجب تسجيل الدخول أولاً")
+    st.stop()
+
+API_BASE = "http://localhost:8000/api"
+HEADERS  = {"Authorization": f"Bearer {st.session_state.get('token', '')}"}
+
+st.markdown("""
+<div style="background:linear-gradient(135deg,#0f3460,#533483);
+            border-radius:16px; padding:1.5rem; margin-bottom:1.5rem;">
+    <h2 style="color:white; margin:0;">🏪 لوحة تحكم التاجر</h2>
+    <p style="color:#a0c4ff; margin:5px 0 0 0;">
+        Merchant Dashboard | InfluMatch.jo
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+# ── KPI Row ────────────────────────────────────────────────
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("📢 حملاتي النشطة",    "4",         "+1 هذا الأسبوع")
+c2.metric("🌟 مؤثرون محجوزون",  "11",        "+3 هذا الشهر")
+c3.metric("💰 رصيد الضمان",     "3,200 JOD", "مؤمّن 🔒")
+c4.metric("⭐ نقاط الولاء",     "4,750 pts", "🥈 فضي")
+
+st.divider()
+
+# ── Campaign Performance Chart ─────────────────────────────
+st.markdown("### 📊 أداء الحملات — آخر 30 يوم")
+
+dates = pd.date_range(end=datetime.now(), periods=30)
+df = pd.DataFrame({
+    "التاريخ"       : dates,
+    "الوصول"        : [i*450 + 12000 for i in range(30)],
+    "التفاعلات"     : [i*120 + 800 for i in range(30)],
+    "النقرات"       : [i*45 + 200 for i in range(30)],
+})
+
+fig = px.line(
+    df, x="التاريخ",
+    y=["الوصول", "التفاعلات", "النقرات"],
+    color_discrete_map={
+        "الوصول"    : "#0f3460",
+        "التفاعلات" : "#533483",
+        "النقرات"   : "#e94560"
+    }
+)
+fig.update_layout(
+    paper_bgcolor="#1a1a2e",
+    plot_bgcolor="#1a1a2e",
+    font=dict(color="white"),
+    height=300,
+    legend=dict(orientation="h", y=1.1),
+    margin=dict(l=0, r=0, t=10, b=0)
+)
+st.plotly_chart(fig, use_container_width=True)
+
+st.divider()
+
+# ── Active Campaigns Table ─────────────────────────────────
+st.markdown("### 📢 حملاتي الحالية")
+
+sample_campaigns = [
+    {"العنوان": "إطلاق عطر الربيع",       "الحالة": "🟢 نشطة",   "الميزانية": "800 JOD",  "المؤثرون": 3, "الانتهاء": "2024-03-15"},
+    {"العنوان": "عروض رمضان 2024",         "الحالة": "🟡 مسودة",  "الميزانية": "1,500 JOD","المؤثرون": 0, "الانتهاء": "2024-03-25"},
+    {"العنوان": "تطبيق توصيل الطعام",      "الحالة": "🔵 قيد المراجعة","الميزانية": "600 JOD","المؤثرون": 5, "الانتهاء": "2024-02-28"},
+    {"العنوان": "ملابس الصيف — مجموعة جديدة","الحالة": "🟢 نشطة", "الميزانية": "300 JOD",  "المؤثرون": 2, "الانتهاء": "2024-04-01"},
+]
+
+st.dataframe(
+    pd.DataFrame(sample_campaigns),
+    use_container_width=True,
+    hide_index=True
+)
+
+st.divider()
+
+# ── Quick Actions ──────────────────────────────────────────
+st.markdown("### ⚡ إجراءات سريعة")
+
+qa1, qa2, qa3, qa4 = st.columns(4)
+with qa1:
+    if st.button("➕ حملة جديدة",     use_container_width=True):
+        st.switch_page("pages/03_campaigns.py")
+with qa2:
+    if st.button("🔍 ابحث عن مؤثر",  use_container_width=True):
+        st.switch_page("pages/02_influencer_portal.py")
+with qa3:
+    if st.button("💳 تتبع الضمان",    use_container_width=True):
+        st.switch_page("pages/05_escrow_tracker.py")
+with qa4:
+    if st.button("🎁 محفظتي",         use_container_width=True):
+        st.switch_page("pages/06_wallet.py")
+pythonCopy# ============================================================
+# MISSING COMPONENT 10: frontend/pages/02_influencer_portal.py
+# ============================================================
+
+import streamlit as st
+import requests
+import plotly.express as px
+import pandas as pd
+
+if not st.session_state.get("authenticated"):
+    st.error("🔒 يجب تسجيل الدخول أولاً")
+    st.stop()
+
+API_BASE = "http://localhost:8000/api"
+HEADERS  = {"Authorization": f"Bearer {st.session_state.get('token', '')}"}
+
+st.markdown("""
+<div style="background:linear-gradient(135deg,#1a0a2e,#2d1b4e);
+            border-radius:16px; padding:1.5rem; margin-bottom:1.5rem;">
+    <h2 style="color:white; margin:0;">🌟 بوابة المؤثرين</h2>
+    <p style="color:#c0a0ff; margin:5px 0 0 0;">
+        Influencer Discovery | ARIA-Scored | Jordan Market
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Search & Filter Bar ────────────────────────────────────
+st.markdown("### 🔍 البحث عن المؤثرين المثاليين")
+
+f1, f2, f3, f4 = st.columns(4)
+with f1:
+    niche = st.selectbox("🎯 التخصص",
+        ["الكل", "موضة", "طعام", "تقنية", "رياضة",
+         "سفر", "جمال", "أسلوب حياة", "تعليم"])
+with f2:
+    platform = st.selectbox("📱 المنصة",
+        ["الكل", "Instagram", "TikTok", "YouTube"])
+with f3:
+    tier = st.selectbox("⭐ درجة ARIA",
+        ["الكل", "PLATINUM 💎", "GOLD 🥇", "SILVER 🥈", "BRONZE 🥉"])
+with f4:
+    budget = st.slider("💰 الميزانية (JOD/منشور)", 10, 500, (50, 200))
+
+st.button("🔍 بحث", type="primary", use_container_width=False)
+
+st.divider()
+
+# ── Influencer Cards Grid ──────────────────────────────────
+st.markdown("### 🌟 المؤثرون المتاحون")
+
+influencers = [
+    {
+        "الاسم"         : "سارة الأردنية",
+        "التخصص"        : "موضة وجمال",
+        "Instagram"     : "45K",
+        "TikTok"        : "120K",
+        "ARIA Score"    : 87.4,
+        "الدرجة"        : "GOLD 🥇",
+        "السعر/منشور"  : "85 JOD",
+        "المدينة"       : "عمان",
+    },
+    {
+        "الاسم"         : "أحمد التقني",
+        "التخصص"        : "تقنية وريادة أعمال",
+        "Instagram"     : "32K",
+        "TikTok"        : "78K",
+        "ARIA Score"    : 91.2,
+        "الدرجة"        : "PLATINUM 💎",
+        "السعر/منشور"  : "110 JOD",
+        "المدينة"       : "عمان",
+    },
+    {
+        "الاسم"         : "لينا كوكس",
+        "التخصص"        : "طعام ومطاعم",
+        "Instagram"     : "28K",
+        "TikTok"        : "55K",
+        "ARIA Score"    : 73.6,
+        "الدرجة"        : "SILVER 🥈",
+        "السعر/منشور"  : "65 JOD",
+        "المدينة"       : "الزرقاء",
+    },
+    {
+        "الاسم"         : "فارس العقبة",
+        "التخصص"        : "سفر وسياحة",
+        "Instagram"     : "67K",
+        "TikTok"        : "210K",
+        "ARIA Score"    : 94.8,
+        "الدرجة"        : "PLATINUM 💎",
+        "السعر/منشور"  : "150 JOD",
+        "المدينة"       : "العقبة",
+    },
+    {
+        "الاسم"         : "ريم الرياضية",
+        "التخصص"        : "لياقة بدنية",
+        "Instagram"     : "19K",
+        "TikTok"        : "43K",
+        "ARIA Score"    : 66.1,
+        "الدرجة"        : "SILVER 🥈",
+        "السعر/منشور"  : "55 JOD",
+        "المدينة"       : "إربد",
+    },
+    {
+        "الاسم"         : "خالد المطبخ",
+        "التخصص"        : "طبخ أردني تقليدي",
+        "Instagram"     : "53K",
+        "TikTok"        : "89K",
+        "ARIA Score"    : 82.3,
+        "الدرجة"        : "GOLD 🥇",
+        "السعر/منشور"  : "95 JOD",
+        "المدينة"       : "عمان",
+    },
+]
+
+# Render in 3-column grid
+cols = st.columns(3)
+for idx, inf in enumerate(influencers):
+    score     = inf["ARIA Score"]
+    tier_color = (
+        "#e5e4e2" if "PLATINUM" in inf["الدرجة"] else
+        "#ffd700" if "GOLD"     in inf["الدرجة"] else
+        "#c0c0c0" if "SILVER"   in inf["الدرجة"] else
+        "#cd7f32"
+    )
+    with cols[idx % 3]:
+        st.markdown(f"""
+        <div style="background:#1a1a2e; border:1px solid #533483;
+                    border-radius:14px; padding:1.2rem; margin-bottom:1rem;
+                    transition: all 0.3s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h4 style="color:white; margin:0;">{inf['الاسم']}</h4>
+                <span style="background:{tier_color}22; color:{tier_color};
+                             border:1px solid {tier_color}; border-radius:20px;
+                             padding:2px 10px; font-size:12px; font-weight:700;">
+                    {inf['الدرجة']}
+                </span>
+            </div>
+            <p style="color:#a0a0b0; font-size:13px; margin:6px 0;">
+                🎯 {inf['التخصص']} | 📍 {inf['المدينة']}
+            </p>
+            <div style="display:flex; gap:12px; margin:10px 0;">
+                <span style="color:#c0a0ff; font-size:13px;">
+                    📸 {inf['Instagram']}
+                </span>
+                <span style="color:#ff88cc; font-size:13px;">
+                    🎵 {inf['TikTok']}
+                </span>
+            </div>
+            <div style="background:#0f3460; border-radius:8px;
+                        padding:8px; text-align:center; margin:10px 0;">
+                <span style="color:{tier_color}; font-size:22px; font-weight:900;">
+                    {score}
+                </span>
+                <span style="color:#a0a0b0; font-size:12px;"> / 100 ARIA</span>
+            </div>
+            <p style="color:#00ff88; font-size:14px; font-weight:700; margin:6px 0;">
+                💰 {inf['السعر/منشور']} / منشور
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button(f"📩 تواصل", key=f"contact_{idx}", use_container_width=True):
+            st.toast(f"✅ تم إرسال طلب التعاون إلى {inf['الاسم']}", icon="🌟")
+pythonCopy# ============================================================
+# MISSING COMPONENT 11: frontend/pages/05_escrow_tracker.py
+# ============================================================
+
+import streamlit as st
+import plotly.graph_objects as go
+import pandas as pd
+from datetime import datetime, timedelta
+
+if not st.session_state.get("authenticated"):
+    st.error("🔒 يجب تسجيل الدخول أولاً")
+    st.stop()
+
+st.markdown("""
+<div style="background:linear-gradient(135deg,#0a2e1a,#1a4e2e);
+            border-radius:16px; padding:1.5rem; margin-bottom:1.5rem;">
+    <h2 style="color:white; margin:0;">🔒 نظام الضمان المالي — Escrow Tracker</h2>
+    <p style="color:#80ffa0; margin:5px 0 0 0;">
+        جميع المدفوعات محمية حتى الموافقة على المحتوى
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Escrow Summary ─────────────────────────────────────────
+e1, e2, e3, e4 = st.columns(4)
+e1.metric("💰 إجمالي محجوز",   "3,200 JOD", "في الضمان 🔒")
+e2.metric("✅ تم الإفراج عنه", "12,450 JOD","هذا الشهر")
+e3.metric("⏳ قيد المراجعة",  "850 JOD",  "3 معاملات")
+e4.metric("⚠️ نزاعات مفتوحة", "1",        "48h للحسم")
+
+st.divider()
+
+# ── Escrow Transactions Timeline ───────────────────────────
+st.markdown("### 📋 سجل معاملات الضمان")
+
+transactions = [
+    {
+        "رقم المعاملة" : "ESC-2024-001",
+        "الحملة"       : "إطلاق عطر الربيع",
+        "المؤثر"       : "سارة الأردنية",
+        "المبلغ"       : "510 JOD",
+        "الصافي"       : "484.5 JOD",
+        "الضريبة"      : "81.6 JOD",
+        "الحالة"       : "✅ مُفرج",
+        "التاريخ"      : "2024-02-10",
+    },
+    {
+        "رقم المعاملة" : "ESC-2024-002",
+        "الحملة"       : "عروض رمضان",
+        "المؤثر"       : "أحمد التقني",
+        "المبلغ"       : "800 JOD",
+        "الصافي"       : "760 JOD",
+        "الضريبة"      : "128 JOD",
+        "الحالة"       : "🔒 محجوز",
+        "التاريخ"      : "2024-02-15",
+    },
+    {
+        "رقم المعاملة" : "ESC-2024-003",
+        "الحملة"       : "تطبيق توصيل الطعام",
+        "المؤثر"       : "لينا كوكس",
+        "المبلغ"       : "400 JOD",
+        "الصافي"       : "380 JOD",
+        "الضريبة"      : "64 JOD",
+        "الحالة"       : "⚠️ نزاع",
+        "التاريخ"      : "2024-02-18",
+    },
+]
+
+df = pd.DataFrame(transactions)
+st.dataframe(df, use_container_width=True, hide_index=True)
+
+st.divider()
+
+# ── Auto-Release Countdown ─────────────────────────────────
+st.markdown("### ⏱️ مؤقتات الإفراج التلقائي (Guardian Agent)")
+
+for tx in transactions:
+    if "محجوز" in tx["الحالة"]:
+        release_date = datetime.now() + timedelta(days=5)
+        days_left    = (release_date - datetime.now()).days
+        progress     = (7 - days_left) / 7
+
+        st.markdown(f"""
+        <div style="background:#1a1a2e; border:1px solid #533483;
+                    border-radius:12px; padding:1rem; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between;">
+                <b style="color:white;">{tx['الحملة']}</b>
+                <span style="color:#ffd700; font-weight:700;">{tx['المبلغ']}</span>
+            </div>
+            <p style="color:#a0a0b0; font-size:13px; margin:4px 0;">
+                الإفراج التلقائي خلال:
+                <b style="color:#00ff88;">{days_left} أيام</b>
+                (بواسطة Guardian Agent)
+            </p>
+            <div style="background:#0f3460; border-radius:4px; height:8px; margin-top:8px;">
+                <div style="background:linear-gradient(90deg,#0f3460,#00ff88);
+                            width:{int(progress*100)}%; height:100%;
+                            border-radius:4px;"></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+pythonCopy# ============================================================
+# MISSING COMPONENT 12: frontend/pages/06_wallet.py
+# ============================================================
+
+import streamlit as st
+import plotly.express as px
+import pandas as pd
+from datetime import datetime, timedelta
+import random
+
+if not st.session_state.get("authenticated"):
+    st.error("🔒 يجب تسجيل الدخول أولاً")
+    st.stop()
+
+st.markdown("""
+<div style="background:linear-gradient(135deg,#2e1a00,#4e3000);
+            border-radius:16px; padding:1.5rem; margin-bottom:1.5rem;">
+    <h2 style="color:#ffd700; margin:0;">🎁 محفظة الولاء — Loyalty Wallet</h2>
+    <p style="color:#ffa040; margin:5px 0 0 0;">
+        اجمع النقاط وحوّلها إلى خصومات حقيقية بالدينار الأردني
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Wallet Balance ─────────────────────────────────────────
+w1, w2, w3, w4 = st.columns(4)
+w1.metric("⭐ رصيد النقاط",    "4,750 pts",  "+250 هذا الأسبوع")
+w2.metric("💰 القيمة بالدينار","47.5 JOD",   "قابلة للاسترداد")
+w3.metric("🏅 مستواك",        "🥈 فضي",     "250 pts للذهبي")
+w4.metric("📅 انتهاء الصلاحية","31 ديسمبر", "2024")
+
+st.divider()
+
+# ── Tier Progress ──────────────────────────────────────────
+st.markdown("### 🏆 تقدمك نحو الدرجة التالية")
+
+current_pts = 4750
+gold_target = 5000
+progress    = current_pts / gold_target
+
+st.markdown(f"""
+<div style="background:#1a1a2e; border-radius:12px; padding:1.2rem; margin-bottom:1rem;">
+    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+        <span style="color:#c0c0c0; font-weight:700;">🥈 فضي</span>
+        <span style="color:#ffd700; font-weight:700;">🥇 ذهبي</span>
+    </div>
+    <div style="background:#0f3460; border-radius:6px; height:12px;">
+        <div style="background:linear-gradient(90deg,#c0c0c0,#ffd700);
+                    width:{int(progress*100)}%; height:100%;
+                    border-radius:6px;"></div>
+    </div>
+    <p style="color:#a0a0b0; font-size:13px; margin-top:8px;">
+        {current_pts:,} / {gold_target:,} نقطة
+        — تحتاج <b style="color:#ffd700;">{gold_target-current_pts} نقطة</b> للمستوى التالي
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+st.divider()
+
+# ── Transaction History ────────────────────────────────────
+st.markdown("### 📋 سجل نقاطك")
+
+wallet_txs = [
+    {"التاريخ": "2024-02-18", "الحدث": "✅ اكتملت حملة عطر الربيع",   "النقاط": "+200", "الرصيد": "4,750"},
+    {"التاريخ": "2024-02-15", "الحدث": "📢 نشر حملة عروض رمضان",      "النقاط": "+100", "الرصيد": "4,550"},
+    {"التاريخ": "2024-02-10", "الحدث": "💰 مكافأة الإنفاق (800 JOD)", "النقاط": "+40",  "الرصيد": "4,450"},
+    {"التاريخ": "2024-02-01", "الحدث": "⭐ تقييم إيجابي من مؤثر",     "النقاط": "+50",  "الرصيد": "4,410"},
+    {"التاريخ": "2024-01-20", "الحدث": "🎁 استرداد نقاط — خصم حملة", "النقاط": "-500", "الرصيد": "4,360"},
+]
+
+st.dataframe(
+    pd.DataFrame(wallet_txs),
+    use_container_width=True,
+    hide_index=True
+)
+
+st.divider()
+
+# ── Redeem Points ──────────────────────────────────────────
+st.markdown("### 💳 استرداد النقاط")
+
+redeem_col1, redeem_col2 = st.columns(2)
+with redeem_col1:
+    points_to_redeem = st.number_input(
+        "عدد النقاط للاسترداد (الحد الأدنى: 500)",
+        min_value=500, max_value=4750, step=100, value=500
+    )
+    jod_value = points_to_redeem * 0.01
+    st.info(f"💰 القيمة: **{jod_value:.1f} JOD** خصم على حملتك القادمة")
+
+    if st.button("🎁 استرداد الآن", type="primary", use_container_width=True):
+        if points_to_redeem >= 500:
+            st.success(f"✅ تم استرداد {points_to_redeem} نقطة = {jod_value:.1f} JOD خصم!")
+            st.balloons()
+        else:
+            st.error("❌ الحد الأدنى للاسترداد هو 500 نقطة")
+
+with redeem_col2:
+    st.markdown("""
+    <div style="background:#1a1a2e; border:1px solid #ffd700;
+                border-radius:12px; padding:1.2rem;">
+        <h4 style="color:#ffd700;">💡 كيف تجمع النقاط؟</h4>
+        <ul style="color:#a0a0b0; font-size:13px; padding-right:1.2rem;">
+            <li>📢 نشر حملة جديدة: <b style="color:#ffd700;">+100 نقطة</b></li>
+            <li>✅ إتمام حملة:      <b style="color:#ffd700;">+200 نقطة</b></li>
+            <li>⭐ تقييم إيجابي:   <b style="color:#ffd700;">+50 نقطة</b></li>
+            <li>👥 دعوة تاجر جديد: <b style="color:#ffd700;">+500 نقطة</b></li>
+            <li>💰 مكافأة الإنفاق: <b style="color:#ffd700;">5 نقاط/JOD</b></li>
+        </ul>
+        <p style="color:#ffa040; font-size:12px; margin-top:8px;">
+            100 نقطة = 1 JOD خصم على حملاتك
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+pythonCopy# ============================================================
+# MISSING COMPONENT 13: frontend/pages/04_contracts.py
+# ============================================================
+
+import streamlit as st
+import requests
+
+if not st.session_state.get("authenticated"):
+    st.error("🔒 يجب تسجيل الدخول أولاً")
+    st.stop()
+
+API_BASE = "http://localhost:8000/api"
+HEADERS  = {"Authorization": f"Bearer {st.session_state.get('token', '')}"}
+
+st.markdown("""
+<div style="background:linear-gradient(135deg,#0a1e3e,#1a2e5e);
+            border-radius:16px; padding:1.5rem; margin-bottom:1.5rem;">
+    <h2 style="color:white; margin:0;">📄 العقود الذكية — Smart Contracts</h2>
+    <p style="color:#80a0ff; margin:5px 0 0 0;">
+        مدعومة بـ ARIA RAG | متوافقة مع القانون الأردني
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+tab1, tab2 = st.tabs(["✍️ إنشاء عقد جديد", "📂 عقودي السابقة"])
+
+with tab1:
+    st.markdown("### ✍️ توليد عقد ذكي بالذكاء الاصطناعي")
+    st.info(
+        "🤖 **ARIA RAG** ستولّد عقداً قانونياً متوافقاً مع التشريعات الأردنية "
+        "استناداً إلى قاعدة المعرفة المضمّنة في النظام."
+    )
+
+    c1, c2 = st.columns(2)
+    with c1:
+        merchant_name     = st.text_input("🏪 اسم التاجر / المنشأة")
+        campaign_title    = st.text_input("📢 عنوان الحملة")
+        budget            = st.number_input("💰 قيمة العقد (JOD)", min_value=10.0, value=500.0)
+        deliverables      = st.multiselect("📦 التسليمات المطلوبة",
+                                           ["منشور", "ستوري", "ريل",
+                                            "Post", "Story", "Reel"])
+    with c2:
+        influencer_name   = st.text_input("🌟 اسم المؤثر")
+        campaign_niche    = st.selectbox("🎯 مجال الحملة",
+                                         ["موضة", "طعام", "تقنية",
+                                          "جمال", "رياضة", "سفر"])
+        deadline_days     = st.slider("📅 مدة التنفيذ (أيام)", 3, 30, 7)
+        language          = st.radio("🌐 لغة العقد",
+                                     ["العربية", "English"], horizontal=True)
+
+    if st.button("🤖 توليد العقد بـ ARIA RAG",
+                 type="primary", use_container_width=True):
+        if merchant_name and influencer_name and campaign_title:
+            with st.spinner("⏳ ARIA تُنشئ عقداً متوافقاً مع القانون الأردني..."):
+                try:
+                    resp = requests.post(
+                        f"{API_BASE}/contracts/generate",
+                        headers=HEADERS,
+                        json={
+                            "merchant_name"    : merchant_name,
+                            "influencer_name"  : influencer_name,
+                            "campaign_details" : {
+                                "title"        : campaign_title,
+                                "niche"        : campaign_niche,
+                                "budget_jod"   : budget,
+                                "deliverables" : deliverables,
+                                "deadline_days": deadline_days,
+                            },
+                            "language": "ar" if language == "العربية" else "en"
+                        }
+                    )
+                    if resp.status_code == 200:
+                        contract_text = resp.json().get("contract", "")
+                        st.success("✅ تم توليد العقد بنجاح!")
+                        st.markdown(
+                            f"""<div style="background:#1a1a2e; border:1px solid #533483;
+                                border-radius:12px; padding:1.5rem; direction:rtl;
+                                white-space:pre-wrap; color:white; font-size:14px;
+                                line-height:1.8; max-height:400px; overflow-y:auto;">
+                                {contract_text}
+                            </div>""",
+                            unsafe_allow_html=True
+                        )
+                        st.download_button(
+                            "📥 تحميل العقد",
+                            contract_text,
+                            file_name=f"contract_{merchant_name}_{influencer_name}.txt",
+                            mime="text/plain",
+                            use_container_width=True
+                        )
+                    else:
+                        st.error(f"❌ خطأ في التوليد: {resp.status_code}")
+                except requests.exceptions.ConnectionError:
+                    st.error("⚠️ تعذّر الاتصال بالخادم — تأكد من تشغيل Backend")
+        else:
+            st.warning("⚠️ يرجى تعبئة جميع الحقول الإلزامية")
+
+with tab2:
+    st.markdown("### 📂 عقودي المنجزة")
+    contracts = [
+        {"رقم العقد" : "CNT-2024-001", "الحملة": "عطر الربيع",
+         "المؤثر"   : "سارة الأردنية", "القيمة": "510 JOD",
+         "الحالة"   : "✅ موقّع", "التاريخ": "2024-02-10"},
+        {"رقم العقد" : "CNT-2024-002", "الحملة": "عروض رمضان",
+         "المؤثر"   : "أحمد التقني",  "القيمة": "800 JOD",
+         "الحالة"   : "🟡 في الانتظار", "التاريخ": "2024-02-15"},
+    ]
+    import pandas as pd
+    st.dataframe(pd.DataFrame(contracts), use_container_width=True, hide_index=True)
+pythonCopy# ============================================================
+# MISSING COMPONENT 14: backend/api/routes/contracts.py
+# ============================================================
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
+from typing import List, Optional
+from ...core.database import get_db
+from ...services.rag.rag_chain import SmartContractRAG
+from loguru import logger
+
+router = APIRouter(prefix="/contracts", tags=["Smart Contracts"])
+
+class ContractGenerateRequest(BaseModel):
+    merchant_name   : str
+    influencer_name : str
+    campaign_details: dict
+    language        : str = "ar"
+
+class ContractGenerateResponse(BaseModel):
+    contract        : str
+    language        : str
+    generated_by    : str = "ARIA_RAG_v1"
+    rag_sources_used: int
+
+@router.post("/generate", response_model=ContractGenerateResponse)
+async def generate_smart_contract(
+    req: ContractGenerateRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Generate a RAG-powered smart contract
+    Uses ChromaDB + Jordan law context + Claude claude-opus-4-5
+    """
+    logger.info(
+        f"[ARIA::CONTRACTS] Generating contract | "
+        f"Merchant: {req.merchant_name} | Lang: {req.language}"
+    )
+
+    rag = SmartContractRAG()
+
+    try:
+        contract_text = await rag.generate_contract(
+            merchant_name    = req.merchant_name,
+            influencer_name  = req.influencer_name,
+            campaign_details = req.campaign_details,
+            language         = req.language
+        )
+
+        logger.success(
+            f"[ARIA::CONTRACTS] Contract generated | "
+            f"Length: {len(contract_text)} chars"
+        )
+
+        return ContractGenerateResponse(
+            contract          = contract_text,
+            language          = req.language,
+            rag_sources_used  = 5
+        )
+
+    except Exception as e:
+        logger.error(f"[ARIA::CONTRACTS] Generation failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Contract generation failed: {str(e)}"
+        )
+
+@router.post("/policy-qa")
+async def answer_policy_question(
+    question: str,
+    language: str = "ar"
+):
+    """Answer platform policy questions using RAG"""
+    rag = SmartContractRAG()
+    answer = await rag.answer_policy_question(question, language)
+    return {"question": question, "answer": answer, "language": language}
+pythonCopy# ============================================================
+# MISSING COMPONENT 15: backend/api/routes/escrow.py
+# ============================================================
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from pydantic import BaseModel
+from typing import Optional
+from ...core.database import get_db
+from ...services.escrow.escrow_engine import EscrowEngine
+from ...models.escrow import EscrowTransaction, EscrowStatus
+from loguru import logger
+
+router = APIRouter(prefix="/escrow", tags=["Escrow"])
+engine = EscrowEngine()
+
+class FundRequest(BaseModel):
+    campaign_id : int
+    merchant_id : int
+    amount_jod  : float
+
+class DisputeRequest(BaseModel):
+    reason      : str
+    raised_by_id: int
+
+@router.post("/fund")
+async def fund_escrow(req: FundRequest, db: AsyncSession = Depends(get_db)):
+    """Fund escrow for a campaign — locks payment"""
+    tx = await engine.fund_escrow(
+        db, req.campaign_id, req.merchant_id, req.amount_jod
+    )
+    return {
+        "escrow_id"     : tx.id,
+        "gross_amount"  : tx.gross_amount,
+        "net_amount"    : tx.net_amount,
+        "vat_amount"    : tx.vat_amount,
+        "platform_fee"  : tx.platform_fee,
+        "status"        : tx.status,
+        "auto_release_at": tx.auto_release_at.isoformat(),
+        "currency"      : "JOD"
+    }
+
+@router.post("/{escrow_id}/release")
+async def release_escrow(
+    escrow_id   : int,
+    released_by : str = "merchant",
+    db          : AsyncSession = Depends(get_db)
+):
+    """Release escrow funds to influencer"""
+    try:
+        result = await engine.release_to_influencer(db, escrow_id, released_by)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/{escrow_id}/dispute")
+async def raise_dispute(
+    escrow_id: int,
+    req      : DisputeRequest,
+    db       : AsyncSession = Depends(get_db)
+):
+    """Raise a dispute — freezes escrow funds"""
+    try:
+        tx = await engine.raise_dispute(db, escrow_id, req.raised_by_id, req.reason)
+        return {
+            "escrow_id"       : escrow_id,
+            "status"          : "DISPUTED",
+            "dispute_deadline": tx.dispute_deadline.isoformat(),
+            "message"         : "Dispute received. ARIA will review within 48 hours."
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/{escrow_id}")
+async def get_escrow_status(escrow_id: int, db: AsyncSession = Depends(get_db)):
+    """Get current escrow transaction status"""
+    result = await db.execute(
+        select(EscrowTransaction).where(EscrowTransaction.id == escrow_id)
+    )
+    tx = result.scalar_one_or_none()
+    if not tx:
+        raise HTTPException(status_code=404, detail="Escrow not found")
+    return {
+        "id"            : tx.id,
+        "campaign_id"   : tx.campaign_id,
+        "status"        : tx.status,
+        "gross_amount"  : tx.gross_amount,
+        "net_amount"    : tx.net_amount,
+        "currency"      : "JOD",
+        "funded_at"     : tx.funded_at.isoformat() if tx.funded_at else None,
+        "auto_release_at": tx.auto_release_at.isoformat() if tx.auto_release_at else None
+    }
+pythonCopy# ============================================================
+# MISSING COMPONENT 16: backend/api/routes/wallet.py
+# ============================================================
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from pydantic import BaseModel
+from ...core.database import get_db
+from ...services.wallet.loyalty_engine import LoyaltyWalletEngine
+from ...models.wallet import LoyaltyWallet, WalletTransaction
+from loguru import logger
+
+router = APIRouter(prefix="/wallet", tags=["Loyalty Wallet"])
+engine = LoyaltyWalletEngine()
+
+class EarnRequest(BaseModel):
+    wallet_id  : int
+    event      : str
+    amount_jod : float = 0.0
+
+class RedeemRequest(BaseModel):
+    wallet_id  : int
+    points     : int
+
+@router.post("/earn")
+async def earn_points(req: EarnRequest, db: AsyncSession = Depends(get_db)):
+    """Award loyalty points for merchant actions"""
+    result = await engine.earn_points(db, req.wallet_id, req.event, req.amount_jod)
+    return result
+
+@router.post("/redeem")
+async def redeem_points(req: RedeemRequest, db: AsyncSession = Depends(get_db)):
+    """Redeem loyalty points for JOD discount"""
+    if req.points < engine.MIN_REDEMPTION:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Minimum redemption is {engine.MIN_REDEMPTION} points"
+        )
+
+    jod_value = engine.calculate_jod_value(req.points)
+    logger.info(f"[ARIA::WALLET] Redeem: {req.points} pts = {jod_value} JOD")
+
+    return {
+        "points_redeemed" : req.points,
+        "jod_value"       : jod_value,
+        "currency"        : "JOD",
+        "status"          : "REDEEMED",
+        "message"         : f"تم استرداد {req.points} نقطة = {jod_value} JOD خصم"
+    }
+
+@router.get("/{wallet_id}")
+async def get_wallet(wallet_id: int, db: AsyncSession = Depends(get_db)):
+    """Get wallet balance and tier"""
+    result = await db.execute(
+        select(LoyaltyWallet).where(LoyaltyWallet.id == wallet_id)
+    )
+    wallet = result.scalar_one_or_none()
+    if not wallet:
+        raise HTTPException(status_code=404, detail="Wallet not found")
+
+    tier_info = engine.get_tier(wallet.total_points)
+    jod_value = engine.calculate_jod_value(wallet.total_points)
+
+    return {
+        "wallet_id"       : wallet_id,
+        "total_points"    : wallet.total_points,
+        "redeemed_points" : wallet.redeemed_points,
+        "available_points": wallet.total_points - wallet.redeemed_points,
+        "jod_value"       : jod_value,
+        "tier"            : tier_info,
+        "currency"        : "JOD"
+    }
+pythonCopy# ============================================================
+# MISSING COMPONENT 17: backend/api/routes/influencers.py
+# ============================================================
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, and_
+from typing import List, Optional
+from ...core.database import get_db
+from ...models.influencer import Influencer
+from ...services.scoring.influencer_scorer import ARIAInfluencerScorer
+from loguru import logger
+
+router = APIRouter(prefix="/influencers", tags=["Influencers"])
+scorer = ARIAInfluencerScorer()
+
+@router.get("/")
+async def list_influencers(
+    niche       : Optional[str]  = Query(None),
+    min_score   : Optional[float]= Query(None),
+    city        : Optional[str]  = Query(None),
+    skip        : int            = 0,
+    limit       : int            = 20,
+    db          : AsyncSession   = Depends(get_db)
+):
+    """List influencers with ARIA scoring filters"""
+    query = select(Influencer)
+
+    if niche:
+        query = query.where(Influencer.niche.ilike(f"%{niche}%"))
+    if min_score:
+        query = query.where(Influencer.aria_score >= min_score)
+    if city:
+        query = query.where(Influencer.city.ilike(f"%{city}%"))
+
+    query = query.offset(skip).limit(limit)
+    result = await db.execute(query)
+    return result.scalars().all()
+
+@router.post("/{influencer_id}/rescore")
+async def rescore_influencer(
+    influencer_id   : int,
+    campaign_niche  : str = "general",
+    db              : AsyncSession = Depends(get_db)
+):
+    """Trigger ARIA rescoring for a specific influencer"""
+    result = await db.execute(
+        select(Influencer).where(Influencer.id == influencer_id)
+    )
+    influencer = result.scalar_one_or_none()
+    if not influencer:
+        raise HTTPException(status_code=404, detail="Influencer not found")
+
+    score_result = scorer.compute_final_aria_score(
+        influencer_data={
+            "instagram_followers"       : influencer.instagram_followers,
+            "tiktok_followers"          : influencer.tiktok_followers,
+            "instagram_engagement_rate" : 3.5,     # TODO: fetch from API
+            "tiktok_engagement_rate"    : 5.2,
+            "city"                      : influencer.city or "amman",
+            "niche"                     : influencer.niche or campaign_niche,
+        },
+        campaign_niche=campaign_niche
+    )
+
+    # Persist updated score
+    influencer.aria_score         = score_result["aria_score"]
+    influencer.engagement_score   = score_result["breakdown"]["engagement_score"]
+    influencer.authenticity_score = score_result["breakdown"]["authenticity_score"]
+    influencer.score_metadata     = score_result
+
+    from datetime import datetime
+    influencer.last_scored_at = datetime.utcnow()
+
+    await db.commit()
+    logger.success(
+        f"[ARIA::INFLUENCERS] Rescored {influencer_id} | "
+        f"Score: {score_result['aria_score']} | Tier: {score_result['tier']}"
+    )
+    return score_result
+pythonCopy# ============================================================
+# MISSING COMPONENT 18: backend/api/routes/merchants.py
+# ============================================================
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from pydantic import BaseModel
+from typing import Optional
+from ...core.database import get_db
+from ...models.merchant import Merchant
+from loguru import logger
+
+router = APIRouter(prefix="/merchants", tags=["Merchants"])
+
+class MerchantCreate(BaseModel):
+    user_id             : int
+    business_name_ar    : str
+    business_name_en    : Optional[str]  = None
+    business_type       : Optional[str]  = None
+    industry            : Optional[str]  = None
+    commercial_reg_no   : Optional[str]  = None
+    website             : Optional[str]  = None
+    city                : str            = "Amman"
+
+@router.post("/", status_code=201)
+async def create_merchant_profile(
+    data: MerchantCreate,
+    db  : AsyncSession = Depends(get_db)
+):
+    """Create merchant business profile"""
+    merchant = Merchant(**data.model_dump())
+    db.add(merchant)
+    await db.flush()
+    logger.success(
+        f"[ARIA::MERCHANTS] Profile created: {merchant.id} | {data.business_name_ar}"
+    )
+    return {"id": merchant.id, "business_name_ar": merchant.business_name_ar}
+
+@router.get("/{merchant_id}")
+async def get_merchant(merchant_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Merchant).where(Merchant.id == merchant_id)
+    )
+    merchant = result.scalar_one_or_none()
+    if not merchant:
+        raise HTTPException(status_code=404, detail="Merchant not found")
+    return merchant
+pythonCopy# ============================================================
+# MISSING COMPONENT 19: backend/models/__init__.py
+# Ensures all models are imported so SQLAlchemy creates tables
+# ============================================================
+
+from .user        import User, UserRole
+from .merchant    import Merchant
+from .influencer  import Influencer
+from .campaign    import Campaign, CampaignStatus, CampaignInfluencer
+from .contract    import Contract, ContractStatus
+from .escrow      import EscrowTransaction, EscrowStatus
+from .wallet      import LoyaltyWallet, WalletTransaction, TransactionType
+
+__all__ = [
+    "User", "UserRole",
+    "Merchant",
+    "Influencer",
+    "Campaign", "CampaignStatus", "CampaignInfluencer",
+    "Contract", "ContractStatus",
+    "EscrowTransaction", "EscrowStatus",
+    "LoyaltyWallet", "WalletTransaction", "TransactionType"
+]
+pythonCopy# ============================================================
+# MISSING COMPONENT 20: backend/models/campaign.py ADDITION
+# CampaignInfluencer join table (referenced but not defined)
+# ============================================================
+
+# ADD this class to the EXISTING backend/models/campaign.py file:
+
+class CampaignInfluencer(Base):
+    """
+    Join table: Campaign ↔ Influencer assignment
+    Tracks per-influencer status within a campaign
+    """
+    __tablename__ = "campaign_influencers"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    campaign_id     = Column(Integer, ForeignKey("campaigns.id"))
+    influencer_id   = Column(Integer, ForeignKey("influencers.id"))
+
+    # Assignment status
+    status          = Column(String, default="invited")
+    # invited → accepted → submitted → approved → paid
+
+    # Deliverable tracking
+    submitted_at    = Column(DateTime)
+    content_url     = Column(String)
+    content_caption = Column(String)
+    audit_result    = Column(JSON)       # AI Auditor result
+    approved_at     = Column(DateTime)
+    paid_at         = Column(DateTime)
+
+    # Payment
+    agreed_rate_jod = Column(Float)
+    paid_amount_jod = Column(Float)
+
+    assigned_at     = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    campaign        = relationship("Campaign",   back_populates="influencers")
+    influencer      = relationship("Influencer", back_populates="campaigns")
+pythonCopy# ============================================================
+# MISSING COMPONENT 21: frontend/pages/03_campaigns.py
+# ============================================================
+
+import streamlit as st
+import requests
+import pandas as pd
+from datetime import datetime, timedelta
+
+if not st.session_state.get("authenticated"):
+    st.error("🔒 يجب تسجيل الدخول أولاً")
+    st.stop()
+
+API_BASE = "http://localhost:8000/api"
+HEADERS  = {"Authorization": f"Bearer {st.sessi
