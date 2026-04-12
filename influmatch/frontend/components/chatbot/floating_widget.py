@@ -49,7 +49,7 @@ def render_chatbot():
         if send and user_input.strip():
             msgs.append({"role": "user", "content": user_input})
             status_code, resp = api_post(
-                "/api/chat",
+                "/api/chatbot/chat",
                 json={"message": user_input, "language": lang}
             )
             if status_code == 200:

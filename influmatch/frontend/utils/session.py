@@ -22,6 +22,15 @@ def get_role() -> str:
     return st.session_state.get("role", "")
 
 def logout():
-    for k in ["token", "user", "role"]:
-        st.session_state[k] = None
+    defaults = {
+        "token"        : None,
+        "user"         : None,
+        "role"         : None,
+        "lang"         : "ar",
+        "page"         : "home",
+        "chat_messages": [],
+        "chat_open"    : False,
+    }
+    for k, v in defaults.items():
+        st.session_state[k] = v
     st.rerun()

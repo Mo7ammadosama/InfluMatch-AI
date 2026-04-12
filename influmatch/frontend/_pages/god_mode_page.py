@@ -201,13 +201,11 @@ def render():
             st.download_button("⬇️ Download Report", report, "platform_report.txt", use_container_width=True)
         if st.button("📥 Export User List", use_container_width=True):
             if users_data:
-                import pandas as pd
                 df = pd.DataFrame(users_data)
                 st.download_button("⬇️ Download CSV", df.to_csv(index=False),
                                    "users.csv", "text/csv", use_container_width=True)
         if st.button("📥 Export Campaigns", use_container_width=True):
             if campaigns_data:
-                import pandas as pd
                 df = pd.DataFrame(campaigns_data)
                 st.download_button("⬇️ Download CSV", df.to_csv(index=False),
                                    "campaigns.csv", "text/csv", use_container_width=True)
@@ -261,10 +259,6 @@ def render():
 
     with tab4:
         st.markdown("#### 📊 Platform Analytics")
-        import plotly.graph_objects as go
-        import pandas as pd
-        from datetime import datetime, timedelta
-        import random
         dates = pd.date_range(start=datetime.now() - timedelta(days=7), periods=7)
         fig3 = go.Figure()
         fig3.add_trace(go.Bar(

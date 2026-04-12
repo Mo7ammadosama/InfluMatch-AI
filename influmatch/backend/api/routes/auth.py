@@ -26,6 +26,8 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     db.add(user)
     await db.flush()
     db.add(LoyaltyWallet(user_id=user.id))
+    await db.commit()
+    await db.refresh(user)
     logger.success(f"[ARIA::AUTH] Registered: {user.email} [{user.role}]")
     return user
 

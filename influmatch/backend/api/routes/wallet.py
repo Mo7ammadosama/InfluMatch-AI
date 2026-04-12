@@ -58,16 +58,16 @@ async def get_my_wallet(
     result = await db.execute(select(Merchant).where(Merchant.user_id == current_user.id))
     merchant = result.scalar_one_or_none()
 
-    if not merchant:
-        raise HTTPException(status_code=404, detail="Merchant profile not found. Create a merchant profile first.")
-
-    # Find or create wallet
-    result = await db.execute(select(LoyaltyWallet).where(LoyaltyWallet.merchant_id == merchant.id))
+    # Find or create wallet — search by user_id first, then merchant_id as fallback
+    result = await db.execute(select(LoyaltyWallet).where(LoyaltyWallet.user_id == current_user.id))
     wallet = result.scalar_one_or_none()
-
     if not wallet:
-        # Auto-create wallet on first access
-        wallet = LoyaltyWallet(merchant_id=merchant.id, total_points=0, redeemed_points=0)
+        # fallback: check by merchant_id
+        if merchant:
+            result = await db.execute(select(LoyaltyWallet).where(LoyaltyWallet.merchant_id == merchant.id))
+            wallet = result.scalar_one_or_none()
+    if not wallet:
+        wallet = LoyaltyWallet(user_id=current_user.id, total_points=0, redeemed_points=0)
         db.add(wallet)
         await db.commit()
         await db.refresh(wallet)
