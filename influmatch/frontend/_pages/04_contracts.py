@@ -94,13 +94,36 @@ with tab1:
 with tab2:
     st.markdown("### 📂 عقودي المنجزة")
     contracts = [
-        {"رقم العقد" : "CNT-2024-001", "الحملة": "عطر الربيع",
+        {"رقم العقد" : "CNT-2024-001", "id": 1, "الحملة": "عطر الربيع",
          "المؤثر"   : "سارة الأردنية", "القيمة": "510 JOD",
-         "الحالة"   : "✅ موقّع", "التاريخ": "2024-02-10"},
-        {"رقم العقد" : "CNT-2024-002", "الحملة": "عروض رمضان",
+         "الحالة"   : "موقّع", "التاريخ": "2024-02-10"},
+        {"رقم العقد" : "CNT-2024-002", "id": 2, "الحملة": "عروض رمضان",
          "المؤثر"   : "أحمد التقني",  "القيمة": "800 JOD",
-         "الحالة"   : "🟡 في الانتظار", "التاريخ": "2024-02-15"},
+         "الحالة"   : "في الانتظار", "التاريخ": "2024-02-15"},
     ]
     import pandas as pd
-    st.dataframe(pd.DataFrame(contracts), use_container_width=True, hide_index=True)
+    display_cols = ["رقم العقد", "الحملة", "المؤثر", "القيمة", "الحالة", "التاريخ"]
+    st.dataframe(pd.DataFrame(contracts)[display_cols], use_container_width=True, hide_index=True)
+
+    st.markdown("#### 📄 تحميل عقد بصيغة PDF")
+    contract_id_pdf = st.number_input("رقم العقد للتحميل", min_value=1, value=1, step=1, key="pdf_id")
+    if st.button("📄 تحميل PDF", use_container_width=True):
+        with st.spinner("جارٍ إنشاء PDF ..."):
+            try:
+                r = requests.get(
+                    f"{API_BASE}/contracts/{contract_id_pdf}/pdf", headers=HEADERS
+                )
+                if r.status_code == 200:
+                    st.download_button(
+                        label     = "⬇️ حفظ PDF",
+                        data      = r.content,
+                        file_name = f"contract_{contract_id_pdf}.pdf",
+                        mime      = "application/pdf",
+                        use_container_width=True,
+                    )
+                    st.success("تم إنشاء PDF بنجاح")
+                else:
+                    st.error(f"خطأ {r.status_code}: {r.text[:200]}")
+            except requests.exceptions.ConnectionError:
+                st.error("تعذّر الاتصال بالخادم — تأكد من تشغيل Backend")
 # ============================================================

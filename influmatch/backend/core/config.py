@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     # Security
     secret_key: str = "aria-influmatch-secret-2024-jordan"
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
+    access_token_expire_minutes: int = 1440
 
     # Database
     database_url: str = "sqlite:///./influmatch.db"
@@ -41,7 +41,17 @@ class Settings(BaseSettings):
     currency: str = "JOD"
     vat_rate: float = 0.16
     default_language: str = "ar"
-    claude_model: str = "claude-opus-4-6"
+    claude_model: str = "claude-sonnet-4-6"
+
+    # Notifications — SMTP
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_pass: str = ""
+
+    # Notifications — WhatsApp
+    whatsapp_api_url: str = "https://api.whatsapp.com/stub"
+    whatsapp_token: str   = "stub_token"
 
     model_config = {
         "env_file": ".env",

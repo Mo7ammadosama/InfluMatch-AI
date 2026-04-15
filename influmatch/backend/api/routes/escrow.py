@@ -46,6 +46,13 @@ async def release_escrow(
     """Release escrow funds to influencer"""
     try:
         result = await engine.release_to_influencer(db, escrow_id, released_by)
+        try:
+            from ...services.notifications.notification_service import NotificationService
+            NotificationService().notify_payment_transferred(
+                "influencer@platform.jo", float(result.get("net_amount", 0))
+            )
+        except Exception as exc:
+            logger.warning(f"[ARIA::ESCROW] Notification failed: {exc}")
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -59,6 +66,13 @@ async def raise_dispute(
     """Raise a dispute — freezes escrow funds"""
     try:
         tx = await engine.raise_dispute(db, escrow_id, req.raised_by_id, req.reason)
+        try:
+            from ...services.notifications.notification_service import NotificationService
+            NotificationService().notify_dispute_raised(
+                "merchant@platform.jo", "influencer@platform.jo", f"Escrow #{escrow_id}"
+            )
+        except Exception as exc:
+            logger.warning(f"[ARIA::ESCROW] Notification failed: {exc}")
         return {
             "escrow_id"       : escrow_id,
             "status"          : "DISPUTED",

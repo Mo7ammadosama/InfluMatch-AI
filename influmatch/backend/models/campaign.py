@@ -42,6 +42,8 @@ class Campaign(Base):
     influencer_assignments = relationship("CampaignInfluencer", back_populates="campaign")
     escrow = relationship("EscrowTransaction", back_populates="campaign", uselist=False)
     contract = relationship("Contract", back_populates="campaign", uselist=False)
+    milestones = relationship("CampaignMilestone", back_populates="campaign", cascade="all, delete-orphan")
+
     def __repr__(self): return f"<Campaign {self.title_en} [{self.status}]>"
 
 class CampaignInfluencer(Base):

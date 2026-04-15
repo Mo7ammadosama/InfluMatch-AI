@@ -154,5 +154,34 @@ for idx, inf in enumerate(influencers):
         </div>
         """, unsafe_allow_html=True)
         if st.button(f"📩 تواصل", key=f"contact_{idx}", use_container_width=True):
-            st.toast(f"✅ تم إرسال طلب التعاون إلى {inf['الاسم']}", icon="🌟")
+            st.toast(f"تم إرسال طلب التعاون", icon="🌟")
+
+# ── Campaign Report Upload ────────────────────────────────────
+st.divider()
+st.markdown("### 📤 رفع تقرير الحملة / Upload Campaign Report")
+
+upload_campaign_id = st.number_input("رقم الحملة / Campaign ID", min_value=1, value=1, step=1, key="upload_cid")
+uploaded_file = st.file_uploader(
+    "رفع تقرير الحملة / Upload Campaign Report",
+    type=["png", "jpg", "jpeg", "pdf"],
+    help="الحد الأقصى: 10 ميغابايت | Max: 10 MB",
+)
+
+if uploaded_file is not None:
+    file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
+    st.info(f"الملف: {uploaded_file.name} | الحجم: {file_size_mb:.2f} MB")
+    if st.button("📤 رفع التقرير", type="primary", use_container_width=True):
+        with st.spinner("جارٍ الرفع ..."):
+            try:
+                r = requests.post(
+                    f"{API_BASE}/campaigns/{upload_campaign_id}/upload-report",
+                    headers=HEADERS,
+                    files={"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)},
+                )
+                if r.status_code == 201:
+                    st.success(f"تم رفع التقرير بنجاح | Report ID: {r.json().get('report_id')}")
+                else:
+                    st.error(f"خطأ {r.status_code}: {r.json().get('detail', 'Unknown error')}")
+            except requests.exceptions.ConnectionError:
+                st.error("تعذّر الاتصال بالخادم — تأكد من تشغيل Backend")
 # ============================================================

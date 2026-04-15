@@ -21,6 +21,9 @@ def is_logged_in() -> bool:
 def get_role() -> str:
     return st.session_state.get("role", "")
 
+def get_user() -> dict:
+    return st.session_state.get("user") or {}
+
 def logout():
     defaults = {
         "token"        : None,

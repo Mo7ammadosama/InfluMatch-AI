@@ -1,278 +1,354 @@
-"""God Mode Admin Dashboard — Module 13"""
+"""God Mode Admin Dashboard — InfluMatch.jo"""
 import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
-from datetime import datetime, timedelta
-import random
-from ..utils.api_client import api_get, api_post
+from datetime import datetime
+from ..utils.api_client import api_get, api_post, api_patch, api_delete
 from ..utils.session import get_role
 
 def render():
     if get_role() != "admin":
-        st.error("⛔ God Mode — Admin Access Only / وصول مرفوض")
+        st.error("وصول مرفوض — للمدير فقط / Admin Access Only")
         st.stop()
 
-    st.markdown('''
-    <div class="god-mode-header">
-        <h1 style="color:#e94560;margin:0;">⚡ GOD MODE — ARIA Control Center</h1>
-        <p style="color:#a0a0b0;margin:5px 0 0 0;">
-            Full platform oversight | Zero restrictions | Executive authority
-        </p>
+    st.markdown("""
+<div class="admin-banner">
+  <div style="display:flex;align-items:center;gap:1rem">
+    <div style="font-size:3rem">⚡</div>
+    <div>
+      <div style="font-size:1.8rem;font-weight:900;color:#ef4444;letter-spacing:0.05em">
+        GOD MODE — ARIA Control Center
+      </div>
+      <div style="color:#a0a0b0;font-size:0.85rem">
+        Full platform oversight | Zero restrictions | Executive authority
+      </div>
     </div>
-    ''', unsafe_allow_html=True)
+  </div>
+</div>""", unsafe_allow_html=True)
 
-    # ── Real-time Platform Metrics ──────────────────────────────
-    st.markdown("### 📊 Platform Pulse — Real-Time")
-
+    # ── REAL PLATFORM STATS ──
     stats = api_get("/api/admin/platform-stats") or {}
+    st.markdown("### Platform Pulse — Live")
 
-    col1, col2, col3, col4, col5 = st.columns(5)
-    metrics = [
-        ("👥 Total Users",        str(stats.get("total_users", 0)),        "+23 today"),
-        ("🏪 Active Merchants",   str(stats.get("total_merchants", 0)),    "+5 this week"),
-        ("🌟 Active Influencers", str(stats.get("total_influencers", 0)),  "+18 this week"),
-        ("📢 Live Campaigns",     str(stats.get("active_campaigns", 0)),   "+8 today"),
-        ("💰 Escrow Locked",      f"{stats.get('escrow_locked_jod',0):,.0f} JOD", "secured"),
+    cols = st.columns(5)
+    kpis = [
+        ("المستخدمون",      stats.get("total_users", 0)),
+        ("التجار",          stats.get("total_merchants", 0)),
+        ("المؤثرون",        stats.get("total_influencers", 0)),
+        ("الحملات النشطة", stats.get("active_campaigns", 0)),
+        ("Escrow المحجوز",  f"{stats.get('escrow_locked_jod', 0):.3f} JOD"),
     ]
-    for col, (label, value, delta) in zip([col1,col2,col3,col4,col5], metrics):
-        col.metric(label, value, delta)
+    icons = ["👥", "🏪", "🌟", "📢", "💰"]
+    for col, icon, (label, val) in zip(cols, icons, kpis):
+        col.markdown(f"""
+<div class="kpi-block" style="border-left-color:#ef4444">
+  <div style="font-size:1.4rem">{icon}</div>
+  <div class="kpi-value">{val}</div>
+  <div class="kpi-label">{label}</div>
+</div>""", unsafe_allow_html=True)
+
+    st.markdown("")
+    c1, c2, c3, c4 = st.columns(4)
+    for col, label, val, color in [
+        (c1, "إجمالي حجم Escrow",  f"{stats.get('total_escrow_volume_jod', 0):.3f} JOD", "#f59e0b"),
+        (c2, "عمولات المنصة",       f"{stats.get('total_platform_fees_jod', 0):.3f} JOD", "#00ff88"),
+        (c3, "نزاعات مفتوحة",       stats.get("open_disputes", 0),                        "#ef4444"),
+        (c4, "مستخدمون اليوم",      stats.get("new_users_today", 0),                       "#8b5cf6"),
+    ]:
+        col.markdown(f"""
+<div class="aria-card" style="text-align:center;border-top:3px solid {color}">
+  <div style="color:{color};font-size:1.5rem;font-weight:700">{val}</div>
+  <div style="color:#a0a0b0;font-size:0.75rem;margin-top:0.3rem">{label}</div>
+</div>""", unsafe_allow_html=True)
 
     st.divider()
 
-    # ── ARIA Agent Status Panel ─────────────────────────────────
-    st.markdown("### 🤖 ARIA Agent Status")
-    agent_col1, agent_col2 = st.columns(2)
+    # ── AGENT STATUS (from real stats) ──
+    st.markdown("### ARIA Agent Status")
+    a1, a2 = st.columns(2)
+    guardian_raw = stats.get("guardian_agent", "unknown")
+    rag_raw      = stats.get("rag_system", "unknown")
 
-    with agent_col1:
-        st.markdown('''
-        <div style="background:#1a1a2e;border:1px solid #533483;border-radius:12px;padding:1.2rem;">
-            <h4 style="color:#00ff88;">🛡️ Guardian Agent</h4>
-            <p style="color:#a0a0b0;font-size:13px;">Status: <b style="color:#00ff88;">ONLINE</b></p>
-            <p style="color:#a0a0b0;font-size:13px;">Jobs Queued: <b>14</b></p>
-            <p style="color:#a0a0b0;font-size:13px;">Next Run: <b>02:00 AM (Scoring)</b></p>
-            <p style="color:#a0a0b0;font-size:13px;">Escrow Releases Today: <b>3</b></p>
-        </div>
-        ''', unsafe_allow_html=True)
+    def _sc(s):
+        return "#00ff88" if s.lower() in ("active", "ready", "online") else "#ef4444"
 
-    with agent_col2:
-        st.markdown('''
-        <div style="background:#1a1a2e;border:1px solid #533483;border-radius:12px;padding:1.2rem;">
-            <h4 style="color:#ffd700;">🔍 AI Auditor Agent</h4>
-            <p style="color:#a0a0b0;font-size:13px;">Status: <b style="color:#00ff88;">ONLINE</b></p>
-            <p style="color:#a0a0b0;font-size:13px;">Audits Today: <b>28</b></p>
-            <p style="color:#a0a0b0;font-size:13px;">Auto-Approved: <b>22 (78.5%)</b></p>
-            <p style="color:#a0a0b0;font-size:13px;">Flagged for Review: <b>6</b></p>
-        </div>
-        ''', unsafe_allow_html=True)
+    with a1:
+        st.markdown(f"""
+<div class="aria-card" style="border-left:4px solid {_sc(guardian_raw)}">
+  <div style="font-weight:700;color:{_sc(guardian_raw)};margin-bottom:0.5rem">
+    Guardian Agent — {guardian_raw.upper()}
+  </div>
+  <div style="color:#a0a0b0;font-size:0.85rem">نزاعات مفتوحة: <b style="color:#fff">{stats.get("open_disputes", 0)}</b></div>
+  <div style="color:#a0a0b0;font-size:0.85rem">حملات مكتملة: <b style="color:#fff">{stats.get("completed_campaigns", 0)}</b></div>
+  <div style="color:#a0a0b0;font-size:0.85rem">إجمالي الحملات: <b style="color:#fff">{stats.get("total_campaigns", 0)}</b></div>
+</div>""", unsafe_allow_html=True)
 
-    st.divider()
-
-    # ── Revenue Analytics ───────────────────────────────────────
-    st.markdown("### 💹 Revenue Analytics (JOD)")
-
-    dates = pd.date_range(start=datetime.now() - timedelta(days=30), periods=30)
-    revenue_data = pd.DataFrame({
-        "date": dates,
-        "platform_fees": [random.uniform(200, 800) for _ in range(30)],
-        "escrow_volume": [random.uniform(2000, 8000) for _ in range(30)],
-    })
-
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=revenue_data["date"], y=revenue_data["escrow_volume"],
-        fill="tozeroy", name="Escrow Volume",
-        line=dict(color="#0f3460"), fillcolor="rgba(15,52,96,0.3)"
-    ))
-    fig.add_trace(go.Scatter(
-        x=revenue_data["date"], y=revenue_data["platform_fees"],
-        fill="tozeroy", name="Platform Fees",
-        line=dict(color="#533483"), fillcolor="rgba(83,52,131,0.3)"
-    ))
-    fig.update_layout(
-        paper_bgcolor="#1a1a2e", plot_bgcolor="#1a1a2e",
-        font=dict(color="white"), height=300,
-        margin=dict(l=0, r=0, t=20, b=0),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02)
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    with a2:
+        st.markdown(f"""
+<div class="aria-card" style="border-left:4px solid {_sc(rag_raw)}">
+  <div style="font-weight:700;color:{_sc(rag_raw)};margin-bottom:0.5rem">
+    RAG System — {rag_raw.upper()}
+  </div>
+  <div style="color:#a0a0b0;font-size:0.85rem">إجمالي المستخدمين: <b style="color:#fff">{stats.get("total_users", 0)}</b></div>
+  <div style="color:#a0a0b0;font-size:0.85rem">مستخدمون جدد اليوم: <b style="color:#fff">{stats.get("new_users_today", 0)}</b></div>
+  <div style="color:#a0a0b0;font-size:0.85rem">عمولات المنصة: <b style="color:#fff">{stats.get("total_platform_fees_jod", 0):.3f} JOD</b></div>
+</div>""", unsafe_allow_html=True)
 
     st.divider()
 
-    # ── ARIA Score Distribution ─────────────────────────────────
-    st.markdown("### 🏆 Influencer ARIA Score Distribution")
-    score_col1, score_col2 = st.columns([2, 1])
+    # ── EXECUTIVE CONTROL PANEL ──
+    st.markdown("### Executive Control Panel")
+    p1, p2, p3 = st.columns(3)
 
-    with score_col1:
-        tiers  = ["PLATINUM", "GOLD", "SILVER", "BRONZE", "UNRANKED"]
-        counts = [12, 47, 98, 103, 52]
-        colors = ["#e5e4e2", "#ffd700", "#c0c0c0", "#cd7f32", "#555"]
-        fig2 = go.Figure(go.Bar(x=tiers, y=counts, marker_color=colors,
-                                text=counts, textposition="outside"))
-        fig2.update_layout(paper_bgcolor="#1a1a2e", plot_bgcolor="#1a1a2e",
-                           font=dict(color="white"), height=280,
-                           margin=dict(l=0,r=0,t=10,b=0), showlegend=False)
-        st.plotly_chart(fig2, use_container_width=True)
-
-    with score_col2:
-        st.markdown('''
-        <div style="padding:1rem;">
-            <div style="margin-bottom:12px;">
-                <span style="color:#e5e4e2;font-size:20px;">💎</span>
-                <b style="color:#e5e4e2;"> PLATINUM</b>
-                <span style="float:right;color:#a0a0b0;">12</span>
-            </div>
-            <div style="margin-bottom:12px;">
-                <span style="color:#ffd700;font-size:20px;">🥇</span>
-                <b style="color:#ffd700;"> GOLD</b>
-                <span style="float:right;color:#a0a0b0;">47</span>
-            </div>
-            <div style="margin-bottom:12px;">
-                <span style="color:#c0c0c0;font-size:20px;">🥈</span>
-                <b style="color:#c0c0c0;"> SILVER</b>
-                <span style="float:right;color:#a0a0b0;">98</span>
-            </div>
-            <div style="margin-bottom:12px;">
-                <span style="color:#cd7f32;font-size:20px;">🥉</span>
-                <b style="color:#cd7f32;"> BRONZE</b>
-                <span style="float:right;color:#a0a0b0;">103</span>
-            </div>
-            <div>
-                <span style="font-size:20px;">⬜</span>
-                <b style="color:#555;"> UNRANKED</b>
-                <span style="float:right;color:#a0a0b0;">52</span>
-            </div>
-        </div>
-        ''', unsafe_allow_html=True)
-
-    st.divider()
-
-    # ── Executive Control Panel ─────────────────────────────────
-    st.markdown("### ⚙️ Executive Control Panel")
-    ctrl_col1, ctrl_col2, ctrl_col3 = st.columns(3)
-
-    with ctrl_col1:
-        st.markdown("**🔄 Manual Agent Triggers**")
-        if st.button("▶️ Force Influencer Scoring", use_container_width=True):
+    with p1:
+        st.markdown("**Manual Triggers**")
+        if st.button("Force Influencer Scoring", use_container_width=True):
             s, r = api_post("/api/admin/trigger/scoring", json={})
-            if s == 200:
-                st.toast(r.get("message", "Scoring queued"), icon="🤖")
-            else:
-                st.error(r.get("detail"))
-        if st.button("▶️ Force Escrow Release Check", use_container_width=True):
+            st.success(r.get("message", "Queued")) if s == 200 else st.error(str(r))
+        if st.button("Force Escrow Release", use_container_width=True):
             s, r = api_post("/api/admin/trigger/escrow_release", json={})
-            if s == 200:
-                st.toast(r.get("message", "Escrow check queued"), icon="💰")
-            else:
-                st.error(r.get("detail"))
-        if st.button("▶️ Re-Audit Flagged Content", use_container_width=True):
+            st.success(r.get("message", "Queued")) if s == 200 else st.error(str(r))
+        if st.button("Re-Audit Content", use_container_width=True):
             s, r = api_post("/api/admin/trigger/reaudit", json={})
-            if s == 200:
-                st.toast(r.get("message", "Re-audit queued"), icon="🔍")
-            else:
-                st.error(r.get("detail"))
+            st.success(r.get("message", "Queued")) if s == 200 else st.error(str(r))
 
-    with ctrl_col2:
-        st.markdown("**🚨 Emergency Controls**")
-        if st.button("🛑 Freeze All Escrows", use_container_width=True, type="secondary"):
-            if st.session_state.get("confirm_freeze"):
+    with p2:
+        st.markdown("**Emergency Controls**")
+        if st.button("Freeze ALL Escrows", use_container_width=True, type="primary"):
+            if not st.session_state.get("freeze_confirm"):
+                st.session_state["freeze_confirm"] = True
+                st.warning("اضغط مرة أخرى للتأكيد!")
+            else:
                 s, r = api_post("/api/admin/freeze-all-escrows", json={})
+                st.session_state["freeze_confirm"] = False
                 if s == 200:
-                    st.error(f"🛑 FROZEN: {r.get('frozen_count',0)} escrows")
-                    st.session_state["confirm_freeze"] = False
+                    st.error(f"تم تجميد {r.get('frozen_count', 0)} escrow")
                 else:
-                    st.error(r.get("detail"))
-            else:
-                st.session_state["confirm_freeze"] = True
-                st.warning("⚠️ Click again to CONFIRM freeze of ALL escrows")
-        if st.button("📧 Blast Notification (All)", use_container_width=True, type="secondary"):
-            st.info("📧 Platform-wide notification — coming soon")
-        if st.button("🔃 Rebuild RAG Index", use_container_width=True, type="secondary"):
-            st.toast("RAG rebuild initiated...", icon="🧠")
+                    st.error(str(r))
+        if st.button("Blast Notification", use_container_width=True):
+            st.warning("قيد التطوير — Notification blast pending")
+        if st.button("Rebuild RAG Index", use_container_width=True):
+            st.warning("قيد التطوير — RAG rebuild endpoint pending")
 
-    with ctrl_col3:
-        st.markdown("**📊 Reports**")
-        users_data = api_get("/api/admin/users") or []
+    with p3:
+        st.markdown("**Data Exports**")
+        users_data     = api_get("/api/admin/users") or []
         campaigns_data = api_get("/api/campaigns/") or []
-        if st.button("📥 Export Platform Report", use_container_width=True):
-            report = f"InfluMatch.jo Platform Report\nGenerated: {datetime.now()}\n\n"
-            report += f"Total Users: {stats.get('total_users',0)}\n"
-            report += f"Total Campaigns: {len(campaigns_data)}\n"
-            report += f"Escrow Locked: {stats.get('escrow_locked_jod',0):,.2f} JOD\n"
-            st.download_button("⬇️ Download Report", report, "platform_report.txt", use_container_width=True)
-        if st.button("📥 Export User List", use_container_width=True):
-            if users_data:
-                df = pd.DataFrame(users_data)
-                st.download_button("⬇️ Download CSV", df.to_csv(index=False),
-                                   "users.csv", "text/csv", use_container_width=True)
-        if st.button("📥 Export Campaigns", use_container_width=True):
-            if campaigns_data:
-                df = pd.DataFrame(campaigns_data)
-                st.download_button("⬇️ Download CSV", df.to_csv(index=False),
-                                   "campaigns.csv", "text/csv", use_container_width=True)
+        if users_data:
+            import json as _json
+            st.download_button(
+                "Export Users (JSON)",
+                _json.dumps(users_data, ensure_ascii=False, indent=2),
+                "influmatch_users.json", "application/json",
+                use_container_width=True
+            )
+        if campaigns_data:
+            rows = [{"ID": c.get("id"),
+                     "Title": c.get("title_en") or c.get("title_ar"),
+                     "Status": c.get("status"),
+                     "Budget JOD": c.get("total_budget"),
+                     "Niche": c.get("niche")} for c in campaigns_data]
+            st.download_button(
+                "Export Campaigns (CSV)",
+                pd.DataFrame(rows).to_csv(index=False),
+                "influmatch_campaigns.csv", "text/csv",
+                use_container_width=True
+            )
 
     st.divider()
 
-    # ── Users Table ─────────────────────────────────────────────
-    tab1, tab2, tab3, tab4 = st.tabs(["👥 Users", "📢 All Campaigns", "⚖️ Disputes", "📊 Analytics"])
+    # ── MAIN TABS ──
+    tab1, tab2, tab3, tab4 = st.tabs(["👥 المستخدمون", "📢 الحملات", "⚖️ النزاعات", "📊 التحليلات"])
+
+    # TAB 1 — USER MANAGEMENT
     with tab1:
+        st.markdown("#### إدارة المستخدمين")
+        search = st.text_input("بحث بالاسم أو الإيميل", placeholder="admin@influmatch.jo", key="user_search")
         users = api_get("/api/admin/users") or []
-        if users:
-            df = pd.DataFrame([{
-                "ID": u.get("id"), "Name": u.get("full_name_en") or u.get("full_name_ar"),
-                "Email": u.get("email"), "Role": u.get("role"), "Active": u.get("is_active"),
-            } for u in users])
-            st.dataframe(df, use_container_width=True)
-        else:
-            st.info("No users found")
+        if search:
+            users = [u for u in users if search.lower() in
+                     (u.get("email", "") + u.get("full_name_en", "") + u.get("username", "")).lower()]
 
+        if not users:
+            st.info("لا يوجد مستخدمون")
+        else:
+            for u in users:
+                uid       = u.get("id")
+                is_active = u.get("is_active", True)
+                role_val  = u.get("role", "")
+                role_color = {"admin": "#ef4444", "merchant": "#f59e0b",
+                              "influencer": "#8b5cf6"}.get(role_val, "#6b7280")
+                display_name = u.get("full_name_en") or u.get("full_name_ar") or u.get("username") or u.get("email")
+                status_dot = "🟢" if is_active else "🔴"
+
+                with st.expander(f"{status_dot} [{role_val.upper()}] {display_name} — {u.get('email')}"):
+                    uc1, uc2, uc3, uc4 = st.columns(4)
+
+                    with uc1:
+                        st.markdown(f"**ID:** {uid}")
+                        st.markdown(f"**Role:** <span style='color:{role_color}'>{role_val.upper()}</span>",
+                                    unsafe_allow_html=True)
+                        st.markdown(f"**Active:** {'نعم' if is_active else 'لا'}")
+                        joined = u.get("created_at", "—")[:10] if u.get("created_at") else "—"
+                        st.markdown(f"**Joined:** {joined}")
+
+                    with uc2:
+                        role_options = ["merchant", "influencer", "admin"]
+                        cur_idx = role_options.index(role_val) if role_val in role_options else 0
+                        new_role = st.selectbox("تغيير الدور", role_options,
+                                                index=cur_idx, key=f"role_sel_{uid}")
+                        if st.button("حفظ الدور", key=f"save_role_{uid}", use_container_width=True):
+                            s, r = api_patch(f"/api/admin/users/{uid}/role", json={"role": new_role})
+                            if s == 200:
+                                st.success(f"الدور الجديد: {new_role}")
+                                st.rerun()
+                            else:
+                                st.error(str(r))
+
+                    with uc3:
+                        toggle_lbl = "تعطيل" if is_active else "تفعيل"
+                        if st.button(toggle_lbl, key=f"toggle_{uid}", use_container_width=True):
+                            s, r = api_patch(f"/api/admin/users/{uid}/toggle-active", json={})
+                            if s == 200:
+                                st.success(f"is_active = {r.get('is_active')}")
+                                st.rerun()
+                            else:
+                                st.error(str(r))
+
+                    with uc4:
+                        if role_val != "admin":
+                            if st.button("حذف", key=f"del_{uid}", use_container_width=True):
+                                s, r = api_delete(f"/api/admin/users/{uid}")
+                                if s == 200:
+                                    st.success("تم الحذف")
+                                    st.rerun()
+                                else:
+                                    st.error(str(r))
+
+    # TAB 2 — CAMPAIGNS
     with tab2:
-        campaigns = api_get("/api/campaigns") or []
-        if campaigns:
-            df = pd.DataFrame([{
-                "ID": c.get("id"),
-                "Title": c.get("title_en") or c.get("title_ar"),
-                "Status": c.get("status"),
-                "Budget (JOD)": c.get("total_budget"),
-                "Niche": c.get("niche"),
-            } for c in campaigns])
-            st.dataframe(df, use_container_width=True)
-        else:
-            st.info("No campaigns found")
+        st.markdown("#### جميع الحملات")
+        all_statuses = ["الكل", "draft", "active", "in_progress", "under_review",
+                        "completed", "disputed", "cancelled"]
+        status_filter = st.selectbox("فلتر الحالة", all_statuses, key="camp_status_filter")
+        campaigns = api_get("/api/campaigns/") or []
+        if status_filter != "الكل":
+            campaigns = [c for c in campaigns if c.get("status") == status_filter]
 
+        if not campaigns:
+            st.info("لا توجد حملات بهذه الحالة")
+        else:
+            for c in campaigns:
+                cid   = c.get("id")
+                title = c.get("title_en") or c.get("title_ar") or f"Campaign #{cid}"
+                s_color = {"active": "#00ff88", "in_progress": "#f59e0b",
+                           "completed": "#8b5cf6", "disputed": "#ef4444",
+                           "draft": "#6b7280", "cancelled": "#374151",
+                           "under_review": "#3b82f6"}.get(c.get("status", ""), "#6b7280")
+
+                with st.expander(f"[{c.get('status','').upper()}] {title} — {c.get('total_budget', 0):.3f} JOD"):
+                    cc1, cc2 = st.columns([3, 1])
+                    with cc1:
+                        st.markdown(f"**Niche:** {c.get('niche', '—')} | **Merchant ID:** {c.get('merchant_id', '—')}")
+                        st.markdown(
+                            f"**Status:** <span style='color:{s_color}'>{c.get('status','').upper()}</span>",
+                            unsafe_allow_html=True
+                        )
+                        st.markdown(f"**Budget:** {c.get('total_budget', 0):.3f} JOD")
+                    with cc2:
+                        editable_statuses = ["draft", "active", "in_progress",
+                                             "under_review", "completed", "cancelled"]
+                        cur_s = c.get("status", "draft")
+                        if cur_s not in editable_statuses:
+                            cur_s = "draft"
+                        new_status = st.selectbox("تغيير الحالة", editable_statuses,
+                                                  index=editable_statuses.index(cur_s),
+                                                  key=f"cstatus_{cid}")
+                        if st.button("حفظ", key=f"save_c_{cid}", use_container_width=True):
+                            s, r = api_patch(f"/api/admin/campaigns/{cid}/status",
+                                             json={"status": new_status})
+                            if s == 200:
+                                st.success(f"الحالة الجديدة: {new_status}")
+                                st.rerun()
+                            else:
+                                st.error(str(r))
+
+    # TAB 3 — DISPUTES
     with tab3:
-        # Disputes — use dedicated endpoint
-        disputed = api_get("/api/admin/disputes") or []
-        if disputed:
-            for d in disputed:
-                st.markdown(f"""
-                <div style="background:#1a1a2e;border-left:3px solid #e94560;
-                            border-radius:8px;padding:0.8rem 1rem;margin-bottom:0.5rem">
-                    <b>{d.get('title_en') or d.get('title_ar','')}</b>
-                    <span style="color:#e94560;margin-left:0.8rem">⚠️ DISPUTED</span>
-                    <span style="color:#a0a0b0;font-size:0.8rem;margin-left:0.8rem">
-                        Budget: {d.get('total_budget',0):.0f} JOD
-                    </span>
-                </div>
-                """, unsafe_allow_html=True)
+        st.markdown("#### النزاعات النشطة")
+        disputes = api_get("/api/admin/disputes") or []
+        if not disputes:
+            st.success("لا توجد نزاعات مفتوحة — المنصة بخير")
         else:
-            st.success("✅ No active disputes — platform healthy")
+            st.error(f"{len(disputes)} نزاع نشط يحتاج قراراً")
+            for d in disputes:
+                eid   = d.get("escrow_id") or d.get("id")
+                title = d.get("title_en") or d.get("title_ar") or f"Campaign #{d.get('campaign_id','?')}"
 
+                with st.expander(f"نزاع #{eid} — {title} — {d.get('total_budget', 0):.3f} JOD"):
+                    st.markdown(f"**سبب النزاع:** {d.get('dispute_reason') or 'غير محدد'}")
+                    st.markdown(f"**تاريخ الرفع:** {(d.get('dispute_raised_at') or '—')[:19]}")
+                    st.markdown(f"**Merchant ID:** {d.get('merchant_id', '—')}")
+                    st.markdown(f"**المبلغ الصافي:** {d.get('net_amount', 0):.3f} JOD")
+
+                    reason = st.text_area("سبب القرار", key=f"reason_{eid}",
+                                          placeholder="اشرح قرارك للطرفين...")
+                    dr1, dr2 = st.columns(2)
+                    with dr1:
+                        if st.button(f"لصالح التاجر #{eid}", key=f"merch_{eid}",
+                                     use_container_width=True):
+                            if not reason.strip():
+                                st.warning("أدخل سبب القرار أولاً")
+                            else:
+                                s, r = api_post(f"/api/admin/disputes/{eid}/resolve",
+                                                json={"decision": "MERCHANT", "reason": reason})
+                                if s == 200:
+                                    st.success(f"تم الاسترداد للتاجر | {r.get('amount_jod', 0):.3f} JOD")
+                                    st.rerun()
+                                else:
+                                    st.error(str(r))
+                    with dr2:
+                        if st.button(f"لصالح المؤثر #{eid}", key=f"infl_{eid}",
+                                     use_container_width=True):
+                            if not reason.strip():
+                                st.warning("أدخل سبب القرار أولاً")
+                            else:
+                                s, r = api_post(f"/api/admin/disputes/{eid}/resolve",
+                                                json={"decision": "INFLUENCER", "reason": reason})
+                                if s == 200:
+                                    st.success(f"تم الإفراج للمؤثر | {r.get('amount_jod', 0):.3f} JOD")
+                                    st.rerun()
+                                else:
+                                    st.error(str(r))
+
+    # TAB 4 — ANALYTICS (real endpoint)
     with tab4:
-        st.markdown("#### 📊 Platform Analytics")
-        dates = pd.date_range(start=datetime.now() - timedelta(days=7), periods=7)
-        fig3 = go.Figure()
-        fig3.add_trace(go.Bar(
-            x=[d.strftime("%a") for d in dates],
-            y=[random.randint(5, 30) for _ in range(7)],
-            name="New Users", marker_color="#533483"
-        ))
-        fig3.add_trace(go.Bar(
-            x=[d.strftime("%a") for d in dates],
-            y=[random.randint(1, 10) for _ in range(7)],
-            name="New Campaigns", marker_color="#e94560"
-        ))
-        fig3.update_layout(paper_bgcolor="#1a1a2e", plot_bgcolor="#1a1a2e",
-                           font=dict(color="white"), height=250,
-                           margin=dict(l=0,r=0,t=10,b=0), barmode="group")
-        st.plotly_chart(fig3, use_container_width=True)
-        st.caption("Note: Live analytics endpoint in roadmap — current data is illustrative")
+        st.markdown("#### تحليلات المنصة")
+        analytics = api_get("/api/admin/analytics") or {}
+        daily = analytics.get("daily_campaigns", [])
+
+        if daily:
+            df_a = pd.DataFrame(daily)
+            fig = go.Figure(go.Bar(
+                x=df_a["date"], y=df_a["count"],
+                marker_color="#ef4444",
+                text=df_a["count"], textposition="outside"
+            ))
+            fig.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#ffffff", title="الحملات الجديدة يومياً",
+                height=350, showlegend=False,
+                margin=dict(l=0, r=0, t=40, b=0)
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("لا توجد بيانات تحليلية بعد — أنشئ حملات أولاً")
+
+        sc1, sc2, sc3 = st.columns(3)
+        total_c = max(stats.get("total_campaigns", 1), 1)
+        sc1.metric("إجمالي حجم المعاملات",
+                   f"{stats.get('total_escrow_volume_jod', 0):.3f} JOD")
+        sc2.metric("عمولات المنصة المحققة",
+                   f"{stats.get('total_platform_fees_jod', 0):.3f} JOD")
+        sc3.metric("معدل إتمام الحملات",
+                   f"{round(stats.get('completed_campaigns', 0) / total_c * 100, 1)}%")

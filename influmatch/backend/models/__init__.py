@@ -8,6 +8,8 @@ from .campaign    import Campaign, CampaignStatus, CampaignInfluencer
 from .contract    import Contract, ContractStatus
 from .escrow      import EscrowTransaction, EscrowStatus
 from .wallet      import LoyaltyWallet, WalletTransaction, TransactionType
+from .milestone   import CampaignMilestone, MilestoneStatus
+from .campaign_report import CampaignReport, ReportStatus
 
 __all__ = [
     "User", "UserRole",
@@ -16,6 +18,8 @@ __all__ = [
     "Campaign", "CampaignStatus", "CampaignInfluencer",
     "Contract", "ContractStatus",
     "EscrowTransaction", "EscrowStatus",
-    "LoyaltyWallet", "WalletTransaction", "TransactionType"
+    "LoyaltyWallet", "WalletTransaction", "TransactionType",
+    "CampaignMilestone", "MilestoneStatus",
+    "CampaignReport", "ReportStatus",
 ]
 # ============================================================

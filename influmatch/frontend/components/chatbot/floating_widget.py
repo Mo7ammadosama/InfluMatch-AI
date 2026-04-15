@@ -48,14 +48,18 @@ def render_chatbot():
 
         if send and user_input.strip():
             msgs.append({"role": "user", "content": user_input})
-            status_code, resp = api_post(
-                "/api/chatbot/chat",
-                json={"message": user_input, "language": lang}
-            )
+            st.session_state["chat_messages"] = msgs
+            with st.spinner("🤖 ARIA تفكر... / Thinking..."):
+                status_code, resp = api_post(
+                    "/api/chatbot/chat",
+                    json={"message": user_input, "history": msgs[:-1], "language": lang},
+                    timeout=60
+                )
             if status_code == 200:
                 reply = resp.get("response", "...")
             else:
-                reply = "عذراً، حدث خطأ. / Sorry, an error occurred." if lang == "ar" else "Sorry, an error occurred."
+                detail = resp.get("detail", "") if isinstance(resp, dict) else ""
+                reply = f"عذراً، حدث خطأ ({status_code}). / Error ({status_code}): {detail}" if lang == "ar" else f"Error ({status_code}): {detail}"
             msgs.append({"role": "assistant", "content": reply})
             st.session_state["chat_messages"] = msgs
             st.rerun()

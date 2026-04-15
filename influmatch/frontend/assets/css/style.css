@@ -153,3 +153,105 @@ section[data-testid="stSidebar"] > div     { visibility: visible !important; }
 /* Ensure the collapse/expand arrow button is always reachable */
 div[data-testid="collapsedControl"]        { display: block !important; visibility: visible !important; }
 button[data-testid="baseButton-header"]    { display: block !important; visibility: visible !important; }
+
+/* ── ROLE IDENTITY COLORS ── */
+:root {
+  --merchant-primary: #f59e0b;
+  --merchant-glow: rgba(245,158,11,0.15);
+  --influencer-primary: #8b5cf6;
+  --influencer-glow: rgba(139,92,246,0.15);
+  --admin-primary: #ef4444;
+  --admin-glow: rgba(239,68,68,0.15);
+}
+
+/* ── PREMIUM CARDS ── */
+.aria-card {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(83,52,131,0.4);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+.aria-card:hover {
+  border-color: rgba(83,52,131,0.8);
+  box-shadow: 0 8px 32px rgba(83,52,131,0.2);
+  transform: translateY(-2px);
+}
+
+/* ── KPI METRIC BLOCKS ── */
+.kpi-block {
+  background: linear-gradient(135deg, #1a1a2e, #0f3460);
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem;
+  border-left: 4px solid var(--merchant-primary);
+  text-align: center;
+}
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.1;
+}
+.kpi-label {
+  font-size: 0.8rem;
+  color: #a0a0b0;
+  margin-top: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.kpi-delta-up   { color: #00ff88; font-size: 0.75rem; }
+.kpi-delta-down { color: #ef4444; font-size: 0.75rem; }
+
+/* ── ROLE HEADER BANNERS ── */
+.merchant-banner {
+  background: linear-gradient(135deg, #1a1200 0%, #2d1f00 50%, #1a1a2e 100%);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+}
+.influencer-banner {
+  background: linear-gradient(135deg, #120a1f 0%, #1e1035 50%, #1a1a2e 100%);
+  border: 1px solid rgba(139,92,246,0.3);
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+}
+.admin-banner {
+  background: linear-gradient(135deg, #1a0505 0%, #2d0f0f 50%, #1a1a2e 100%);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ── STATUS TIMELINE ── */
+.timeline-step {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.timeline-dot-done    { width:10px;height:10px;border-radius:50%;background:#00ff88;flex-shrink:0; }
+.timeline-dot-active  { width:10px;height:10px;border-radius:50%;background:#f59e0b;flex-shrink:0;
+                        box-shadow:0 0 8px #f59e0b; }
+.timeline-dot-pending { width:10px;height:10px;border-radius:50%;background:#374151;flex-shrink:0; }
+
+/* ── ARIA SCORE RING (text-based) ── */
+.score-ring {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  border: 4px solid #8b5cf6;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; font-weight: 700; color: #ffffff;
+  box-shadow: 0 0 16px rgba(139,92,246,0.4);
+  margin: 0 auto;
+}
+
+/* ── ACTION BUTTONS ROLE-THEMED ── */
+.btn-merchant { background: linear-gradient(135deg,#b45309,#f59e0b) !important; color:#000 !important; }
+.btn-influencer { background: linear-gradient(135deg,#5b21b6,#8b5cf6) !important; }
+.btn-admin { background: linear-gradient(135deg,#991b1b,#ef4444) !important; }

@@ -22,6 +22,14 @@ class MerchantCreate(BaseModel):
     website             : Optional[str]  = None
     city                : str            = "Amman"
 
+class MerchantUpdate(BaseModel):
+    business_name_ar    : Optional[str] = None
+    business_name_en    : Optional[str] = None
+    business_type       : Optional[str] = None
+    industry            : Optional[str] = None
+    website             : Optional[str] = None
+    city                : Optional[str] = None
+
 @router.post("/", status_code=201)
 async def create_merchant_profile(
     data: MerchantCreate,
@@ -83,6 +91,85 @@ async def get_my_merchant_profile(
         "total_campaigns": len(all_campaigns),
         "active_campaigns": active_count,
     }
+
+@router.patch("/me")
+async def update_my_merchant_profile(
+    data: MerchantUpdate,
+    db  : AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update logged-in merchant's business profile"""
+    result = await db.execute(select(Merchant).where(Merchant.user_id == current_user.id))
+    merchant = result.scalar_one_or_none()
+    if not merchant:
+        raise HTTPException(status_code=404, detail="Merchant profile not found")
+    for field, value in data.model_dump(exclude_none=True).items():
+        setattr(merchant, field, value)
+    await db.commit()
+    await db.refresh(merchant)
+    logger.info(f"[ARIA::MERCHANTS] Profile updated: {merchant.id}")
+    return {"message": "Profile updated", "id": merchant.id, "business_name_ar": merchant.business_name_ar}
+
+
+@router.get("/analytics")
+async def get_merchant_analytics(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Real campaign + escrow analytics for the logged-in merchant"""
+    from ...models.escrow import EscrowTransaction, EscrowStatus
+    from sqlalchemy import func
+
+    result = await db.execute(select(Merchant).where(Merchant.user_id == current_user.id))
+    merchant = result.scalar_one_or_none()
+    if not merchant:
+        return {
+            "profile_exists"       : False,
+            "total_campaigns"      : 0,
+            "completed_campaigns"  : 0,
+            "total_budget_jod"     : 0.0,
+            "total_released_jod"   : 0.0,
+            "campaign_success_rate": 0.0,
+            "campaigns"            : [],
+        }
+
+    campaigns_res = await db.execute(
+        select(Campaign).where(Campaign.merchant_id == merchant.id)
+    )
+    campaigns = campaigns_res.scalars().all()
+
+    escrow_res = await db.execute(
+        select(func.sum(EscrowTransaction.gross_amount))
+        .where(EscrowTransaction.merchant_id == merchant.id)
+        .where(EscrowTransaction.status == EscrowStatus.RELEASED)
+    )
+    total_released = float(escrow_res.scalar() or 0)
+
+    completed      = sum(1 for c in campaigns if c.status == CampaignStatus.COMPLETED)
+    total_budget   = sum(float(c.total_budget or 0) for c in campaigns)
+    success_rate   = round((completed / len(campaigns) * 100) if campaigns else 0.0, 1)
+
+    campaign_data = [
+        {
+            "id"        : c.id,
+            "title"     : c.title_en or c.title_ar,
+            "status"    : c.status.value if c.status else "draft",
+            "budget"    : float(c.total_budget or 0),
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+        }
+        for c in campaigns
+    ]
+
+    return {
+        "profile_exists"       : True,
+        "total_campaigns"      : len(campaigns),
+        "completed_campaigns"  : completed,
+        "total_budget_jod"     : total_budget,
+        "total_released_jod"   : total_released,
+        "campaign_success_rate": success_rate,
+        "campaigns"            : campaign_data,
+    }
+
 
 @router.get("/{merchant_id}")
 async def get_merchant(merchant_id: int, db: AsyncSession = Depends(get_db)):

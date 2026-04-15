@@ -126,7 +126,11 @@ def _render_contracts_page():
             st.download_button("⬇️ Download Contract", resp.get("contract",""),
                                file_name=f"contract_{selected_id}.txt")
         else:
-            st.error(f"Generation failed: {resp.get('detail')}")
+            err_msg = resp.get("detail", "") if isinstance(resp, dict) else str(resp)
+            if any(k in err_msg.lower() for k in ["credit", "billing", "unavailable"]):
+                st.warning("خدمة الذكاء الاصطناعي غير متاحة مؤقتاً. يرجى المحاولة لاحقاً.")
+            else:
+                st.error(f"خطأ في العملية ({status}). / Operation failed ({status}).")
 
     st.divider()
     st.markdown("### 💬 Policy Q&A / أسئلة السياسات")
@@ -139,21 +143,107 @@ def _render_contracts_page():
 
 
 def _render_settings_page():
+    from frontend.utils.api_client import api_patch
     st.markdown("## ⚙️ Settings / الإعدادات")
     user = st.session_state.get("user", {})
     role = get_role()
+    lang = st.session_state.get("lang", "ar")
 
     st.markdown("### 👤 Profile / الملف الشخصي")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.text_input("Email", value=user.get("email", ""), disabled=True, key="set_email")
-        st.text_input("Username", value=user.get("username", ""), disabled=True, key="set_uname")
-    with col2:
-        st.text_input("Full Name (EN)", value=user.get("full_name_en", ""), key="set_fname_en")
-        st.text_input("الاسم بالعربي", value=user.get("full_name_ar", ""), key="set_fname_ar")
+    with st.form("profile_update_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.text_input("Email", value=user.get("email", ""), disabled=True, key="set_email")
+            st.text_input("Username", value=user.get("username", ""), disabled=True, key="set_uname")
+        with col2:
+            fname_en = st.text_input("Full Name (EN)", value=user.get("full_name_en", ""), key="set_fname_en")
+            fname_ar = st.text_input("الاسم بالعربي", value=user.get("full_name_ar", ""), key="set_fname_ar")
+        phone = st.text_input("Phone / الهاتف", value=user.get("phone", ""), placeholder="+962...")
+        if st.form_submit_button("💾 Save Profile / حفظ", use_container_width=True):
+            s, r = api_patch("/api/auth/me", json={
+                "full_name_en": fname_en or None,
+                "full_name_ar": fname_ar or None,
+                "phone"       : phone or None,
+            })
+            if s == 200:
+                st.session_state["user"] = r
+                st.success("Profile updated! / تم تحديث الملف الشخصي")
+                st.rerun()
+            else:
+                st.error(r.get("detail", "Update failed"))
+
+    # Role-specific profile updates
+    if role == "merchant":
+        st.markdown("---")
+        st.markdown("### 🏪 Business Profile / الملف التجاري")
+        m = api_patch  # just reference
+        with st.form("merchant_update_form"):
+            biz_ar = st.text_input("اسم النشاط التجاري (عربي)", key="m_biz_ar")
+            biz_en = st.text_input("Business Name (EN)", key="m_biz_en")
+            col1, col2 = st.columns(2)
+            with col1:
+                industry = st.text_input("Industry / القطاع", key="m_industry")
+                website  = st.text_input("Website", key="m_website", placeholder="https://")
+            with col2:
+                city     = st.text_input("City / المدينة", value="Amman", key="m_city")
+            if st.form_submit_button("💾 Save Business Info", use_container_width=True):
+                payload = {k: v for k, v in {
+                    "business_name_ar": biz_ar or None,
+                    "business_name_en": biz_en or None,
+                    "industry": industry or None,
+                    "website" : website or None,
+                    "city"    : city or None,
+                }.items() if v}
+                s, r = api_patch("/api/merchants/me", json=payload)
+                if s == 200:
+                    st.success("Business profile updated!")
+                else:
+                    st.error(r.get("detail", "Update failed"))
+
+    elif role == "influencer":
+        st.markdown("---")
+        st.markdown("### 🌟 Influencer Profile / ملف المؤثر")
+        with st.form("influencer_update_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                ig_handle    = st.text_input("Instagram Handle", key="i_ig_h")
+                ig_followers = st.number_input("Instagram Followers", min_value=0, value=0, key="i_ig_f")
+                ig_er        = st.number_input("Instagram Engagement %", min_value=0.0, value=0.0, step=0.1, key="i_ig_er")
+            with col2:
+                tt_handle    = st.text_input("TikTok Handle", key="i_tt_h")
+                tt_followers = st.number_input("TikTok Followers", min_value=0, value=0, key="i_tt_f")
+                niche        = st.selectbox("Niche / التخصص", [
+                    "Fashion","Food","Tech","Beauty","Fitness",
+                    "Travel","Gaming","Education","Lifestyle","Sports"
+                ], key="i_niche")
+            col3, col4 = st.columns(2)
+            with col3:
+                rate_post  = st.number_input("Rate/Post (JOD)", min_value=0.0, value=0.0, step=5.0, key="i_rp")
+                rate_story = st.number_input("Rate/Story (JOD)", min_value=0.0, value=0.0, step=5.0, key="i_rs")
+            with col4:
+                rate_reel   = st.number_input("Rate/Reel (JOD)", min_value=0.0, value=0.0, step=5.0, key="i_rr")
+                is_available = st.checkbox("Available for campaigns / متاح", value=True, key="i_avail")
+            if st.form_submit_button("💾 Update Profile & Rescore", use_container_width=True):
+                payload = {k: v for k, v in {
+                    "instagram_handle"          : ig_handle or None,
+                    "instagram_followers"       : int(ig_followers) if ig_followers else None,
+                    "instagram_engagement_rate" : ig_er if ig_er else None,
+                    "tiktok_handle"             : tt_handle or None,
+                    "tiktok_followers"          : int(tt_followers) if tt_followers else None,
+                    "niche"                     : niche,
+                    "rate_per_post"             : rate_post if rate_post else None,
+                    "rate_per_story"            : rate_story if rate_story else None,
+                    "rate_per_reel"             : rate_reel if rate_reel else None,
+                    "is_available"              : is_available,
+                }.items() if v is not None}
+                s, r = api_patch("/api/influencers/me", json=payload)
+                if s == 200:
+                    st.success(f"Profile updated! New ARIA score: {r.get('aria_score', '—')}")
+                    st.rerun()
+                else:
+                    st.error(r.get("detail", "Update failed"))
 
     st.markdown("---")
-    lang = st.session_state.get("lang", "ar")
     new_lang = st.radio("Interface Language / لغة الواجهة", ["ar", "en"],
                         index=0 if lang == "ar" else 1,
                         format_func=lambda x: "🇯🇴 العربية" if x == "ar" else "🇬🇧 English",

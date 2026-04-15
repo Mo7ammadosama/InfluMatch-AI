@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from pydantic import BaseModel
+from typing import Optional
 from loguru import logger
 from ...core.database import get_db
 from ...core.security import verify_password, create_access_token, get_password_hash
@@ -11,6 +13,11 @@ from ...schemas.auth import Token, UserCreate, UserResponse
 from ..dependencies.auth_deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+class UserUpdate(BaseModel):
+    full_name_ar: Optional[str] = None
+    full_name_en: Optional[str] = None
+    phone       : Optional[str] = None
 
 @router.post("/register", response_model=UserResponse, status_code=201)
 async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
@@ -43,4 +50,22 @@ async def login(form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = 
 
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+@router.patch("/me", response_model=UserResponse)
+async def update_me(
+    data: UserUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update current user's name / phone"""
+    if data.full_name_ar is not None:
+        current_user.full_name_ar = data.full_name_ar
+    if data.full_name_en is not None:
+        current_user.full_name_en = data.full_name_en
+    if data.phone is not None:
+        current_user.phone = data.phone
+    await db.commit()
+    await db.refresh(current_user)
+    logger.info(f"[ARIA::AUTH] Profile updated: {current_user.email}")
     return current_user

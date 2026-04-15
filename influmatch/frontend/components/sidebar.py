@@ -66,21 +66,28 @@ def render_sidebar():
             or user.get("username")
             or "User"
         )
-        role_icon = {"merchant": "🏢", "influencer": "⭐", "admin": "🛡️"}.get(role, "👤")
 
-        st.markdown(
-            f"""
-            <div style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.8rem;
-                        background:rgba(124,58,237,0.1);border-radius:8px;margin-bottom:0.8rem">
-                <span style="font-size:1.4rem">{role_icon}</span>
-                <div>
-                    <div style="font-weight:600;font-size:0.85rem">{name}</div>
-                    <div style="font-size:0.7rem;color:#94A3B8;text-transform:capitalize">{role}</div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        role_meta = {
+            "merchant":   {"label": "تاجر",  "icon": "🏪", "color": "#f59e0b", "desc": "لوحة تحكم التاجر"},
+            "influencer": {"label": "مؤثر",  "icon": "🌟", "color": "#8b5cf6", "desc": "بوابة المؤثر"},
+            "admin":      {"label": "مدير",  "icon": "⚡", "color": "#ef4444", "desc": "مركز تحكم ARIA"},
+        }.get(role, {"label": "زائر", "icon": "👤", "color": "#6b7280", "desc": "InfluMatch.jo"})
+
+        st.sidebar.markdown(f"""
+<div style="background:linear-gradient(135deg,rgba(0,0,0,0.4),rgba(0,0,0,0.2));
+            border:1px solid {role_meta['color']}33;border-radius:12px;
+            padding:0.8rem 1rem;margin-bottom:1rem;
+            border-left:4px solid {role_meta['color']}">
+  <div style="display:flex;align-items:center;gap:0.5rem">
+    <span style="font-size:1.3rem">{role_meta['icon']}</span>
+    <div>
+      <div style="color:{role_meta['color']};font-weight:700;font-size:0.9rem">
+        {name} · {role_meta['label']}
+      </div>
+      <div style="color:#a0a0b0;font-size:0.7rem">{role_meta['desc']}</div>
+    </div>
+  </div>
+</div>""", unsafe_allow_html=True)
 
         nav = (
             MERCHANT_NAV   if role == "merchant"   else

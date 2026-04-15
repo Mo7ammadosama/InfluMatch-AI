@@ -15,9 +15,9 @@ def api_get(path: str, params: dict = None):
     except Exception:
         return None
 
-def api_post(path: str, data: dict = None, json: dict = None):
+def api_post(path: str, data: dict = None, json: dict = None, timeout: int = 60):
     try:
-        r = httpx.post(f"{API_BASE}{path}", headers=get_headers(), data=data, json=json, timeout=10)
+        r = httpx.post(f"{API_BASE}{path}", headers=get_headers(), data=data, json=json, timeout=timeout)
         return r.status_code, r.json()
     except Exception as e:
         return 500, {"detail": str(e)}

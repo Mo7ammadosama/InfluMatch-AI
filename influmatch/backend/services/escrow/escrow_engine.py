@@ -9,7 +9,7 @@ from backend.models.escrow import EscrowTransaction, EscrowStatus
 from backend.core.config import get_settings
 
 settings = get_settings()
-PLATFORM_COMMISSION = 0.05
+PLATFORM_COMMISSION = 0.10
 
 VALID_TRANSITIONS = {
     EscrowStatus.PENDING:      [EscrowStatus.FUNDED, EscrowStatus.REFUNDED],
@@ -23,6 +23,8 @@ VALID_TRANSITIONS = {
 }
 
 class EscrowEngine:
+    PLATFORM_COMMISSION = PLATFORM_COMMISSION  # expose as class attr for tests
+
     async def fund_escrow(self, db: AsyncSession, campaign_id: int, merchant_id: int, amount_jod: float) -> EscrowTransaction:
         vat = round(amount_jod * settings.vat_rate, 3)
         fee = round(amount_jod * PLATFORM_COMMISSION, 3)

@@ -1,7 +1,8 @@
 """Loyalty Wallet page"""
 import streamlit as st
-from ..utils.api_client import api_get
+from ..utils.api_client import api_get, api_post
 from ..utils.i18n import t
+from ..utils.session import get_role
 
 TIER_INFO = {
     "BRONZE": ("🥉", 0, 999, "rgba(180,83,9,0.2)", "#b45309"),
@@ -15,7 +16,10 @@ def render():
     wallet = api_get("/api/wallet/me")
 
     if not wallet:
-        st.info("Wallet not found. Make sure your merchant profile is set up. / المحفظة غير موجودة")
+        role = get_role()
+        msg = ("لم يتم إعداد محفظتك بعد. أكمل ملفك الشخصي أولاً." if role == "influencer"
+               else "لم يتم إعداد ملف التاجر. أنشئ ملف التاجر أولاً. / Set up your merchant profile first.")
+        st.info(msg)
         return
 
     # Use correct field names from API response
@@ -66,7 +70,38 @@ def render():
             <div class="metric-value">{jod_val:.1f} JOD</div>
             <div class="metric-label">Cash Value</div></div>""", unsafe_allow_html=True)
 
+    # Redeem form
+    st.markdown("---")
+    st.markdown(f"#### {'استرداد النقاط' if lang=='ar' else 'Redeem Points'}")
+    min_redeem = 500
+    if points >= min_redeem:
+        with st.form("redeem_form"):
+            redeem_pts = st.number_input(
+                f"{'عدد النقاط للاسترداد' if lang=='ar' else 'Points to redeem'} (min {min_redeem})",
+                min_value=min_redeem,
+                max_value=int(points),
+                value=min_redeem,
+                step=100,
+            )
+            jod_preview = round(redeem_pts * 0.01, 3)
+            st.caption(f"= {jod_preview} JOD discount")
+            submitted = st.form_submit_button(
+                "🎁 استرداد" if lang == "ar" else "🎁 Redeem",
+                use_container_width=True,
+                type="primary"
+            )
+            if submitted:
+                s, r = api_post("/api/wallet/redeem", json={"points": int(redeem_pts)})
+                if s == 200:
+                    st.success(r.get("message", f"Redeemed {redeem_pts} pts = {jod_preview} JOD"))
+                    st.rerun()
+                else:
+                    st.error(r.get("detail", "Redemption failed"))
+    else:
+        st.info(f"تحتاج {min_redeem:,} نقطة على الأقل للاسترداد — لديك {points:,} نقطة حالياً")
+
     # Transactions
+    st.markdown("---")
     st.markdown(f"#### {'المعاملات الأخيرة' if lang=='ar' else 'Recent Transactions'}")
     txns = wallet.get("transactions", [])
     if not txns:
@@ -74,14 +109,15 @@ def render():
     else:
         for tx in txns[-10:]:
             tx_type = tx.get("transaction_type", "")
-            pts = tx.get("points", 0)
-            sign = "+" if tx_type in ("earned", "bonus", "referral") else "-"
-            color = "#10B981" if sign == "+" else "#EF4444"
+            pts     = tx.get("points", 0)
+            sign    = "+" if pts > 0 else ""
+            color   = "#10B981" if pts >= 0 else "#EF4444"
+            label   = tx.get("description") or tx_type or "—"
             st.markdown(f"""
             <div class="aria-card" style="display:flex;justify-content:space-between;align-items:center;padding:0.7rem 1rem">
                 <div>
-                    <span style="font-weight:600">{tx.get('event','—')}</span>
-                    <span style="font-size:0.75rem;color:#94A3B8;margin-left:0.5rem">{tx_type}</span>
+                    <span style="font-weight:600">{label}</span>
+                    <span style="font-size:0.75rem;color:#94A3B8;margin-left:0.5rem">{tx.get('created_at','')[:10]}</span>
                 </div>
                 <span style="color:{color};font-weight:700">{sign}{pts:,} pts</span>
             </div>

@@ -90,17 +90,26 @@ async def chat_with_aria(request: ChatRequest):
     user_content = request.message + (rag_context if rag_context else "")
     messages.append({"role": "user", "content": user_content})
 
-    if not settings.anthropic_api_key:
+    if not settings.anthropic_api_key or settings.anthropic_api_key == "your_key_here":
         reply = "ARIA AI غير مفعّل — أضف ANTHROPIC_API_KEY في ملف .env / ARIA AI not activated — add ANTHROPIC_API_KEY to .env"
     else:
-        resp = client.messages.create(
-            model=settings.claude_model,
-            max_tokens=1024,
-            system=ARIA_SYSTEM,
-            messages=messages
-        )
-        reply = resp.content[0].text
-        logger.success(f"[ARIA::CHATBOT] Response | tokens={resp.usage.output_tokens}")
+        try:
+            logger.info(f"[ARIA::CHATBOT] Calling Claude API | model={settings.claude_model} | msgs={len(messages)}")
+            resp = client.messages.create(
+                model=settings.claude_model,
+                max_tokens=1024,
+                system=ARIA_SYSTEM,
+                messages=messages
+            )
+            reply = resp.content[0].text
+            logger.success(f"[ARIA::CHATBOT] Response | tokens={resp.usage.output_tokens}")
+        except Exception as e:
+            err_str = str(e).lower()
+            logger.error(f"[ARIA::CHATBOT] API error: {type(e).__name__}: {e}")
+            if any(k in err_str for k in ["credit", "billing", "402", "invalid_request_error", "400"]):
+                reply = "خدمة ARIA غير متاحة مؤقتاً بسبب حد الاستخدام. يرجى المحاولة لاحقاً. / ARIA service temporarily unavailable. Please try again later."
+            else:
+                reply = "عذراً، حدث خطأ في ARIA. يرجى المحاولة مرة أخرى. / ARIA encountered an error. Please try again."
 
     return ChatResponse(
         response=reply,

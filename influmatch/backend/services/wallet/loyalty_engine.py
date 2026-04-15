@@ -12,6 +12,7 @@ class LoyaltyWalletEngine:
         "positive_review": 50, "merchant_referral": 500,
         "profile_completed": 75, "first_campaign": 250,
     }
+    EARNING_EVENTS = EVENTS  # alias for backward-compat
     REDEMPTION_RATE = 0.01
     MIN_REDEMPTION = 500
 
