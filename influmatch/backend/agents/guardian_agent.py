@@ -178,11 +178,103 @@ class GuardianAgent:
             logger.success(f"[ARIA::GUARDIAN] Weekly report: {json.dumps(report)}")
         except Exception as exc:
             logger.error(f"[ARIA::GUARDIAN] Weekly report failed: {exc}")
-    async def _on_campaign_start(self, cid): logger.info(f"[ARIA::GUARDIAN] Campaign {cid} STARTED")
-    async def _on_deadline(self, cid): logger.warning(f"[ARIA::GUARDIAN] Campaign {cid} DEADLINE")
-    async def _on_review(self, cid): logger.info(f"[ARIA::GUARDIAN] Campaign {cid} REVIEW")
-    async def _on_payment(self, cid): logger.info(f"[ARIA::GUARDIAN] Campaign {cid} PAYMENT RELEASE")
-    async def _on_expire(self, cid): logger.warning(f"[ARIA::GUARDIAN] Campaign {cid} EXPIRED")
+    async def _on_campaign_start(self, cid):
+        if not self.db_factory:
+            logger.info(f"[ARIA::GUARDIAN] Campaign {cid} STARTED (no DB)")
+            return
+        try:
+            from ..models.booking import Booking, BookingStatus
+            from ..services.notifications.notification_service import NotificationService
+            from sqlalchemy import select
+            async with self.db_factory() as session:
+                bookings_q = await session.execute(
+                    select(Booking).where(
+                        Booking.campaign_id == cid,
+                        Booking.status == BookingStatus.CONFIRMED,
+                    )
+                )
+                bookings = bookings_q.scalars().all()
+                ns = NotificationService()
+                for b in bookings:
+                    ns.send_whatsapp("", f"تذكير: يجب رفع محتوى الحملة #{cid} قبل الموعد النهائي")
+                logger.info(f"[ARIA::GUARDIAN] Campaign #{cid} started — notified {len(bookings)} influencers")
+        except Exception as exc:
+            logger.error(f"[ARIA::GUARDIAN] _on_campaign_start failed cid={cid}: {exc}")
+
+    async def _on_deadline(self, cid):
+        if not self.db_factory:
+            logger.warning(f"[ARIA::GUARDIAN] Campaign {cid} DEADLINE (no DB)")
+            return
+        try:
+            from ..models.booking import Booking, BookingStatus
+            from sqlalchemy import select
+            async with self.db_factory() as session:
+                result = await session.execute(
+                    select(Booking).where(
+                        Booking.campaign_id == cid,
+                        Booking.status == BookingStatus.CONFIRMED,
+                    )
+                )
+                overdue = result.scalars().all()
+                for b in overdue:
+                    logger.warning(f"[ARIA::GUARDIAN] Booking #{b.id} overdue — content not submitted")
+                logger.info(f"[ARIA::GUARDIAN] Deadline check campaign #{cid} — {len(overdue)} overdue")
+        except Exception as exc:
+            logger.error(f"[ARIA::GUARDIAN] _on_deadline failed cid={cid}: {exc}")
+
+    async def _on_review(self, cid):
+        if not self.db_factory:
+            logger.info(f"[ARIA::GUARDIAN] Campaign {cid} REVIEW (no DB)")
+            return
+        try:
+            from ..models.booking import Booking, BookingStatus
+            from sqlalchemy import select
+            async with self.db_factory() as session:
+                result = await session.execute(
+                    select(Booking).where(
+                        Booking.campaign_id == cid,
+                        Booking.status == BookingStatus.CONTENT_SUBMITTED,
+                    )
+                )
+                pending = result.scalars().all()
+                logger.info(f"[ARIA::GUARDIAN] Review triggered campaign #{cid} — {len(pending)} pending")
+        except Exception as exc:
+            logger.error(f"[ARIA::GUARDIAN] _on_review failed cid={cid}: {exc}")
+
+    async def _on_payment(self, cid):
+        if not self.db_factory:
+            logger.info(f"[ARIA::GUARDIAN] Campaign {cid} PAYMENT RELEASE (no DB)")
+            return
+        try:
+            from ..models.booking import Booking, BookingStatus
+            from ..services.escrow.escrow_engine import EscrowEngine
+            from sqlalchemy import select
+            async with self.db_factory() as session:
+                result = await session.execute(
+                    select(Booking).where(
+                        Booking.campaign_id == cid,
+                        Booking.status == BookingStatus.CONTENT_APPROVED,
+                    )
+                )
+                approved = result.scalars().all()
+                engine   = EscrowEngine()
+                released = 0
+                for b in approved:
+                    try:
+                        if b.escrow_id:
+                            await engine.release_to_influencer(session, b.escrow_id, "guardian_agent")
+                            b.status = BookingStatus.RELEASED
+                            session.add(b)
+                            released += 1
+                    except Exception as exc:
+                        logger.error(f"[ARIA::GUARDIAN] Auto-release failed booking #{b.id}: {exc}")
+                await session.commit()
+                logger.success(f"[ARIA::GUARDIAN] Auto-payment campaign #{cid} — released {released}/{len(approved)} bookings")
+        except Exception as exc:
+            logger.error(f"[ARIA::GUARDIAN] _on_payment failed cid={cid}: {exc}")
+
+    async def _on_expire(self, cid):
+        logger.warning(f"[ARIA::GUARDIAN] Campaign {cid} EXPIRED")
 
     def start(self):
         self.scheduler.start()

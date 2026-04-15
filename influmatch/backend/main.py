@@ -6,7 +6,7 @@ import sys
 
 from .core.config import get_settings
 from .core.database import init_db, AsyncSessionLocal
-from .api.routes import auth, merchants, influencers, campaigns, contracts, escrow, wallet, admin, chatbot, milestones
+from .api.routes import auth, merchants, influencers, campaigns, contracts, escrow, wallet, admin, chatbot, milestones, bookings
 from .api.middleware.auth_middleware import LoggingMiddleware
 from .api.middleware.rate_limiter import RateLimiter
 from .agents.guardian_agent import GuardianAgent
@@ -72,7 +72,7 @@ app.add_middleware(CORSMiddleware,
 
 for r in [auth.router, merchants.router, influencers.router, campaigns.router,
           contracts.router, escrow.router, wallet.router, admin.router, chatbot.router,
-          milestones.router]:
+          milestones.router, bookings.router]:
     app.include_router(r, prefix="/api")
 
 @app.get("/", tags=["Health"])

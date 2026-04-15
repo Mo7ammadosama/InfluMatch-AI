@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, JSON, ForeignKey, DateTim
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from ..core.database import Base
+# ── NOTE: audience_gender_split, audience_age_split, available_from/until added v2
 
 class Influencer(Base):
     __tablename__ = "influencers"
@@ -39,7 +40,11 @@ class Influencer(Base):
     account_age_days = Column(Integer, default=365)
     score_metadata = Column(JSON, default=dict)
     last_scored_at = Column(DateTime)
-    is_available = Column(Boolean, default=True)
+    is_available           = Column(Boolean, default=True)
+    audience_gender_split  = Column(JSON, nullable=True)   # {"female":70,"male":30}
+    audience_age_split     = Column(JSON, nullable=True)   # {"18-24":40,"25-34":35,"35+":25}
+    available_from         = Column(DateTime, nullable=True)
+    available_until        = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user = relationship("User", back_populates="influencer_profile")

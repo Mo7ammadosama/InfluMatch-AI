@@ -142,6 +142,98 @@ def _render_contracts_page():
             st.info(f"**ARIA:** {resp.get('answer','')}")
 
 
+def _render_booking_wizard():
+    from frontend.utils.api_client import api_get, api_post
+    inf = st.session_state.get("booking_influencer", {})
+    if not inf:
+        st.session_state["page"] = "discover"
+        st.rerun()
+        return
+
+    handle = inf.get("instagram_handle") or inf.get("tiktok_handle") or "—"
+    rate   = float(inf.get("rate_per_post") or 0)
+
+    st.markdown(f"""
+    <div class="merchant-banner">
+      <div style="display:flex;align-items:center;gap:1rem">
+        <div style="font-size:2.5rem">📅</div>
+        <div>
+          <div style="font-size:1.3rem;font-weight:700;color:#f59e0b">حجز @{handle}</div>
+          <div style="color:#a0a0b0;font-size:0.85rem">Rate: {rate:.3f} JOD per post</div>
+        </div>
+      </div>
+    </div>""", unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="glass-card">
+      <div style="font-weight:700;margin-bottom:1rem;color:#f59e0b">رحلة الحجز / Booking Journey</div>
+      <div class="booking-timeline">
+        <div class="timeline-item active"><b style="color:#f59e0b">1. الحجز والدفع</b> <span style="color:#6b7280;font-size:0.8rem">— تجميد المبلغ في Escrow</span></div>
+        <div class="timeline-item"><b style="color:#fff">2. تأكيد المؤثر</b> <span style="color:#6b7280;font-size:0.8rem">— المؤثر يقبل الحجز</span></div>
+        <div class="timeline-item"><b style="color:#fff">3. تنفيذ الإعلان</b> <span style="color:#6b7280;font-size:0.8rem">— المؤثر يرفع المحتوى</span></div>
+        <div class="timeline-item"><b style="color:#fff">4. مراجعة ARIA</b> <span style="color:#6b7280;font-size:0.8rem">— ذكاء اصطناعي يراجع</span></div>
+        <div class="timeline-item"><b style="color:#fff">5. تحويل المبلغ</b> <span style="color:#6b7280;font-size:0.8rem">— تلقائي بعد القبول</span></div>
+      </div>
+    </div>""", unsafe_allow_html=True)
+
+    with st.form("booking_form"):
+        brief = st.text_area(
+            "وصف الإعلان المطلوب / Campaign Brief",
+            placeholder="مثال: فيديو ريلز 60 ثانية يعرض منتج X مع كود خصم 20%...",
+            height=100,
+        )
+        dc1, dc2 = st.columns(2)
+        with dc1:
+            agreed_rate = st.number_input("المبلغ المتفق عليه (JOD)", value=float(rate) or 1.0, min_value=1.0, step=1.0)
+        with dc2:
+            import datetime as _dt
+            deadline = st.date_input("الموعد النهائي للنشر", value=_dt.date.today() + _dt.timedelta(days=14))
+        deliverables = st.multiselect(
+            "المطلوب",
+            ["1 Reel", "1 Story", "3 Stories", "TikTok Video", "Instagram Post", "YouTube Short"],
+            default=["1 Reel"],
+        )
+        campaigns   = api_get("/api/campaigns/") or []
+        camp_opts   = {"بدون حملة محددة": None}
+        camp_opts.update({c.get("title_en") or c.get("title_ar", "—"): c.get("id") for c in campaigns})
+        sel_camp    = st.selectbox("ربط بحملة (اختياري)", list(camp_opts.keys()))
+
+        col1, col2 = st.columns(2)
+        with col1:
+            submitted = st.form_submit_button("💳 تأكيد الحجز وتجميد المبلغ", type="primary", use_container_width=True)
+        with col2:
+            cancelled = st.form_submit_button("إلغاء", use_container_width=True)
+
+        if cancelled:
+            st.session_state.pop("booking_influencer", None)
+            st.session_state["page"] = "discover"
+            st.rerun()
+
+        if submitted:
+            if not brief.strip():
+                st.error("اكتب وصف الإعلان المطلوب")
+            else:
+                s, r = api_post("/api/bookings/", json={
+                    "influencer_id"  : inf.get("id"),
+                    "agreed_rate_jod": round(agreed_rate, 3),
+                    "brief"          : brief,
+                    "deliverables"   : deliverables,
+                    "deadline"       : deadline.isoformat(),
+                    "campaign_id"    : camp_opts.get(sel_camp),
+                })
+                if s == 201:
+                    st.success(
+                        f"✅ تم الحجز بنجاح!\n\n"
+                        f"💰 تم تجميد **{agreed_rate:.3f} JOD** في Escrow\n\n"
+                        f"📋 رقم الحجز: #{r.get('booking_id')}\n\n"
+                        f"⏳ بانتظار تأكيد @{handle}"
+                    )
+                    st.session_state.pop("booking_influencer", None)
+                    st.balloons()
+                else:
+                    st.error(f"خطأ ({s}): {r.get('detail', '')}")
+
+
 def _render_settings_page():
     from frontend.utils.api_client import api_patch
     st.markdown("## ⚙️ Settings / الإعدادات")
@@ -319,6 +411,12 @@ elif page in ("campaigns", "my_campaigns"):
 
 elif page == "discover":
     render_discover()
+
+elif page == "booking_wizard":
+    if not logged_in:
+        render_login()
+    else:
+        _render_booking_wizard()
 
 elif page == "wallet":
     if not logged_in:

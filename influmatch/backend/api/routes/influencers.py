@@ -202,6 +202,61 @@ async def match_influencers(
         return {"matches": [], "total": 0, "brief": brief, "error": str(exc)}
 
 
+@router.post("/smart-search")
+async def smart_search(
+    payload : dict,
+    db      : AsyncSession = Depends(get_db),
+):
+    """Natural language influencer search with ARIA scoring + niche/city boost"""
+    brief       = payload.get("brief", "")
+    budget_max  = float(payload.get("budget_max", 9999) or 9999)
+    city_filter = payload.get("city", "")
+    top_k       = int(payload.get("top_k", 10) or 10)
+
+    stmt = select(Influencer).where(Influencer.is_available == True)
+    if city_filter:
+        stmt = stmt.where(Influencer.city.ilike(f"%{city_filter}%"))
+    if budget_max < 9999:
+        stmt = stmt.where(
+            (Influencer.rate_per_post == None) | (Influencer.rate_per_post <= budget_max)
+        )
+
+    result  = await db.execute(stmt.limit(50))
+    all_inf = result.scalars().all()
+
+    if not all_inf:
+        return {"results": [], "total": 0, "brief": brief}
+
+    scored = []
+    brief_lower = brief.lower()
+    for inf in all_inf:
+        score = float(inf.aria_score or 0)
+        if brief_lower and inf.niche and inf.niche.lower() in brief_lower:
+            score += 20
+        if city_filter and inf.city and city_filter.lower() in inf.city.lower():
+            score += 15
+        scored.append({
+            "id"                       : inf.id,
+            "instagram_handle"         : inf.instagram_handle,
+            "tiktok_handle"            : inf.tiktok_handle,
+            "niche"                    : inf.niche,
+            "city"                     : inf.city,
+            "aria_score"               : inf.aria_score,
+            "aria_tier"                : inf.aria_tier,
+            "instagram_followers"      : inf.instagram_followers,
+            "tiktok_followers"         : inf.tiktok_followers,
+            "instagram_engagement_rate": inf.instagram_engagement_rate,
+            "rate_per_post"            : inf.rate_per_post,
+            "is_available"             : inf.is_available,
+            "audience_gender_split"    : inf.audience_gender_split,
+            "audience_age_split"       : inf.audience_age_split,
+            "match_score"              : round(score, 1),
+        })
+
+    scored.sort(key=lambda x: x["match_score"], reverse=True)
+    return {"results": scored[:top_k], "total": len(scored), "brief": brief}
+
+
 @router.post("/{influencer_id}/rescore")
 async def rescore_influencer(
     influencer_id   : int,

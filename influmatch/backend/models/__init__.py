@@ -10,6 +10,7 @@ from .escrow      import EscrowTransaction, EscrowStatus
 from .wallet      import LoyaltyWallet, WalletTransaction, TransactionType
 from .milestone   import CampaignMilestone, MilestoneStatus
 from .campaign_report import CampaignReport, ReportStatus
+from .booking import Booking, BookingStatus
 
 __all__ = [
     "User", "UserRole",
@@ -21,5 +22,6 @@ __all__ = [
     "LoyaltyWallet", "WalletTransaction", "TransactionType",
     "CampaignMilestone", "MilestoneStatus",
     "CampaignReport", "ReportStatus",
+    "Booking", "BookingStatus",
 ]
 # ============================================================
