@@ -21,10 +21,24 @@
     --aria-radius-lg: 20px;
 }
 
+.stApp, .stApp > div, .main, .main > div,
+div[data-testid="stAppViewContainer"],
+div[data-testid="stAppViewContainer"] > section,
+div[data-testid="block-container"] {
+    background: var(--aria-bg-dark) !important;
+    font-family: 'Cairo', 'Inter', sans-serif !important;
+    color: var(--aria-text-primary) !important;
+}
+
+/* Remove white page background */
 .stApp {
-    background: var(--aria-bg-dark);
-    font-family: 'Cairo', 'Inter', sans-serif;
-    color: var(--aria-text-primary);
+    background-color: var(--aria-bg-dark) !important;
+}
+
+/* Main content area */
+section.main > div {
+    background: var(--aria-bg-dark) !important;
+    padding-top: 1rem !important;
 }
 
 [lang="ar"] .stApp, .rtl-content {
@@ -361,3 +375,61 @@ button[data-testid="baseButton-header"]    { display: block !important; visibili
 .stat-item { background:rgba(0,0,0,0.3);border-radius:10px;padding:0.6rem;text-align:center; }
 .stat-value { font-size:1.1rem;font-weight:700;color:#fff; }
 .stat-label { font-size:0.65rem;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em; }
+
+/* ── STREAMLIT COMPONENT OVERRIDES ── */
+/* Warning / Info / Error boxes */
+div[data-testid="stAlert"] {
+    background: rgba(26,26,46,0.9) !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(83,52,131,0.4) !important;
+}
+
+/* Expander */
+div[data-testid="stExpander"] {
+    background: rgba(26,26,46,0.8) !important;
+    border: 1px solid rgba(83,52,131,0.3) !important;
+    border-radius: 12px !important;
+}
+div[data-testid="stExpander"] summary {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+/* Selectbox dropdown */
+div[data-baseweb="select"] > div {
+    background: #1a1a2e !important;
+    border-color: rgba(83,52,131,0.5) !important;
+}
+
+/* Radio buttons */
+div[data-testid="stRadio"] label {
+    color: #a0a0b0 !important;
+}
+
+/* Form container */
+div[data-testid="stForm"] {
+    background: rgba(26,26,46,0.6) !important;
+    border: 1px solid rgba(83,52,131,0.3) !important;
+    border-radius: 16px !important;
+    padding: 1rem !important;
+}
+
+/* Number input */
+div[data-testid="stNumberInput"] input {
+    background: #1a1a2e !important;
+    border-color: rgba(83,52,131,0.5) !important;
+    color: #fff !important;
+    border-radius: 10px !important;
+}
+
+/* Primary button glow */
+.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #000 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 20px rgba(245,158,11,0.4) !important;
+}
+.stButton > button[kind="primary"]:hover {
+    box-shadow: 0 6px 28px rgba(245,158,11,0.6) !important;
+    transform: translateY(-2px) !important;
+}

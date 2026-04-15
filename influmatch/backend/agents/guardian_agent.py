@@ -126,7 +126,7 @@ class GuardianAgent:
             async with self.db_factory() as db:
                 res = await db.execute(
                     select(EscrowTransaction).where(
-                        EscrowTransaction.status == EscrowStatus.IN_PROGRESS,
+                        EscrowTransaction.status == EscrowStatus.FUNDED,
                         EscrowTransaction.created_at < cutoff,
                     )
                 )

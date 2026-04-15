@@ -85,30 +85,55 @@ def _render_escrow_page():
 
 def _render_contracts_page():
     from frontend.utils.api_client import api_get, api_post
-    st.markdown("## 📄 Smart Contracts / العقود الذكية (ARIA RAG)")
     lang = st.session_state.get("lang", "ar")
+
+    # ── Header Banner ──────────────────────────────────────────
+    st.markdown("""
+    <div class="merchant-banner">
+      <div style="display:flex;align-items:center;gap:1.2rem">
+        <div style="font-size:2.8rem">📄</div>
+        <div>
+          <div style="font-size:1.4rem;font-weight:800;color:#f59e0b">
+            العقود الذكية / Smart Contracts
+          </div>
+          <div style="color:#a0a0b0;font-size:0.85rem;margin-top:0.2rem">
+            مدعوم بـ ARIA RAG · قانون الأردن · ضريبة 16%
+          </div>
+        </div>
+      </div>
+    </div>""", unsafe_allow_html=True)
 
     campaigns = api_get("/api/campaigns/") or []
     active = [c for c in campaigns if c.get("status") in ("active", "in_progress", "draft")]
 
     if not active:
-        st.info("No campaigns available for contract generation.")
+        st.markdown("""
+        <div class="glass-card" style="text-align:center;padding:3rem">
+          <div style="font-size:3rem;margin-bottom:1rem">📋</div>
+          <div style="color:#a0a0b0">لا توجد حملات نشطة لإنشاء عقد لها</div>
+          <div style="color:#6b7280;font-size:0.8rem;margin-top:0.5rem">No active campaigns for contract generation</div>
+        </div>""", unsafe_allow_html=True)
         return
 
+    # ── Contract Generator Card ────────────────────────────────
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div style="font-weight:700;font-size:1.1rem;color:#f59e0b;margin-bottom:1.2rem">⚡ إنشاء عقد ذكي / Generate Smart Contract</div>', unsafe_allow_html=True)
+
     campaign_titles = {c["id"]: (c.get("title_en") or c.get("title_ar","")) for c in active}
-    selected_id = st.selectbox("Select Campaign", list(campaign_titles.keys()),
+    selected_id = st.selectbox("الحملة / Campaign", list(campaign_titles.keys()),
                                format_func=lambda x: campaign_titles[x])
     campaign = next(c for c in active if c["id"] == selected_id)
 
     col1, col2 = st.columns(2)
-    merchant_name  = col1.text_input("Merchant Name", value="InfluMatch Merchant")
-    influencer_name = col2.text_input("Influencer Name", value="Jordan Influencer")
-    contract_lang  = st.radio("Contract Language", ["ar", "en"],
-                              format_func=lambda x: "🇯🇴 Arabic" if x == "ar" else "🇬🇧 English",
-                              horizontal=True)
+    merchant_name   = col1.text_input("اسم التاجر / Merchant Name", value="InfluMatch Merchant")
+    influencer_name = col2.text_input("اسم المؤثر / Influencer Name", value="Jordan Influencer")
+    contract_lang   = st.radio("لغة العقد / Contract Language", ["ar", "en"],
+                               format_func=lambda x: "🇯🇴 العربية" if x == "ar" else "🇬🇧 English",
+                               horizontal=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    if st.button("⚡ Generate Smart Contract via ARIA RAG", type="primary", use_container_width=True):
-        with st.spinner("ARIA is generating your contract..."):
+    if st.button("⚡ إنشاء العقد عبر ARIA RAG", type="primary", use_container_width=True):
+        with st.spinner("ARIA تُولّد العقد..."):
             status, resp = api_post("/api/contracts/generate", json={
                 "merchant_name"   : merchant_name,
                 "influencer_name" : influencer_name,
@@ -121,25 +146,49 @@ def _render_contracts_page():
                 "language": contract_lang
             })
         if status == 200:
-            st.success(f"✅ Contract generated | Sources used: {resp.get('rag_sources_used')}")
-            st.text_area("📄 Smart Contract", resp.get("contract",""), height=400)
-            st.download_button("⬇️ Download Contract", resp.get("contract",""),
+            st.markdown(f"""
+            <div class="glass-card" style="border-color:rgba(0,255,136,0.3)">
+              <div style="color:#00ff88;font-weight:700;margin-bottom:0.5rem">
+                ✅ تم إنشاء العقد | المصادر المستخدمة: {resp.get('rag_sources_used', 0)}
+              </div>
+            </div>""", unsafe_allow_html=True)
+            st.text_area("📄 نص العقد / Contract Text", resp.get("contract",""), height=400)
+            st.download_button("⬇️ تحميل العقد / Download", resp.get("contract",""),
                                file_name=f"contract_{selected_id}.txt")
         else:
             err_msg = resp.get("detail", "") if isinstance(resp, dict) else str(resp)
-            if any(k in err_msg.lower() for k in ["credit", "billing", "unavailable"]):
-                st.warning("خدمة الذكاء الاصطناعي غير متاحة مؤقتاً. يرجى المحاولة لاحقاً.")
+            if any(k in err_msg.lower() for k in ["credit", "billing", "unavailable", "temporarily"]):
+                st.markdown("""
+                <div class="glass-card" style="border-color:rgba(245,158,11,0.4);background:rgba(245,158,11,0.05)">
+                  <div style="color:#f59e0b;font-weight:700">⚠️ خدمة ARIA غير متاحة مؤقتاً</div>
+                  <div style="color:#a0a0b0;font-size:0.85rem;margin-top:0.5rem">
+                    يرجى إضافة ANTHROPIC_API_KEY صالح في ملف .env ثم إعادة تشغيل السيرفر
+                  </div>
+                </div>""", unsafe_allow_html=True)
             else:
-                st.error(f"خطأ في العملية ({status}). / Operation failed ({status}).")
+                st.markdown(f"""
+                <div class="glass-card" style="border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.05)">
+                  <div style="color:#ef4444;font-weight:700">❌ خطأ ({status})</div>
+                  <div style="color:#a0a0b0;font-size:0.8rem;margin-top:0.3rem">{err_msg[:200]}</div>
+                </div>""", unsafe_allow_html=True)
 
-    st.divider()
-    st.markdown("### 💬 Policy Q&A / أسئلة السياسات")
-    q = st.text_input("Ask about platform policies / اسأل عن سياسات المنصة",
-                       placeholder="What is the VAT rate? / ما هي نسبة ضريبة القيمة المضافة؟")
-    if q and st.button("🤖 Ask ARIA"):
-        status, resp = api_post(f"/api/contracts/policy-qa?question={q}&language={lang}", json={})
-        if status == 200:
-            st.info(f"**ARIA:** {resp.get('answer','')}")
+    # ── Policy Q&A Card ────────────────────────────────────────
+    st.markdown('<div class="glass-card" style="margin-top:1.5rem">', unsafe_allow_html=True)
+    st.markdown('<div style="font-weight:700;font-size:1rem;color:#8b5cf6;margin-bottom:1rem">💬 أسئلة السياسات / Policy Q&A</div>', unsafe_allow_html=True)
+    q = st.text_input("اسأل ARIA عن سياسات المنصة",
+                       placeholder="مثال: ما هي نسبة ضريبة القيمة المضافة؟ / What is the VAT rate?",
+                       label_visibility="collapsed")
+    if q and st.button("🤖 اسأل ARIA", use_container_width=True):
+        s2, r2 = api_post(f"/api/contracts/policy-qa?question={q}&language={lang}", json={})
+        if s2 == 200:
+            st.markdown(f"""
+            <div class="glass-card" style="border-color:rgba(139,92,246,0.3);background:rgba(139,92,246,0.05)">
+              <div style="color:#8b5cf6;font-size:0.8rem;font-weight:600;margin-bottom:0.5rem">🤖 ARIA</div>
+              <div style="color:#e0e0f0">{r2.get('answer','')}</div>
+            </div>""", unsafe_allow_html=True)
+        else:
+            st.warning("ARIA غير متاح حالياً / ARIA not available")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def _render_booking_wizard():

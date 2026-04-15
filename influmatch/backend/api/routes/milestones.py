@@ -92,6 +92,20 @@ async def release_milestone(milestone_id: int, db: AsyncSession = Depends(get_db
     if ms.status != MilestoneStatus.PENDING:
         raise HTTPException(status_code=400, detail=f"Milestone status is {ms.status}, only PENDING can be released")
 
+    # Gate: ensure at least one booking for this campaign has content approved
+    from ...models.booking import Booking, BookingStatus
+    booking_check = await db.execute(
+        select(Booking).where(
+            Booking.campaign_id == ms.campaign_id,
+            Booking.status.in_([BookingStatus.CONTENT_APPROVED, BookingStatus.RELEASED]),
+        )
+    )
+    if not booking_check.scalar_one_or_none():
+        raise HTTPException(
+            status_code=400,
+            detail="لا يمكن إصدار الدفعة قبل اعتماد محتوى المؤثر / Cannot release milestone before influencer content is approved"
+        )
+
     ms.status      = MilestoneStatus.RELEASED
     ms.released_at = datetime.utcnow()
     await db.flush()
