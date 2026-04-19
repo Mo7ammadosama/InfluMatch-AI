@@ -239,10 +239,11 @@ async def submit_content(
                     campaign_requirements["niche"] = camp.niche or "general"
                     campaign_requirements["brand_name_en"] = camp.title_en or camp.title_ar or ""
 
+            caption_text = payload.get("caption", "").strip() or content_url
             submission = {
                 "id"         : booking_id,
                 "platform"   : "instagram",
-                "caption"    : content_url,   # use the submitted URL/caption, not the merchant's brief
+                "caption"    : caption_text,
                 "content_url": content_url,
             }
             audit = await aria_auditor.audit_content_submission(submission, campaign_requirements)

@@ -198,10 +198,17 @@ def render():
                             placeholder="https://www.instagram.com/p/...",
                             key=f"url_{bid}"
                         )
+                        caption = st.text_area(
+                            "نص المنشور / Post Caption",
+                            placeholder="اكتب نص المنشور هنا مع الهاشتاق والعلامة التجارية...
+Write your post caption here with hashtags and brand mention...",
+                            key=f"caption_{bid}",
+                            height=100
+                        )
                         if st.button(label, key=f"submit_{bid}", type="primary"):
                             if content_url.strip():
                                 s, r = api_post(f"/api/bookings/{bid}/submit-content",
-                                                json={"content_url": content_url})
+                                                json={"content_url": content_url, "caption": caption.strip()})
                                 if s == 200:
                                     ai = r.get("ai_review", {})
                                     if ai.get("approved"):
