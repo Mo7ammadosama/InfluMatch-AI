@@ -201,7 +201,14 @@ async def submit_content(
     booking = b_q.scalar_one_or_none()
     if not booking:
         raise HTTPException(404, "Booking not found")
-    if booking.status != BookingStatus.CONFIRMED:
+    # Allow resubmission when ARIA previously rejected the content
+    aria_rejected = (
+        isinstance(booking.ai_review_result, dict)
+        and booking.ai_review_result.get("verdict") == "REJECTED"
+    )
+    if booking.status not in (BookingStatus.CONFIRMED, BookingStatus.CONTENT_SUBMITTED) or (
+        booking.status == BookingStatus.CONTENT_SUBMITTED and not aria_rejected
+    ):
         raise HTTPException(400, "يجب تأكيد الحجز أولاً / Booking must be confirmed first")
 
     content_url = payload.get("content_url", "").strip()
@@ -274,14 +281,29 @@ async def submit_content(
 @router.post("/{booking_id}/release")
 async def release_booking(
     booking_id   : int,
+    payload      : dict         = None,
     current_user : User         = Depends(get_current_user),
     db           : AsyncSession = Depends(get_db),
 ):
+    if payload is None:
+        payload = {}
+    override = payload.get("override", False)
+
     b_q     = await db.execute(select(Booking).where(Booking.id == booking_id))
     booking = b_q.scalar_one_or_none()
     if not booking:
         raise HTTPException(404, "Booking not found")
-    if booking.status not in (BookingStatus.CONTENT_APPROVED,):
+
+    allowed_statuses = (BookingStatus.CONTENT_APPROVED,)
+    if override:
+        # Merchant manually approves despite ARIA rejection
+        allowed_statuses = (BookingStatus.CONTENT_APPROVED, BookingStatus.CONTENT_SUBMITTED)
+        if booking.status == BookingStatus.CONTENT_SUBMITTED:
+            booking.status              = BookingStatus.CONTENT_APPROVED
+            booking.content_approved_at = datetime.utcnow()
+            logger.info(f"[BOOKING] Merchant manual override #{booking_id}")
+
+    if booking.status not in allowed_statuses:
         raise HTTPException(400, f"Cannot release in status: {booking.status}")
     if not booking.escrow_id:
         raise HTTPException(400, "No escrow linked to this booking")

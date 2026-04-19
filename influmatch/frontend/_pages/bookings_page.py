@@ -177,27 +177,42 @@ def render():
                         else:
                             st.error(r.get("detail", "خطأ"))
 
-                elif status == "confirmed":
-                    content_url = st.text_input(
-                        "رابط المحتوى / Content URL",
-                        placeholder="https://www.instagram.com/p/...",
-                        key=f"url_{bid}"
-                    )
-                    if st.button("📤 رفع المحتوى", key=f"submit_{bid}", type="primary"):
-                        if content_url.strip():
-                            s, r = api_post(f"/api/bookings/{bid}/submit-content",
-                                            json={"content_url": content_url})
-                            if s == 200:
-                                ai = r.get("ai_review", {})
-                                if ai.get("approved"):
-                                    st.success(f"✅ تمت الموافقة! ARIA Score: {ai.get('score')}/100")
+                elif status in ("confirmed", "content_submitted"):
+                    # Allow resubmission if content was rejected by ARIA
+                    ai_verdict = (ai_res.get("verdict", "") if ai_res else "")
+                    is_rejected = ai_verdict == "REJECTED"
+
+                    if status == "content_submitted" and is_rejected:
+                        st.markdown(
+                            '<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);'
+                            'border-radius:8px;padding:0.6rem 1rem;font-size:0.82rem;color:#fca5a5;margin-bottom:0.5rem">'
+                            '⚠️ تم رفض المحتوى من ARIA — يمكنك إعادة الرفع بمحتوى أفضل / '
+                            'Content rejected by ARIA. Resubmit with improved content.</div>',
+                            unsafe_allow_html=True
+                        )
+
+                    if status == "confirmed" or is_rejected:
+                        label = "🔄 إعادة رفع المحتوى / Resubmit" if is_rejected else "📤 رفع المحتوى / Submit Content"
+                        content_url = st.text_input(
+                            "رابط المحتوى / Content URL",
+                            placeholder="https://www.instagram.com/p/...",
+                            key=f"url_{bid}"
+                        )
+                        if st.button(label, key=f"submit_{bid}", type="primary"):
+                            if content_url.strip():
+                                s, r = api_post(f"/api/bookings/{bid}/submit-content",
+                                                json={"content_url": content_url})
+                                if s == 200:
+                                    ai = r.get("ai_review", {})
+                                    if ai.get("approved"):
+                                        st.success(f"✅ تمت الموافقة! ARIA Score: {ai.get('score')}/100")
+                                    else:
+                                        st.warning(f"تم الرفع — Score: {ai.get('score')}/100. ARIA لم توافق بعد.")
+                                    st.rerun()
                                 else:
-                                    st.warning(f"⏳ بانتظار المراجعة | Score: {ai.get('score')}/100 — {ai.get('notes','')}")
-                                st.rerun()
+                                    st.error(r.get("detail", "خطأ"))
                             else:
-                                st.error(r.get("detail", "خطأ"))
-                        else:
-                            st.warning("أدخل رابط المحتوى")
+                                st.warning("أدخل رابط المحتوى")
 
             elif role == "merchant":
                 if status == "content_approved":
@@ -208,6 +223,26 @@ def render():
                             st.rerun()
                         else:
                             st.error(r.get("detail", "خطأ"))
+
+                elif status == "content_submitted":
+                    # Merchant can manually override ARIA rejection and approve content
+                    ai_verdict = (ai_res.get("verdict", "") if ai_res else "")
+                    if ai_verdict == "REJECTED":
+                        st.markdown(
+                            '<div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.4);'
+                            'border-radius:8px;padding:0.6rem 1rem;font-size:0.82rem;color:#fcd34d;margin-bottom:0.5rem">'
+                            '🤖 ARIA رفضت المحتوى (Score: ' + str(int(ai_res.get("score", 0))) + '/100). '
+                            'يمكنك الموافقة اليدوية أو انتظار إعادة الرفع من المؤثر.</div>',
+                            unsafe_allow_html=True
+                        )
+                        if st.button("✅ موافقة يدوية وإصدار الدفع / Manually Approve & Pay",
+                                     key=f"override_{bid}"):
+                            s, r = api_post(f"/api/bookings/{bid}/release", json={"override": True})
+                            if s == 200:
+                                st.success(f"✅ تمت الموافقة اليدوية وتحويل {r.get('net_amount','—')} JOD!")
+                                st.rerun()
+                            else:
+                                st.error(r.get("detail", "خطأ"))
 
             # ── In-app chat thread ─────────────────────────────────
             _render_chat(bid)
