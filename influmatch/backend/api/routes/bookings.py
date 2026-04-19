@@ -242,7 +242,7 @@ async def submit_content(
             submission = {
                 "id"         : booking_id,
                 "platform"   : "instagram",
-                "caption"    : booking.brief or "",
+                "caption"    : content_url,   # use the submitted URL/caption, not the merchant's brief
                 "content_url": content_url,
             }
             audit = await aria_auditor.audit_content_submission(submission, campaign_requirements)

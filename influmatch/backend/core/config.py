@@ -34,8 +34,8 @@ class Settings(BaseSettings):
     loyalty_points_rate: float = 0.05
 
     # Admin
-    admin_username: str = "godmode_admin"
-    admin_password: str = "aria_admin_2024"
+    admin_username: str = "admin"
+    admin_password: str = "Admin@2024"
 
     # Jordan Market
     currency: str = "JOD"

@@ -31,8 +31,8 @@ async def _seed_admin(session):
     if not result.scalar_one_or_none():
         admin = User(
             email="admin@influmatch.jo",
-            username="godmode_admin",
-            hashed_password=get_password_hash("aria_admin_2024"),
+            username="admin",
+            hashed_password=get_password_hash("Admin@2024"),
             role=UserRole.ADMIN,
             full_name_en="Platform Admin",
             full_name_ar="مدير المنصة",
