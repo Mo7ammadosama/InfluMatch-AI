@@ -173,7 +173,8 @@ async def confirm_booking(
     booking = b_q.scalar_one_or_none()
     if not booking:
         raise HTTPException(404, "Booking not found")
-    if booking.status != BookingStatus.PENDING:
+    _st = (booking.status.value if hasattr(booking.status, "value") else str(booking.status)).lower()
+    if _st != "pending":
         raise HTTPException(400, f"Cannot confirm booking in status: {booking.status}")
 
     booking.status     = BookingStatus.CONFIRMED
@@ -202,7 +203,9 @@ async def submit_content(
     if not booking:
         raise HTTPException(404, "Booking not found")
     # Allow submission when confirmed, and resubmission any time status is content_submitted
-    if booking.status not in (BookingStatus.CONFIRMED, BookingStatus.CONTENT_SUBMITTED):
+    # Normalize: DB may store uppercase enum names or lowercase enum values
+    _status_norm = (booking.status.value if hasattr(booking.status, "value") else str(booking.status)).lower()
+    if _status_norm not in ("confirmed", "content_submitted"):
         raise HTTPException(400, "يجب تأكيد الحجز أولاً / Booking must be confirmed first")
 
     content_url = payload.get("content_url", "").strip()
