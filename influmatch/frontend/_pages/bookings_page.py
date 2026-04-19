@@ -200,8 +200,7 @@ def render():
                         )
                         caption = st.text_area(
                             "نص المنشور / Post Caption",
-                            placeholder="اكتب نص المنشور هنا مع الهاشتاق والعلامة التجارية...
-Write your post caption here with hashtags and brand mention...",
+                            placeholder="اكتب نص المنشور هنا مع الهاشتاق والعلامة التجارية...",
                             key=f"caption_{bid}",
                             height=100
                         )
