@@ -201,18 +201,8 @@ async def submit_content(
     booking = b_q.scalar_one_or_none()
     if not booking:
         raise HTTPException(404, "Booking not found")
-    # Allow resubmission when ARIA previously rejected the content
-    raw_review = booking.ai_review_result or {}
-    if isinstance(raw_review, str):
-        import json as _json
-        try:
-            raw_review = _json.loads(raw_review)
-        except Exception:
-            raw_review = {}
-    aria_rejected = raw_review.get("verdict") == "REJECTED"
-
-    allowed = booking.status in (BookingStatus.CONFIRMED, BookingStatus.CONTENT_SUBMITTED)
-    if not allowed or (booking.status == BookingStatus.CONTENT_SUBMITTED and not aria_rejected):
+    # Allow submission when confirmed, and resubmission any time status is content_submitted
+    if booking.status not in (BookingStatus.CONFIRMED, BookingStatus.CONTENT_SUBMITTED):
         raise HTTPException(400, "يجب تأكيد الحجز أولاً / Booking must be confirmed first")
 
     content_url = payload.get("content_url", "").strip()
