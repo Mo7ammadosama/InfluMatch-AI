@@ -6,10 +6,23 @@ from ..utils.i18n import t
 def render_login():
     lang = st.session_state.get("lang", "ar")
     st.markdown("""
-    <div style="text-align:center;padding:2rem 0 1rem">
-        <span style="font-size:3rem">🎯</span>
-        <h2 style="color:#A78BFA;margin:0.5rem 0">InfluMatch.jo</h2>
-        <p style="color:#94A3B8;font-size:0.9rem">منصة التسويق عبر المؤثرين في الأردن<br>Jordan Influencer Marketing Platform</p>
+    <div style="text-align:center;padding:2.5rem 0 1.5rem">
+      <div style="display:inline-flex;align-items:center;justify-content:center;
+                  width:64px;height:64px;border-radius:18px;
+                  background:linear-gradient(135deg,#7c3aed,#4f46e5);
+                  box-shadow:0 6px 30px rgba(124,58,237,0.5);margin-bottom:1rem">
+        <span style="font-size:2rem;line-height:1">&#9889;</span>
+      </div>
+      <div style="font-size:2rem;font-weight:900;letter-spacing:-0.03em;margin-bottom:0.3rem">
+        <span style="background:linear-gradient(135deg,#a78bfa,#818cf8);
+                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">Influ</span><span
+             style="background:linear-gradient(135deg,#f59e0b,#fbbf24);
+                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">Match</span><span
+             style="color:#f59e0b;font-size:1.3rem">.jo</span>
+      </div>
+      <p style="color:#64748b;font-size:0.82rem;margin:0;letter-spacing:0.04em">
+        منصة التسويق عبر المؤثرين في الأردن &nbsp;&middot;&nbsp; Jordan Influencer Marketing Platform
+      </p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -50,7 +63,7 @@ def render_login():
                         st.error(f"❌ {detail}")
 
         st.markdown("---")
-        st.caption("Admin: admin@influmatch.jo / aria_admin_2024")
+        st.caption("Admin: admin@influmatch.jo / Admin@2024")
 
     # ── Register Tab ─────────────────────────────────────────────
     with tab2:

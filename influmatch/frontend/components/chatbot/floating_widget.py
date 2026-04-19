@@ -17,7 +17,7 @@ def render_chatbot():
     user_id    = st.session_state.get("user_id")   # may be None for unauthenticated
     msgs       = st.session_state.get("chat_messages", [])
 
-    with st.expander("🤖 ARIA AI Assistant", expanded=True):
+    with st.expander("⚡ InfluMatchGPT", expanded=True):
         # Message history
         chat_container = st.container()
         with chat_container:
@@ -38,7 +38,7 @@ def render_chatbot():
                         <div style="background:rgba(30,41,59,0.9);border:1px solid rgba(148,163,184,0.15);
                                     padding:0.5rem 0.9rem;border-radius:12px 12px 12px 0;
                                     max-width:80%;font-size:0.88rem">
-                            🤖 {content}
+                            ⚡ {content}
                         </div>
                     </div>""", unsafe_allow_html=True)
 
@@ -56,7 +56,7 @@ def render_chatbot():
         if send and user_input.strip():
             msgs.append({"role": "user", "content": user_input})
             st.session_state["chat_messages"] = msgs
-            with st.spinner("🤖 ARIA تفكر... / Thinking..."):
+            with st.spinner("⚡ InfluMatchGPT يفكر... / Thinking..."):
                 status_code, resp = api_post(
                     "/api/chatbot/chat",
                     json={

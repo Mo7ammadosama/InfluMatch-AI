@@ -19,11 +19,20 @@ def render_home():
                   margin-bottom:1.2rem;letter-spacing:0.1em">
         🇯🇴 &nbsp; JORDAN'S #1 AI INFLUENCER PLATFORM &nbsp; 🇯🇴
       </div>
-      <div style="font-size:3.2rem;font-weight:900;line-height:1.1;margin-bottom:0.8rem">
-        <span style="background:linear-gradient(135deg,#f59e0b,#8b5cf6,#ef4444);
-                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">
-          InfluMatch.jo
-        </span>
+      <div style="margin-bottom:1rem">
+        <div style="display:inline-flex;align-items:center;justify-content:center;
+                    width:72px;height:72px;border-radius:22px;
+                    background:linear-gradient(135deg,#7c3aed,#4f46e5);
+                    box-shadow:0 8px 40px rgba(124,58,237,0.55);margin-bottom:1rem">
+          <span style="font-size:2.2rem;line-height:1">&#9889;</span>
+        </div>
+      </div>
+      <div style="font-size:3.4rem;font-weight:900;line-height:1.05;margin-bottom:0.8rem;letter-spacing:-0.03em">
+        <span style="background:linear-gradient(135deg,#a78bfa,#818cf8);
+                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">Influ</span><span
+             style="background:linear-gradient(135deg,#f59e0b,#fbbf24);
+                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">Match</span><span
+             style="color:#f59e0b;font-size:2rem">.jo</span>
       </div>
       <div style="font-size:1.3rem;font-weight:700;color:#e0e0f0;margin-bottom:0.5rem">
         منصة المؤثرين الأولى في الأردن

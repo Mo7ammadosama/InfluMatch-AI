@@ -9,11 +9,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import streamlit as st
 
 st.set_page_config(
-    page_title="InfluMatch.jo",
-    page_icon="🎯",
+    page_title="InfluMatch — AI Influencer Platform",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items={"About": "InfluMatch.jo — AI Influencer Platform for Jordan"}
+    menu_items={"About": "InfluMatch — Jordan's #1 AI-Powered Influencer Marketing Platform"}
 )
 
 from frontend.utils.session import init_session, is_logged_in, get_role

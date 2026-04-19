@@ -46,10 +46,22 @@ def render_sidebar():
         # ── Brand ─────────────────────────────────────────────
         st.markdown(
             """
-            <div style="text-align:center;padding:1rem 0 0.5rem">
-                <span style="font-size:2.5rem">🎯</span><br>
-                <span style="font-weight:700;font-size:1.1rem;color:#A78BFA">InfluMatch.jo</span><br>
-                <span style="font-size:0.7rem;color:#64748B">AI Influencer Platform</span>
+            <div style="text-align:center;padding:1.2rem 0 0.8rem">
+              <div style="display:inline-flex;align-items:center;justify-content:center;
+                          width:52px;height:52px;border-radius:16px;margin-bottom:0.7rem;
+                          background:linear-gradient(135deg,#7c3aed,#4f46e5);
+                          box-shadow:0 4px 24px rgba(124,58,237,0.5)">
+                <span style="font-size:1.6rem;line-height:1">&#9889;</span>
+              </div><br>
+              <div style="font-weight:800;font-size:1.2rem;letter-spacing:-0.02em;line-height:1.2">
+                <span style="background:linear-gradient(135deg,#a78bfa,#818cf8);
+                             -webkit-background-clip:text;-webkit-text-fill-color:transparent">Influ</span><span
+                     style="background:linear-gradient(135deg,#f59e0b,#fbbf24);
+                             -webkit-background-clip:text;-webkit-text-fill-color:transparent">Match</span><span
+                     style="color:#f59e0b;font-size:0.9rem">.jo</span>
+              </div>
+              <div style="font-size:0.62rem;color:#475569;letter-spacing:0.1em;
+                          text-transform:uppercase;margin-top:0.3rem">AI &middot; Influencer &middot; Marketing</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -117,7 +129,7 @@ def render_sidebar():
         _render_notifications(role)
 
         # ARIA Chatbot toggle
-        if st.button("🤖  ARIA AI Assistant", use_container_width=True, key="sidebar_chatbot_toggle"):
+        if st.button("⚡  InfluMatchGPT", use_container_width=True, key="sidebar_chatbot_toggle"):
             st.session_state["chat_open"] = not st.session_state.get("chat_open", False)
             st.rerun()
 

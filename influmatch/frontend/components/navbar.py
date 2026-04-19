@@ -11,10 +11,24 @@ def render_navbar():
     col1, col2, col3 = st.columns([2, 6, 2])
     with col1:
         st.markdown(f"""
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 0">
-            <span style="font-size:1.6rem">🎯</span>
-            <span style="font-size:1.1rem;font-weight:700;color:#A78BFA">InfluMatch.jo</span>
-            <span style="font-size:0.7rem;color:#64748b">{status_dot} API</span>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0">
+          <div style="display:inline-flex;align-items:center;justify-content:center;
+                      width:34px;height:34px;border-radius:10px;
+                      background:linear-gradient(135deg,#7c3aed,#4f46e5);
+                      box-shadow:0 2px 12px rgba(124,58,237,0.4);flex-shrink:0">
+            <span style="font-size:1rem;line-height:1">&#9889;</span>
+          </div>
+          <div style="line-height:1.1">
+            <div style="font-size:1.05rem;font-weight:800;letter-spacing:-0.02em">
+              <span style="background:linear-gradient(135deg,#a78bfa,#818cf8);
+                           -webkit-background-clip:text;-webkit-text-fill-color:transparent">Influ</span><span
+                   style="background:linear-gradient(135deg,#f59e0b,#fbbf24);
+                           -webkit-background-clip:text;-webkit-text-fill-color:transparent">Match</span><span
+                   style="color:#f59e0b;font-size:0.8rem">.jo</span>
+            </div>
+            <div style="font-size:0.55rem;color:#475569;letter-spacing:0.08em;text-transform:uppercase">AI Influencer Platform</div>
+          </div>
+          <span style="font-size:0.65rem;color:#64748b;margin-left:4px">{status_dot}</span>
         </div>
         """, unsafe_allow_html=True)
     with col2:
