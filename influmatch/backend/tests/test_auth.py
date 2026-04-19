@@ -4,7 +4,7 @@ import pytest
 TEST_USER = {
     "full_name_en": "Test Merchant",
     "full_name_ar": "تاجر اختبار",
-    "email": "test_merchant@influmatch.jo",
+    "email": "test_merchant@waslai.jo",
     "username": "test_merchant",
     "password": "SecurePass123!",
     "role": "merchant"

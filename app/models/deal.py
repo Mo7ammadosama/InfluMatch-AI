@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Deal Model
+WaslAI.jo — Deal Model
 Binding agreement between Merchant and Influencer
 """
 import enum

@@ -1,0 +1,45 @@
+[32m2026-04-13 01:33:14.745[0m | [32m[1mSUCCESS [0m | [36minflumatch.backend.agents.guardian_agent[0m:[36m_setup_system_jobs[0m:[36m20[0m - [32m[1m[ARIA::GUARDIAN] System jobs registered[0m
+C:\Users\Hp\AppData\Local\Programs\Python\Python311\Lib\site-packages\requests\__init__.py:109: RequestsDependencyWarning: urllib3 (2.1.0) or chardet (7.0.1)/charset_normalizer (3.3.2) doesn't match a supported version!
+  warnings.warn(
+Failed to send telemetry event ClientStartEvent: capture() takes 1 positional argument but 3 were given
+Failed to send telemetry event ClientCreateCollectionEvent: capture() takes 1 positional argument but 3 were given
+Failed to send telemetry event ClientCreateCollectionEvent: capture() takes 1 positional argument but 3 were given
+Failed to send telemetry event ClientCreateCollectionEvent: capture() takes 1 positional argument but 3 were given
+[32m2026-04-13 01:33:32.728[0m | [32m[1mSUCCESS [0m | [36minflumatch.backend.services.rag.vector_store[0m:[36m_init_collections[0m:[36m26[0m - [32m[1m[ARIA::RAG] Vector store initialized[0m
+[32m01:33:34[0m | [32m[1mSUCCESS[0m | [36minflumatch.backend.agents.guardian_agent[0m | [ARIA::GUARDIAN] System jobs registered
+INFO:     Started server process [12028]
+INFO:     Waiting for application startup.
+[32m01:33:34[0m | [1mINFO[0m | [36minflumatch.backend.main[0m | =======================================================
+[32m01:33:34[0m | [1mINFO[0m | [36minflumatch.backend.main[0m | ARIA INFLUMATCH.JO PLATFORM STARTING
+[32m01:33:34[0m | [1mINFO[0m | [36minflumatch.backend.main[0m | =======================================================
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("merchants")
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("influencers")
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("campaigns")
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("campaign_influencers")
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("contracts")
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("escrow_transactions")
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("loyalty_wallets")
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("wallet_transactions")
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-04-13 01:33:34,408 INFO sqlalchemy.engine.Engine COMMIT
+[32m01:33:34[0m | [32m[1mSUCCESS[0m | [36minflumatch.backend.core.database[0m | [ARIA::DB] Tables created successfully
+[32m01:33:34[0m | [32m[1mSUCCESS[0m | [36minflumatch.backend.main[0m | Database initialized
+[32m01:33:34[0m | [32m[1mSUCCESS[0m | [36minflumatch.backend.agents.guardian_agent[0m | [ARIA::GUARDIAN] Guardian Agent ONLINE
+[32m01:33:34[0m | [32m[1mSUCCESS[0m | [36minflumatch.backend.main[0m | Guardian Agent ONLINE
+[32m01:33:34[0m | [32m[1mSUCCESS[0m | [36minflumatch.backend.main[0m | InfluMatch.jo READY | port=8000 | market=Jordan
+INFO:     Application startup complete.
+ERROR:    [Errno 10048] error while attempting to bind on address ('0.0.0.0', 8000): only one usage of each socket address (protocol/network address/port) is normally permitted
+INFO:     Waiting for application shutdown.
+[32m01:33:34[0m | [1mINFO[0m | [36minflumatch.backend.agents.guardian_agent[0m | [ARIA::GUARDIAN] Guardian Agent shutdown
+[32m01:33:34[0m | [1mINFO[0m | [36minflumatch.backend.main[0m | Platform shutdown complete
+INFO:     Application shutdown complete.

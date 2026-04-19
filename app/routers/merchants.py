@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Merchants Router
+WaslAI.jo — Merchants Router
 CRUD for Merchant profiles
 """
 from fastapi import APIRouter, Depends, HTTPException, status

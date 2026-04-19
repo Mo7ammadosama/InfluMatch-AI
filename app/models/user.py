@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — User Model
+WaslAI.jo — User Model
 Base entity for Merchants and Influencers
 """
 import enum

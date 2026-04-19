@@ -1,7 +1,7 @@
 """Master System Prompt Continuation — Modules 13-15 + Tests"""
 import os
 
-BASE = "C:/InfluMatch_AI/influmatch"
+BASE = "C:/WaslAI_AI/waslai"
 
 def w(rel_path, content):
     path = os.path.join(BASE, rel_path)
@@ -12,7 +12,7 @@ def w(rel_path, content):
 
 # ── OFFICIAL ARIA DESIGN SYSTEM CSS ─────────────────────────────────────────
 w("frontend/assets/css/style.css", """/* ============================================================
-   INFLUMATCH.JO — ARIA DESIGN SYSTEM
+   WASLAI.JO — ARIA DESIGN SYSTEM
    Dark Theme + RTL Arabic Support + Jordan Brand Colors
    ============================================================ */
 
@@ -376,7 +376,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from anthropic import Anthropic
 from ...core.config import get_settings
-from ...services.rag.vector_store import InfluMatchVectorStore
+from ...services.rag.vector_store import WaslAIVectorStore
 from loguru import logger
 
 router = APIRouter(prefix="/chatbot", tags=["AI Chatbot"])
@@ -399,11 +399,11 @@ class ChatResponse(BaseModel):
     language_detected: str
 
 ARIA_SYSTEM = """
-أنت ARIA، المساعد الذكي لمنصة InfluMatch.jo — منصة التسويق بالمؤثرين في الأردن.
+أنت ARIA، المساعد الذكي لمنصة WaslAI.jo — منصة التسويق بالمؤثرين في الأردن.
 
 [IDENTITY]
 - اسمك: ARIA (Autonomous Reasoning & Implementation Assistant)
-- تعمل لصالح منصة InfluMatch.jo في الأردن
+- تعمل لصالح منصة WaslAI.jo في الأردن
 - تتحدث العربية والإنجليزية بطلاقة تامة
 - تفهم السوق الأردني وثقافته
 
@@ -446,7 +446,7 @@ async def chat_with_aria(request: ChatRequest):
 
     if needs_rag and settings.anthropic_api_key:
         try:
-            store = InfluMatchVectorStore()
+            store = WaslAIVectorStore()
             doc_type = "contracts" if any(w in request.message for w in ["عقد","contract","اتفاقية"]) else "policies"
             results = store.semantic_search(request.message, doc_type, top_k=3)
             if results:
@@ -506,7 +506,7 @@ def _suggestions(message: str, lang: str) -> List[str]:
 # The frontend widget calls /api/chatbot/chat — already correct
 
 # ── MODULE 15: UPDATED SCRIPTS ───────────────────────────────────────────────
-SCRIPTS_BASE = "C:/InfluMatch_AI/scripts"
+SCRIPTS_BASE = "C:/WaslAI_AI/scripts"
 
 def ws(fname, content):
     path = os.path.join(SCRIPTS_BASE, fname)
@@ -516,11 +516,11 @@ def ws(fname, content):
     print(f"  OK  scripts/{fname}  ({len(content)} bytes)")
 
 ws("start_all.py", '''#!/usr/bin/env python3
-"""ARIA InfluMatch.jo — One-Command Launcher"""
+"""ARIA WaslAI.jo — One-Command Launcher"""
 import subprocess, sys, os, time, signal
 from pathlib import Path
 
-ROOT = Path(__file__).parent.parent / "influmatch"
+ROOT = Path(__file__).parent.parent / "waslai"
 os.chdir(ROOT)
 
 CYAN = "\\033[96m"; GREEN = "\\033[92m"; RED = "\\033[91m"
@@ -529,7 +529,7 @@ YELLOW = "\\033[93m"; RESET = "\\033[0m"; BOLD = "\\033[1m"
 def banner():
     print(f"""{CYAN}{BOLD}
 +--------------------------------------------------------------+
-|   ARIA - InfluMatch.jo Platform Launcher v1.0.0             |
+|   ARIA - WaslAI.jo Platform Launcher v1.0.0             |
 |   Jordan Influencer Marketing Platform                       |
 |   Powered by Claude AI + FastAPI + Streamlit                 |
 +--------------------------------------------------------------+
@@ -585,7 +585,7 @@ def start_services():
 
     print(f"""{GREEN}{BOLD}
 +--------------------------------------------------------------+
-|  ARIA InfluMatch.jo Platform ONLINE                         |
+|  ARIA WaslAI.jo Platform ONLINE                         |
 |                                                              |
 |  FastAPI Backend:   http://localhost:8000                    |
 |  API Documentation: http://localhost:8000/docs               |
@@ -620,7 +620,7 @@ ws("init_db.py", '''#!/usr/bin/env python3
 import asyncio, sys
 from pathlib import Path
 
-ROOT = Path(__file__).parent.parent / "influmatch"
+ROOT = Path(__file__).parent.parent / "waslai"
 sys.path.insert(0, str(ROOT))
 
 async def init():
@@ -636,7 +636,7 @@ async def init():
         result = await db.execute(select(User).where(User.username == "godmode_admin"))
         if not result.scalar_one_or_none():
             admin = User(
-                email="admin@influmatch.jo",
+                email="admin@waslai.jo",
                 username="godmode_admin",
                 hashed_password=get_password_hash("aria_admin_2024"),
                 role=UserRole.ADMIN,
@@ -647,7 +647,7 @@ async def init():
             )
             db.add(admin)
             await db.commit()
-            print("[DB] Admin user created: admin@influmatch.jo / aria_admin_2024")
+            print("[DB] Admin user created: admin@waslai.jo / aria_admin_2024")
         else:
             print("[DB] Admin user already exists")
 
@@ -662,7 +662,7 @@ ws("seed_rag.py", '''#!/usr/bin/env python3
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).parent.parent / "influmatch"
+ROOT = Path(__file__).parent.parent / "waslai"
 sys.path.insert(0, str(ROOT))
 
 ARABIC_CONTRACT = """
@@ -675,7 +675,7 @@ ARABIC_CONTRACT = """
 
 البند الثاني: المقابل المالي
 يلتزم الطرف الأول بدفع المبلغ المتفق عليه بالدينار الأردني (JOD)
-عبر نظام الضمان المالي (Escrow) في منصة InfluMatch.jo.
+عبر نظام الضمان المالي (Escrow) في منصة WaslAI.jo.
 يطبق ضريبة القيمة المضافة بنسبة 16% وفق التشريع الأردني.
 
 البند الثالث: التسليمات المطلوبة
@@ -686,7 +686,7 @@ ARABIC_CONTRACT = """
 يحتفظ الطرف الأول بحق استخدام المحتوى المنتج لمدة 12 شهراً.
 
 البند الخامس: فض النزاعات
-تحال النزاعات إلى فريق InfluMatch.jo خلال 48 ساعة من نشوئها.
+تحال النزاعات إلى فريق WaslAI.jo خلال 48 ساعة من نشوئها.
 القانون الواجب التطبيق: القانون الأردني.
 """
 
@@ -700,7 +700,7 @@ within the agreed timeline and to the specified quality standards.
 
 Article 2: Compensation
 Party A agrees to pay the agreed amount in Jordanian Dinar (JOD)
-through the InfluMatch.jo Escrow system.
+through the WaslAI.jo Escrow system.
 VAT at 16% applies per Jordan tax law.
 
 Article 3: Deliverables
@@ -711,12 +711,12 @@ Article 4: Intellectual Property
 Party A retains rights to produced content for 12 months.
 
 Article 5: Dispute Resolution
-Disputes escalated to InfluMatch.jo within 48 hours.
+Disputes escalated to WaslAI.jo within 48 hours.
 Governing law: Hashemite Kingdom of Jordan.
 """
 
 JORDAN_POLICY = """
-سياسات منصة InfluMatch.jo — السوق الأردني
+سياسات منصة WaslAI.jo — السوق الأردني
 
 1. سياسة الدفع والضمان المالي (Escrow):
 - يتم تجميد المبلغ في حساب الضمان فور إطلاق الحملة
@@ -744,15 +744,15 @@ JORDAN_POLICY = """
 """
 
 def seed():
-    from backend.services.rag.vector_store import InfluMatchVectorStore
-    store = InfluMatchVectorStore()
+    from backend.services.rag.vector_store import WaslAIVectorStore
+    store = WaslAIVectorStore()
 
     store.ingest_document(ARABIC_CONTRACT, "contracts",
-        {"id": "template_ar_001", "language": "ar", "source": "InfluMatch Contract Template AR"})
+        {"id": "template_ar_001", "language": "ar", "source": "WaslAI Contract Template AR"})
     store.ingest_document(ENGLISH_CONTRACT, "contracts",
-        {"id": "template_en_001", "language": "en", "source": "InfluMatch Contract Template EN"})
+        {"id": "template_en_001", "language": "en", "source": "WaslAI Contract Template EN"})
     store.ingest_document(JORDAN_POLICY, "policies",
-        {"id": "jordan_platform_policy", "language": "ar", "source": "InfluMatch Platform Policy v1.0"})
+        {"id": "jordan_platform_policy", "language": "ar", "source": "WaslAI Platform Policy v1.0"})
 
     print("[RAG] Contract templates seeded (AR + EN)")
     print("[RAG] Platform policies seeded")
@@ -846,15 +846,15 @@ class TestRAGSystem:
     """Test RAG vector store"""
 
     def test_vector_store_init(self):
-        from backend.services.rag.vector_store import InfluMatchVectorStore
-        store = InfluMatchVectorStore()
+        from backend.services.rag.vector_store import WaslAIVectorStore
+        store = WaslAIVectorStore()
         assert store.contracts_col is not None
         assert store.policies_col is not None
         print("RAG vector store initialized: PASS")
 
     def test_document_ingestion(self):
-        from backend.services.rag.vector_store import InfluMatchVectorStore
-        store = InfluMatchVectorStore()
+        from backend.services.rag.vector_store import WaslAIVectorStore
+        store = WaslAIVectorStore()
         store.ingest_document(
             "Test contract for Jordan market compliance",
             "contracts",

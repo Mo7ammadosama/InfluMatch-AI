@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Deals Router
+WaslAI.jo — Deals Router
 Deal lifecycle: propose → accept → execute → complete
 """
 from fastapi import APIRouter, Depends, HTTPException

@@ -1,6 +1,6 @@
 from loguru import logger
 from typing import Optional
-from .vector_store import InfluMatchVectorStore
+from .vector_store import WaslAIVectorStore
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
 from backend.core.config import get_settings
@@ -9,7 +9,7 @@ settings = get_settings()
 
 class SmartContractRAG:
     def __init__(self):
-        self.vector_store = InfluMatchVectorStore()
+        self.vector_store = WaslAIVectorStore()
         self._client = None
 
     def _get_client(self):
@@ -25,7 +25,7 @@ class SmartContractRAG:
         ctx += self.vector_store.semantic_search(query, "policy", top_k=2)
         context_text = "\n\n".join([r["text"] for r in ctx]) if ctx else "No prior contracts loaded."
         lang_instr = "Generate the contract in Arabic (RTL)." if language == "ar" else "Generate in English."
-        system = f"You are ARIA legal AI for InfluMatch.jo Jordan. {lang_instr}\n\nContext:\n{context_text}"
+        system = f"You are ARIA legal AI for WaslAI.jo Jordan. {lang_instr}\n\nContext:\n{context_text}"
         user_msg = f"Contract between Merchant: {merchant_name} and Influencer: {influencer_name}\nCampaign: {campaign_details}"
         client = self._get_client()
         resp = client.messages.create(model=settings.claude_model, max_tokens=4096,
@@ -37,7 +37,7 @@ class SmartContractRAG:
         ctx = self.vector_store.semantic_search(question, "policy", top_k=4)
         context_text = "\n\n".join([r["text"] for r in ctx]) if ctx else ""
         lang_instr = "Reply in Arabic." if language == "ar" else "Reply in English."
-        system = f"You are ARIA platform advisor for InfluMatch.jo Jordan. {lang_instr}\nContext:\n{context_text}"
+        system = f"You are ARIA platform advisor for WaslAI.jo Jordan. {lang_instr}\nContext:\n{context_text}"
         client = self._get_client()
         resp = client.messages.create(model=settings.claude_model, max_tokens=1024,
             system=system, messages=[{"role": "user", "content": question}])

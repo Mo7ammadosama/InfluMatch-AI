@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — FastAPI Application Entry Point
+WaslAI.jo — FastAPI Application Entry Point
 ARIA v3.0.0 | Jordan Market B2B Platform
 """
 from contextlib import asynccontextmanager
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
     await create_tables()
     logger.info("✅ Database initialized")
     yield
-    logger.info("🛑 Shutting down InfluMatch.jo")
+    logger.info("🛑 Shutting down WaslAI.jo")
 
 
 # --- Application Factory ---
@@ -89,7 +89,7 @@ async def health_check():
 @app.get("/", tags=["System"])
 async def root():
     return {
-        "message": "InfluMatch.jo API — مرحباً بك",
+        "message": "WaslAI.jo API — مرحباً بك",
         "docs": "/docs",
         "health": "/health",
     }

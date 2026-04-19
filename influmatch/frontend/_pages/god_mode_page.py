@@ -1,4 +1,4 @@
-"""God Mode Admin Dashboard — InfluMatch.jo"""
+"""God Mode Admin Dashboard — WaslAI.jo"""
 import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
@@ -157,7 +157,7 @@ def render():
             st.download_button(
                 "Export Users (JSON)",
                 _json.dumps(users_data, ensure_ascii=False, indent=2),
-                "influmatch_users.json", "application/json",
+                "waslai_users.json", "application/json",
                 use_container_width=True
             )
         if campaigns_data:
@@ -169,7 +169,7 @@ def render():
             st.download_button(
                 "Export Campaigns (CSV)",
                 pd.DataFrame(rows).to_csv(index=False),
-                "influmatch_campaigns.csv", "text/csv",
+                "waslai_campaigns.csv", "text/csv",
                 use_container_width=True
             )
 
@@ -181,7 +181,7 @@ def render():
     # TAB 1 — USER MANAGEMENT
     with tab1:
         st.markdown("#### إدارة المستخدمين")
-        search = st.text_input("بحث بالاسم أو الإيميل", placeholder="admin@influmatch.jo", key="user_search")
+        search = st.text_input("بحث بالاسم أو الإيميل", placeholder="admin@waslai.jo", key="user_search")
         users = api_list("/api/admin/users")
         if search:
             users = [u for u in users if search.lower() in

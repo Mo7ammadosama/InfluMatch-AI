@@ -85,7 +85,7 @@ async def download_contract_pdf(contract_id: int, db: AsyncSession = Depends(get
     from ...services.contracts.pdf_generator import ContractPDFGenerator
 
     # Try to fetch contract details from DB; fall back to placeholder
-    contract_text     = f"عقد رقم {contract_id} — InfluMatch.jo"
+    contract_text     = f"عقد رقم {contract_id} — WaslAI.jo"
     merchant_name     = "تاجر"
     influencer_name   = "مؤثر"
     amount_jod        = 0.0

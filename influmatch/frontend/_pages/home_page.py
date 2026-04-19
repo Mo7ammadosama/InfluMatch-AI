@@ -29,9 +29,9 @@ def render_home():
       </div>
       <div style="font-size:3.4rem;font-weight:900;line-height:1.05;margin-bottom:0.8rem;letter-spacing:-0.03em">
         <span style="background:linear-gradient(135deg,#a78bfa,#818cf8);
-                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">Influ</span><span
+                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">Wasl</span><span
              style="background:linear-gradient(135deg,#f59e0b,#fbbf24);
-                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">Match</span><span
+                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">AI</span><span
              style="color:#f59e0b;font-size:2rem">.jo</span>
       </div>
       <div style="font-size:1.3rem;font-weight:700;color:#e0e0f0;margin-bottom:0.5rem">
@@ -165,5 +165,5 @@ def render_home():
     st.markdown("""
     <div style="text-align:center;padding:2rem 0 1rem;color:#4b4b6b;font-size:0.75rem;
                 border-top:1px solid rgba(255,255,255,0.05);margin-top:2rem">
-      InfluMatch.jo &nbsp;·&nbsp; مدعوم بـ ARIA AI &nbsp;·&nbsp; السوق الأردني &nbsp;·&nbsp; 2026
+      WaslAI.jo &nbsp;·&nbsp; مدعوم بـ ARIA AI &nbsp;·&nbsp; السوق الأردني &nbsp;·&nbsp; 2026
     </div>""", unsafe_allow_html=True)

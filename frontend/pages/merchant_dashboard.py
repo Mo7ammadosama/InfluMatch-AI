@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Merchant Dashboard
+WaslAI.jo — Merchant Dashboard
 Campaigns, AI Matching, Deals, Wallet
 """
 import streamlit as st

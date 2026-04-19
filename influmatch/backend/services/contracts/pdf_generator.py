@@ -80,15 +80,15 @@ class ContractPDFGenerator:
         c.setFont("Helvetica-Bold", 52)
         c.translate(w / 2, h / 2)
         c.rotate(45)
-        c.drawCentredString(0, 0, "InfluMatch.jo VERIFIED")
+        c.drawCentredString(0, 0, "WaslAI.jo VERIFIED")
         c.restoreState()
 
     def _draw_header(self, c: canvas.Canvas, w: float, h: float):
         c.setFillColor(white)
         c.setFont("Helvetica-Bold", 18)
-        c.drawCentredString(w / 2, h - 1.5*cm, "InfluMatch.jo")
+        c.drawCentredString(w / 2, h - 1.5*cm, "WaslAI.jo")
         c.setFont("Helvetica", 10)
-        title_ar = _rtl("منصة InfluMatch.jo — وثيقة رسمية | Official Contract Document")
+        title_ar = _rtl("منصة WaslAI.jo — وثيقة رسمية | Official Contract Document")
         c.drawCentredString(w / 2, h - 2.1*cm, title_ar)
 
     def _draw_meta(self, c: canvas.Canvas, w: float, h: float,
@@ -162,5 +162,5 @@ class ContractPDFGenerator:
     def _draw_footer(self, c: canvas.Canvas, w: float, h: float):
         c.setFillColor(white)
         c.setFont("Helvetica", 7)
-        footer = _rtl("وفقاً لقانون المعاملات الإلكترونية الأردني رقم 15 لسنة 2015  |  influmatch.jo")
+        footer = _rtl("وفقاً لقانون المعاملات الإلكترونية الأردني رقم 15 لسنة 2015  |  waslai.jo")
         c.drawCentredString(w / 2, 0.4*cm, footer)

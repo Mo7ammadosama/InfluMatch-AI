@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Application Configuration
+WaslAI.jo — Application Configuration
 Centralized settings via pydantic-settings (reads from .env)
 """
 from functools import lru_cache
@@ -9,7 +9,7 @@ from pydantic import Field
 
 class Settings(BaseSettings):
     # Application
-    app_name: str = "InfluMatch.jo"
+    app_name: str = "WaslAI.jo"
     app_version: str = "1.0.0"
     app_env: str = "development"
     debug: bool = True
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     port: int = 8000
 
     # Database
-    database_url: str = "sqlite+aiosqlite:///./influmatch.db"
+    database_url: str = "sqlite+aiosqlite:///./waslai.db"
 
     # JWT Auth — accepts both JWT_* and bare aliases
     jwt_secret_key: str = Field(default="", validation_alias="JWT_SECRET_KEY")
@@ -61,7 +61,7 @@ class Settings(BaseSettings):
 
     # Logging
     log_level: str = "DEBUG"
-    log_file: str = "./logs/influmatch.log"
+    log_file: str = "./logs/waslai.log"
 
     # Frontend
     streamlit_port: int = 8501

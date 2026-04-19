@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Test Configuration
+WaslAI.jo — Test Configuration
 Async test client + isolated in-memory database
 """
 import pytest

@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Landing Page
+WaslAI.jo — Landing Page
 Hero section, value proposition, CTA
 """
 import streamlit as st
@@ -12,14 +12,14 @@ def render():
     if is_ar:
         st.markdown("""
 <div style="text-align: right; direction: rtl;">
-    <h1>🎯 InfluMatch.jo</h1>
+    <h1>🎯 WaslAI.jo</h1>
     <h2>منصة التسويق عبر المؤثرين المدعومة بالذكاء الاصطناعي</h2>
     <p style="font-size: 1.2em;">ربط التجار الأردنيين بالمؤثرين المناسبين — بشكل تلقائي وذكي</p>
 </div>
 """, unsafe_allow_html=True)
     else:
         st.markdown("""
-# 🎯 InfluMatch.jo
+# 🎯 WaslAI.jo
 ## AI-Powered Influencer Marketing Platform
 **Connecting Jordanian Merchants with the right Influencers — Automatically.**
 """)

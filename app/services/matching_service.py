@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — AI Matching Service
+WaslAI.jo — AI Matching Service
 Connects Campaigns ↔ Influencers using RAG + scoring
 """
 from loguru import logger

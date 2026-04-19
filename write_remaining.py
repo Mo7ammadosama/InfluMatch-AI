@@ -1,7 +1,7 @@
 """ARIA Bulk Writer — Modules 04-12"""
 import os
 
-BASE = "C:/InfluMatch_AI/influmatch"
+BASE = "C:/WaslAI_AI/waslai"
 
 def w(rel_path, content):
     path = os.path.join(BASE, rel_path)
@@ -293,7 +293,7 @@ from backend.core.config import get_settings
 
 settings = get_settings()
 
-class InfluMatchVectorStore:
+class WaslAIVectorStore:
     def __init__(self):
         self.client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
         self.encoder = SentenceTransformer("all-MiniLM-L6-v2")
@@ -375,7 +375,7 @@ loader = DocumentLoader()
 
 w("backend/services/rag/rag_chain.py", """from loguru import logger
 from typing import Optional
-from .vector_store import InfluMatchVectorStore
+from .vector_store import WaslAIVectorStore
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
 from backend.core.config import get_settings
@@ -384,7 +384,7 @@ settings = get_settings()
 
 class SmartContractRAG:
     def __init__(self):
-        self.vector_store = InfluMatchVectorStore()
+        self.vector_store = WaslAIVectorStore()
         self._client = None
 
     def _get_client(self):
@@ -400,7 +400,7 @@ class SmartContractRAG:
         ctx += self.vector_store.semantic_search(query, "policy", top_k=2)
         context_text = "\\n\\n".join([r["text"] for r in ctx]) if ctx else "No prior contracts loaded."
         lang_instr = "Generate the contract in Arabic (RTL)." if language == "ar" else "Generate in English."
-        system = f"You are ARIA legal AI for InfluMatch.jo Jordan. {lang_instr}\\n\\nContext:\\n{context_text}"
+        system = f"You are ARIA legal AI for WaslAI.jo Jordan. {lang_instr}\\n\\nContext:\\n{context_text}"
         user_msg = f"Contract between Merchant: {merchant_name} and Influencer: {influencer_name}\\nCampaign: {campaign_details}"
         client = self._get_client()
         resp = client.messages.create(model=settings.claude_model, max_tokens=4096,
@@ -412,7 +412,7 @@ class SmartContractRAG:
         ctx = self.vector_store.semantic_search(question, "policy", top_k=4)
         context_text = "\\n\\n".join([r["text"] for r in ctx]) if ctx else ""
         lang_instr = "Reply in Arabic." if language == "ar" else "Reply in English."
-        system = f"You are ARIA platform advisor for InfluMatch.jo Jordan. {lang_instr}\\nContext:\\n{context_text}"
+        system = f"You are ARIA platform advisor for WaslAI.jo Jordan. {lang_instr}\\nContext:\\n{context_text}"
         client = self._get_client()
         resp = client.messages.create(model=settings.claude_model, max_tokens=1024,
             system=system, messages=[{"role": "user", "content": question}])
@@ -487,7 +487,7 @@ from backend.core.config import get_settings
 
 settings = get_settings()
 
-AUDIT_SYSTEM = '''You are ARIA AI Auditor for InfluMatch.jo Jordan. Respond ONLY in this JSON format:
+AUDIT_SYSTEM = '''You are ARIA AI Auditor for WaslAI.jo Jordan. Respond ONLY in this JSON format:
 {"audit_passed":true,"overall_score":0,"checks":{"brand_mentioned":true,"hashtags_present":true,"content_quality":0,"engagement_authentic":true,"platform_compliant":true},"issues_found":[],"recommendations":[],"arabic_caption_quality":0,"rejection_reason":null,"confidence":0.9}'''
 
 class AIAuditorAgent:
@@ -985,8 +985,8 @@ class ChatResponse(BaseModel):
     model_used: str
     language: str
 
-SYSTEM_AR = "أنت ARIA، مساعد ذكي لمنصة InfluMatch.jo الأردنية لربط التجار بالمؤثرين. أجب باللغة العربية بشكل مهني ومفيد. العملة دينار أردني (JOD)، الضريبة 16%."
-SYSTEM_EN = "You are ARIA, the AI assistant for InfluMatch.jo — Jordan's influencer marketing platform connecting merchants and influencers. Be professional and helpful. Currency: JOD, VAT 16%."
+SYSTEM_AR = "أنت ARIA، مساعد ذكي لمنصة WaslAI.jo الأردنية لربط التجار بالمؤثرين. أجب باللغة العربية بشكل مهني ومفيد. العملة دينار أردني (JOD)، الضريبة 16%."
+SYSTEM_EN = "You are ARIA, the AI assistant for WaslAI.jo — Jordan's influencer marketing platform connecting merchants and influencers. Be professional and helpful. Currency: JOD, VAT 16%."
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(payload: ChatRequest, current_user: User = Depends(get_current_user)):
@@ -1029,7 +1029,7 @@ async def god_mode_dashboard(db: AsyncSession = Depends(get_db),
     total_escrow = (await db.execute(select(func.sum(EscrowTransaction.gross_amount)))).scalar() or 0
     released = (await db.execute(select(func.sum(EscrowTransaction.net_amount)).where(EscrowTransaction.status == EscrowStatus.RELEASED))).scalar() or 0
     return {
-        "platform": "InfluMatch.jo", "aria_status": "ONLINE",
+        "platform": "WaslAI.jo", "aria_status": "ONLINE",
         "stats": {"total_users": users, "merchants": merchants, "influencers": influencers,
                   "campaigns": campaigns, "active_campaigns": active_campaigns},
         "finance": {"total_escrow_jod": round(total_escrow, 2), "released_jod": round(released, 2)},
@@ -1102,26 +1102,26 @@ logger.remove()
 logger.add(sys.stdout,
     format="<green>{time:HH:mm:ss}</green> | <level>{level}</level> | <cyan>{name}</cyan> | {message}",
     level="DEBUG" if settings.debug else "INFO", colorize=True)
-logger.add("logs/influmatch_{time:YYYY-MM-DD}.log", rotation="1 day", retention="30 days", serialize=True)
+logger.add("logs/waslai_{time:YYYY-MM-DD}.log", rotation="1 day", retention="30 days", serialize=True)
 
 guardian = GuardianAgent(AsyncSessionLocal)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("=" * 55)
-    logger.info("ARIA INFLUMATCH.JO PLATFORM STARTING")
+    logger.info("ARIA WASLAI.JO PLATFORM STARTING")
     logger.info("=" * 55)
     await init_db()
     logger.success("Database initialized")
     guardian.start()
     logger.success("Guardian Agent ONLINE")
-    logger.success(f"InfluMatch.jo READY | port={settings.port} | market=Jordan")
+    logger.success(f"WaslAI.jo READY | port={settings.port} | market=Jordan")
     yield
     guardian.shutdown()
     logger.info("Platform shutdown complete")
 
 app = FastAPI(
-    title="InfluMatch.jo API", version="1.0.0",
+    title="WaslAI.jo API", version="1.0.0",
     description="ARIA-Powered Influencer Marketing Platform — Jordan",
     docs_url="/docs", redoc_url="/redoc", lifespan=lifespan,
 )
@@ -1138,7 +1138,7 @@ for r in [auth.router, merchants.router, influencers.router, campaigns.router,
 
 @app.get("/", tags=["Health"])
 async def root():
-    return {"platform": "InfluMatch.jo", "aria": "ONLINE", "market": "Jordan", "currency": "JOD"}
+    return {"platform": "WaslAI.jo", "aria": "ONLINE", "market": "Jordan", "currency": "JOD"}
 
 @app.get("/health", tags=["Health"])
 async def health():

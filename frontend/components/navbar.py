@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Navigation Bar Component
+WaslAI.jo — Navigation Bar Component
 Bilingual toggle + auth state aware
 """
 import streamlit as st
@@ -10,7 +10,7 @@ def render_navbar():
 
     with col1:
         lang = st.session_state.get("language", "ar")
-        title = "🎯 InfluMatch.jo — منصة المؤثرين" if lang == "ar" else "🎯 InfluMatch.jo — Influencer Platform"
+        title = "🎯 WaslAI.jo — منصة المؤثرين" if lang == "ar" else "🎯 WaslAI.jo — Influencer Platform"
         st.markdown(f"### {title}")
 
     with col2:

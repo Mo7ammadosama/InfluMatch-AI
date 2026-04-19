@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Merchant Model
+WaslAI.jo — Merchant Model
 Business entity in Jordan market
 """
 import uuid

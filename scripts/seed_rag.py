@@ -3,7 +3,7 @@
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).parent.parent / "influmatch"
+ROOT = Path(__file__).parent.parent / "waslai"
 sys.path.insert(0, str(ROOT))
 
 ARABIC_CONTRACT = """
@@ -16,7 +16,7 @@ ARABIC_CONTRACT = """
 
 البند الثاني: المقابل المالي
 يلتزم الطرف الأول بدفع المبلغ المتفق عليه بالدينار الأردني (JOD)
-عبر نظام الضمان المالي (Escrow) في منصة InfluMatch.jo.
+عبر نظام الضمان المالي (Escrow) في منصة WaslAI.jo.
 يطبق ضريبة القيمة المضافة بنسبة 16% وفق التشريع الأردني.
 
 البند الثالث: التسليمات المطلوبة
@@ -27,7 +27,7 @@ ARABIC_CONTRACT = """
 يحتفظ الطرف الأول بحق استخدام المحتوى المنتج لمدة 12 شهراً.
 
 البند الخامس: فض النزاعات
-تحال النزاعات إلى فريق InfluMatch.jo خلال 48 ساعة من نشوئها.
+تحال النزاعات إلى فريق WaslAI.jo خلال 48 ساعة من نشوئها.
 القانون الواجب التطبيق: القانون الأردني.
 """
 
@@ -41,7 +41,7 @@ within the agreed timeline and to the specified quality standards.
 
 Article 2: Compensation
 Party A agrees to pay the agreed amount in Jordanian Dinar (JOD)
-through the InfluMatch.jo Escrow system.
+through the WaslAI.jo Escrow system.
 VAT at 16% applies per Jordan tax law.
 
 Article 3: Deliverables
@@ -52,12 +52,12 @@ Article 4: Intellectual Property
 Party A retains rights to produced content for 12 months.
 
 Article 5: Dispute Resolution
-Disputes escalated to InfluMatch.jo within 48 hours.
+Disputes escalated to WaslAI.jo within 48 hours.
 Governing law: Hashemite Kingdom of Jordan.
 """
 
 JORDAN_POLICY = """
-سياسات منصة InfluMatch.jo — السوق الأردني
+سياسات منصة WaslAI.jo — السوق الأردني
 
 1. سياسة الدفع والضمان المالي (Escrow):
 - يتم تجميد المبلغ في حساب الضمان فور إطلاق الحملة
@@ -85,15 +85,15 @@ JORDAN_POLICY = """
 """
 
 def seed():
-    from backend.services.rag.vector_store import InfluMatchVectorStore
-    store = InfluMatchVectorStore()
+    from backend.services.rag.vector_store import WaslAIVectorStore
+    store = WaslAIVectorStore()
 
     store.ingest_document(ARABIC_CONTRACT, "contracts",
-        {"id": "template_ar_001", "language": "ar", "source": "InfluMatch Contract Template AR"})
+        {"id": "template_ar_001", "language": "ar", "source": "WaslAI Contract Template AR"})
     store.ingest_document(ENGLISH_CONTRACT, "contracts",
-        {"id": "template_en_001", "language": "en", "source": "InfluMatch Contract Template EN"})
+        {"id": "template_en_001", "language": "en", "source": "WaslAI Contract Template EN"})
     store.ingest_document(JORDAN_POLICY, "policies",
-        {"id": "jordan_platform_policy", "language": "ar", "source": "InfluMatch Platform Policy v1.0"})
+        {"id": "jordan_platform_policy", "language": "ar", "source": "WaslAI Platform Policy v1.0"})
 
     print("[RAG] Contract templates seeded (AR + EN)")
     print("[RAG] Platform policies seeded")

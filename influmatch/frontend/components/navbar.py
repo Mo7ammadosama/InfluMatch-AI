@@ -21,9 +21,9 @@ def render_navbar():
           <div style="line-height:1.1">
             <div style="font-size:1.05rem;font-weight:800;letter-spacing:-0.02em">
               <span style="background:linear-gradient(135deg,#a78bfa,#818cf8);
-                           -webkit-background-clip:text;-webkit-text-fill-color:transparent">Influ</span><span
+                           -webkit-background-clip:text;-webkit-text-fill-color:transparent">Wasl</span><span
                    style="background:linear-gradient(135deg,#f59e0b,#fbbf24);
-                           -webkit-background-clip:text;-webkit-text-fill-color:transparent">Match</span><span
+                           -webkit-background-clip:text;-webkit-text-fill-color:transparent">AI</span><span
                    style="color:#f59e0b;font-size:0.8rem">.jo</span>
             </div>
             <div style="font-size:0.55rem;color:#475569;letter-spacing:0.08em;text-transform:uppercase">AI Influencer Platform</div>

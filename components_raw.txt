@@ -464,7 +464,7 @@ async def get_platform_stats(db: AsyncSession = Depends(get_db)):
     )
 
     return {
-        "platform"          : "InfluMatch.jo",
+        "platform"          : "WaslAI.jo",
         "market"            : "Jordan 🇯🇴",
         "aria_status"       : "ONLINE",
         "total_users"       : total_users.scalar() or 0,
@@ -546,7 +546,7 @@ st.markdown("""
             border-radius:16px; padding:1.5rem; margin-bottom:1.5rem;">
     <h2 style="color:white; margin:0;">🏪 لوحة تحكم التاجر</h2>
     <p style="color:#a0c4ff; margin:5px 0 0 0;">
-        Merchant Dashboard | InfluMatch.jo
+        Merchant Dashboard | WaslAI.jo
     </p>
 </div>
 """, unsafe_allow_html=True)

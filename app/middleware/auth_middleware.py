@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Auth Dependency Injection
+WaslAI.jo — Auth Dependency Injection
 Current user extraction from JWT Bearer token
 """
 from fastapi import Depends, HTTPException, status

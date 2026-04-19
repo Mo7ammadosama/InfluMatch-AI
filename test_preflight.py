@@ -1,5 +1,5 @@
 import ast, os, sys, importlib
-sys.path.insert(0, "C:/InfluMatch_AI")
+sys.path.insert(0, "C:/WaslAI_AI")
 
 PASS = "\033[92mPASS\033[0m"
 FAIL = "\033[91mFAIL\033[0m"
@@ -14,7 +14,7 @@ def check(label, fn):
         errors.append(label)
 
 # 1. Syntax check all frontend .py files
-frontend_root = "C:/InfluMatch_AI/influmatch/frontend"
+frontend_root = "C:/WaslAI_AI/waslai/frontend"
 for root, dirs, files in os.walk(frontend_root):
     dirs[:] = [d for d in dirs if d != "__pycache__"]
     for f in files:
@@ -25,16 +25,16 @@ for root, dirs, files in os.walk(frontend_root):
 
 # 2. Session exports
 def check_session():
-    from influmatch.frontend.utils.session import (
+    from waslai.frontend.utils.session import (
         get_user, get_role, is_logged_in, init_session, logout)
 check("Session exports: get_user/get_role/is_logged_in/init_session/logout", check_session)
 
 # 3. Dashboard imports (non-Streamlit-runtime — just check attribute exists after import)
 for mod, fn in [
-    ("influmatch.frontend._pages.merchant_dashboard",   "render"),
-    ("influmatch.frontend._pages.influencer_dashboard", "render"),
-    ("influmatch.frontend._pages.god_mode_page",        "render"),
-    ("influmatch.frontend._pages.home_page",            "render_home"),
+    ("waslai.frontend._pages.merchant_dashboard",   "render"),
+    ("waslai.frontend._pages.influencer_dashboard", "render"),
+    ("waslai.frontend._pages.god_mode_page",        "render"),
+    ("waslai.frontend._pages.home_page",            "render_home"),
 ]:
     def _check(m=mod, f=fn):
         m_obj = importlib.import_module(m)
@@ -43,7 +43,7 @@ for mod, fn in [
 
 # 4. CSS tokens
 def check_css():
-    css = open("C:/InfluMatch_AI/influmatch/frontend/assets/css/style.css", encoding="utf-8").read()
+    css = open("C:/WaslAI_AI/waslai/frontend/assets/css/style.css", encoding="utf-8").read()
     for token in ["--merchant-primary", "aria-card", "kpi-block", "influencer-banner", "admin-banner"]:
         assert token in css, f"Missing CSS token: {token}"
 check("CSS tokens: role colors + card classes", check_css)

@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Streamlit Frontend Entry Point
+WaslAI.jo — Streamlit Frontend Entry Point
 Bilingual (Arabic RTL + English) | Jordan Market
 Run: streamlit run frontend/app.py
 """
@@ -12,14 +12,14 @@ from frontend.components.navbar import render_navbar
 from frontend.pages import landing, auth, merchant_dashboard, influencer_dashboard
 
 st.set_page_config(
-    page_title="InfluMatch.jo | منصة المؤثرين",
+    page_title="WaslAI.jo | منصة المؤثرين",
     page_icon="🎯",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
         "Get Help": None,
         "Report a bug": None,
-        "About": "InfluMatch.jo — AI-Powered Influencer Marketing Platform | Jordan",
+        "About": "WaslAI.jo — AI-Powered Influencer Marketing Platform | Jordan",
     },
 )
 

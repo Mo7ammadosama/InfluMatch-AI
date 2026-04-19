@@ -34,7 +34,7 @@ def _stripe_charge(amount_jod: float, description: str) -> Optional[str]:
             amount      = amount_fils,
             currency    = "jod",
             description = description,
-            metadata    = {"platform": "InfluMatch.jo"},
+            metadata    = {"platform": "WaslAI.jo"},
         )
         logger.success(f"[ARIA::STRIPE] PaymentIntent created: {intent.id} | {amount_jod} JOD")
         return intent.id
@@ -87,7 +87,7 @@ class EscrowEngine:
         # Attempt Stripe charge (non-blocking — ledger works regardless)
         stripe_payment_id = _stripe_charge(
             amount_jod  = amount_jod,
-            description = f"InfluMatch Escrow — campaign={campaign_id} merchant={merchant_id}",
+            description = f"WaslAI Escrow — campaign={campaign_id} merchant={merchant_id}",
         )
 
         escrow = EscrowTransaction(
@@ -157,7 +157,7 @@ class EscrowEngine:
                         stripe_transfer_id = _stripe_transfer(
                             amount_jod      = float(escrow.net_amount),
                             connect_account = inf.stripe_connect_account_id,
-                            description     = f"InfluMatch payout escrow={escrow_id}",
+                            description     = f"WaslAI payout escrow={escrow_id}",
                         )
             except Exception as exc:
                 logger.warning(f"[ARIA::STRIPE] Transfer lookup failed (non-fatal): {exc}")

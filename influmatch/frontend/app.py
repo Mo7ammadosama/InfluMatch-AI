@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Streamlit Frontend
+WaslAI.jo — Streamlit Frontend
 Module 12 | Entry Point
 Run: streamlit run frontend/app.py --server.port 8501
 """
@@ -9,11 +9,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import streamlit as st
 
 st.set_page_config(
-    page_title="InfluMatch — AI Influencer Platform",
+    page_title="WaslAI — AI Influencer Platform",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items={"About": "InfluMatch — Jordan's #1 AI-Powered Influencer Marketing Platform"}
+    menu_items={"About": "WaslAI — Jordan's #1 AI-Powered Influencer Marketing Platform"}
 )
 
 from frontend.utils.session import init_session, is_logged_in, get_role
@@ -127,7 +127,7 @@ def _render_contracts_page():
     campaign = next(c for c in active if c["id"] == selected_id)
 
     col1, col2 = st.columns(2)
-    merchant_name   = col1.text_input("اسم التاجر / Merchant Name", value="InfluMatch Merchant")
+    merchant_name   = col1.text_input("اسم التاجر / Merchant Name", value="WaslAI Merchant")
     influencer_name = col2.text_input("اسم المؤثر / Influencer Name", value="Jordan Influencer")
     contract_lang   = st.radio("لغة العقد / Contract Language", ["ar", "en"],
                                format_func=lambda x: "🇯🇴 العربية" if x == "ar" else "🇬🇧 English",

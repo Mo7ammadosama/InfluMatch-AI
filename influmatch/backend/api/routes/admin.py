@@ -71,7 +71,7 @@ async def get_platform_stats(db: AsyncSession = Depends(get_db)):
     )
 
     return {
-        "platform"                : "InfluMatch.jo",
+        "platform"                : "WaslAI.jo",
         "market"                  : "Jordan",
         "aria_status"             : "ONLINE",
         "total_users"             : total_users.scalar() or 0,
@@ -299,7 +299,7 @@ async def blast_notification(
         try:
             ns.send_email(
                 to=u.email,
-                subject="InfluMatch.jo — إشعار من المنصة",
+                subject="WaslAI.jo — إشعار من المنصة",
                 body_ar=body.message_ar,
                 body_en=body.message_en or body.message_ar,
             )
@@ -339,8 +339,8 @@ async def get_platform_notifications(role: str = "all", db: AsyncSession = Depen
 async def rebuild_rag_index(_: User = _admin):
     """God Mode: Rebuild ChromaDB RAG vector index from scratch"""
     try:
-        from ...services.rag.vector_store import InfluMatchVectorStore
-        store   = InfluMatchVectorStore()
+        from ...services.rag.vector_store import WaslAIVectorStore
+        store   = WaslAIVectorStore()
         store.rebuild_index()
         logger.success("[ARIA::ADMIN] RAG index rebuilt successfully")
         return {"status": "success", "message": "تم إعادة بناء فهرس RAG بنجاح / RAG index rebuilt successfully"}

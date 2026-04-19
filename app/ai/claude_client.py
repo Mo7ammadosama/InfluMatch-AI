@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Claude API Client
+WaslAI.jo — Claude API Client
 Primary LLM: claude-opus-4-6 | Fallback: OpenAI GPT-4o
 """
 from loguru import logger

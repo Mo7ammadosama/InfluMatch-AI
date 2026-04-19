@@ -8,7 +8,7 @@ from anthropic import Anthropic
 from ...core.config import get_settings
 from ...core.database import get_db
 from ...models.chat_history import ChatHistory
-from ...services.rag.vector_store import InfluMatchVectorStore
+from ...services.rag.vector_store import WaslAIVectorStore
 from loguru import logger
 
 router = APIRouter(prefix="/chatbot", tags=["AI Chatbot"])
@@ -33,11 +33,11 @@ class ChatResponse(BaseModel):
     language_detected: str
 
 ARIA_SYSTEM = """
-أنت ARIA، المساعد الذكي لمنصة InfluMatch.jo — منصة التسويق بالمؤثرين في الأردن.
+أنت ARIA، المساعد الذكي لمنصة WaslAI.jo — منصة التسويق بالمؤثرين في الأردن.
 
 [IDENTITY]
 - اسمك: ARIA (Autonomous Reasoning & Implementation Assistant)
-- تعمل لصالح منصة InfluMatch.jo في الأردن
+- تعمل لصالح منصة WaslAI.jo في الأردن
 - تتحدث العربية والإنجليزية بطلاقة تامة
 - تفهم السوق الأردني وثقافته
 
@@ -97,7 +97,7 @@ async def chat_with_aria(
 
     if needs_rag and settings.anthropic_api_key:
         try:
-            store = InfluMatchVectorStore()
+            store = WaslAIVectorStore()
             doc_type = "contracts" if any(w in request.message for w in ["عقد","contract","اتفاقية"]) else "policies"
             results = store.semantic_search(request.message, doc_type, top_k=3)
             if results:

@@ -8,7 +8,7 @@ sys.path.insert(0, str(ROOT))
 
 class TestScoringEngine:
     def test_tier_classification(self):
-        from influmatch.backend.services.scoring.influencer_scorer import ARIAInfluencerScorer
+        from waslai.backend.services.scoring.influencer_scorer import ARIAInfluencerScorer
         s = ARIAInfluencerScorer()
         result = s.compute_aria_score(
             {
@@ -30,7 +30,7 @@ class TestScoringEngine:
         print(f"\nPASS: Scoring {result['aria_score']} | {result['tier']}")
 
     def test_jordan_location_bonus(self):
-        from influmatch.backend.services.scoring.influencer_scorer import ARIAInfluencerScorer
+        from waslai.backend.services.scoring.influencer_scorer import ARIAInfluencerScorer
         s = ARIAInfluencerScorer()
         amman_score = s.calculate_relevance({"city": "amman", "niche": "fashion"}, "fashion")
         dubai_score = s.calculate_relevance({"city": "dubai", "niche": "fashion"}, "fashion")
@@ -38,7 +38,7 @@ class TestScoringEngine:
         print(f"\nPASS: Jordan bonus Amman={amman_score} > Dubai={dubai_score}")
 
     def test_micro_influencer_tier_bonus(self):
-        from influmatch.backend.services.scoring.influencer_scorer import ARIAInfluencerScorer
+        from waslai.backend.services.scoring.influencer_scorer import ARIAInfluencerScorer
         s = ARIAInfluencerScorer()
         assert s._tier_bonus(50000)   == 1.2
         assert s._tier_bonus(2000000) == 0.70
@@ -47,7 +47,7 @@ class TestScoringEngine:
 
 class TestWalletEngine:
     def test_points_conversion(self):
-        from influmatch.backend.services.wallet.loyalty_engine import LoyaltyWalletEngine
+        from waslai.backend.services.wallet.loyalty_engine import LoyaltyWalletEngine
         e = LoyaltyWalletEngine()
         assert e.calculate_jod_value(0)    == 0.0
         assert e.calculate_jod_value(499)  == 0.0
@@ -56,7 +56,7 @@ class TestWalletEngine:
         print("\nPASS: Points conversion accurate")
 
     def test_all_tiers(self):
-        from influmatch.backend.services.wallet.loyalty_engine import LoyaltyWalletEngine
+        from waslai.backend.services.wallet.loyalty_engine import LoyaltyWalletEngine
         e = LoyaltyWalletEngine()
         assert e.get_tier(100)["tier"]   == "BRONZE"
         assert e.get_tier(5000)["tier"]  == "SILVER"
@@ -65,7 +65,7 @@ class TestWalletEngine:
         print("\nPASS: All loyalty tiers correct")
 
     def test_earning_events(self):
-        from influmatch.backend.services.wallet.loyalty_engine import LoyaltyWalletEngine
+        from waslai.backend.services.wallet.loyalty_engine import LoyaltyWalletEngine
         e = LoyaltyWalletEngine()
         assert e.EARNING_EVENTS["campaign_published"] == 100
         assert e.EARNING_EVENTS["campaign_completed"] == 200
@@ -75,7 +75,7 @@ class TestWalletEngine:
 
 class TestSecurityLayer:
     def test_password_round_trip(self):
-        from influmatch.backend.core.security import get_password_hash, verify_password
+        from waslai.backend.core.security import get_password_hash, verify_password
         raw    = "MySecurePass2024!"
         hashed = get_password_hash(raw)
         assert verify_password(raw, hashed)         is True
@@ -83,7 +83,7 @@ class TestSecurityLayer:
         print("\nPASS: Password hashing round-trip")
 
     def test_jwt_lifecycle(self):
-        from influmatch.backend.core.security import create_access_token, decode_token
+        from waslai.backend.core.security import create_access_token, decode_token
         from datetime import timedelta
         token   = create_access_token(
             {"sub": "42", "role": "merchant"},
@@ -93,11 +93,11 @@ class TestSecurityLayer:
         assert decoded is not None
         assert decoded["sub"]  == "42"
         assert decoded["role"] == "merchant"
-        assert decoded["iss"]  == "influmatch.jo"
+        assert decoded["iss"]  == "waslai.jo"
         print("\nPASS: JWT lifecycle create->encode->decode")
 
     def test_expired_token_rejected(self):
-        from influmatch.backend.core.security import create_access_token, decode_token
+        from waslai.backend.core.security import create_access_token, decode_token
         from datetime import timedelta
         token   = create_access_token({"sub": "1"}, expires_delta=timedelta(seconds=-1))
         decoded = decode_token(token)
@@ -117,7 +117,7 @@ class TestEscrowCalculations:
         print(f"\nPASS: Escrow math {amount} JOD VAT:{vat} Fee:{fee} Net:{net}")
 
     def test_platform_commission_rate(self):
-        from influmatch.backend.services.escrow.escrow_engine import EscrowEngine
+        from waslai.backend.services.escrow.escrow_engine import EscrowEngine
         e = EscrowEngine()
         assert e.PLATFORM_COMMISSION == 0.10
         print("\nPASS: Platform commission 10% confirmed")
@@ -126,8 +126,8 @@ class TestEscrowCalculations:
 class TestRAGVectorStore:
     def test_collections_initialize(self):
         try:
-            from influmatch.backend.services.rag.vector_store import InfluMatchVectorStore
-            store = InfluMatchVectorStore()
+            from waslai.backend.services.rag.vector_store import WaslAIVectorStore
+            store = WaslAIVectorStore()
             assert store.contracts_col is not None
             assert store.policies_col  is not None
             assert store.campaigns_col is not None
@@ -149,15 +149,15 @@ class TestRAGVectorStore:
 
 class TestConfigSettings:
     def test_jordan_market_defaults(self):
-        from influmatch.backend.core.config import get_settings
+        from waslai.backend.core.config import get_settings
         s = get_settings()
         assert s.currency == "JOD"
         assert s.vat_rate == 0.16
-        assert s.app_name == "InfluMatch.jo"
+        assert s.app_name == "WaslAI.jo"
         print(f"\nPASS: Jordan market config {s.currency} | VAT: {s.vat_rate * 100}%")
 
     def test_escrow_defaults(self):
-        from influmatch.backend.core.config import get_settings
+        from waslai.backend.core.config import get_settings
         s = get_settings()
         assert s.escrow_release_days == 7
         assert s.loyalty_points_rate == 0.05

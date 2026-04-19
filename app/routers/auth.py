@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Auth Router
+WaslAI.jo — Auth Router
 POST /register | POST /login | POST /refresh | GET /me
 """
 from fastapi import APIRouter, Depends, HTTPException, status

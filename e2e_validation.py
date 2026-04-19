@@ -3,7 +3,7 @@ ARIA E2E Full-Scale System Validation
 Tests every system layer: API, DB, RAG, Agents, UI logic
 """
 import httpx, json, time, sys, os
-sys.path.insert(0, "C:/InfluMatch_AI/influmatch")
+sys.path.insert(0, "C:/WaslAI_AI/waslai")
 
 BASE = "http://localhost:8000"
 LOG  = []
@@ -22,7 +22,7 @@ def log(label, status, detail=""):
     print(msg)
 
 print("\n" + "═"*65)
-print("  ARIA InfluMatch.jo — E2E Full-Scale System Validation")
+print("  ARIA WaslAI.jo — E2E Full-Scale System Validation")
 print("═"*65 + "\n")
 
 # ─── SECTION 1: HEALTH & CONNECTIVITY ───────────────────────────────────────
@@ -58,12 +58,12 @@ print("━"*65)
 admin_token = None
 try:
     r = httpx.post(f"{BASE}/api/auth/login",
-        data={"username": "admin@influmatch.jo", "password": "aria_admin_2024"},
+        data={"username": "admin@waslai.jo", "password": "aria_admin_2024"},
         timeout=10)
     if r.status_code == 200:
         admin_token = r.json().get("access_token")
         role = r.json().get("role")
-        log("Admin login (admin@influmatch.jo)", "SUCCESS", f"role={role} | token={admin_token[:20]}...")
+        log("Admin login (admin@waslai.jo)", "SUCCESS", f"role={role} | token={admin_token[:20]}...")
     else:
         log("Admin login", "FAILED", f"HTTP {r.status_code}: {r.text[:80]}")
 except Exception as e:
@@ -107,7 +107,7 @@ merchant_token = None
 MERCHANT = {
     "full_name_en": "E2E Test Merchant",
     "full_name_ar": "تاجر اختباري",
-    "email": "e2e_merchant@influmatch.jo",
+    "email": "e2e_merchant@waslai.jo",
     "username": "e2e_merchant_001",
     "password": "TestPass123!",
     "role": "merchant"
@@ -200,7 +200,7 @@ print("━"*65)
 INFLUENCER = {
     "full_name_en": "E2E Test Influencer",
     "full_name_ar": "مؤثر اختباري",
-    "email": "e2e_inf@influmatch.jo",
+    "email": "e2e_inf@waslai.jo",
     "username": "e2e_influencer_001",
     "password": "TestPass123!",
     "role": "influencer"
@@ -342,7 +342,7 @@ print("━"*65)
 import ast, os
 
 def check_ui_component(label, file_path, check_fn=None, expected_status="SUCCESS"):
-    full = f"C:/InfluMatch_AI/influmatch/{file_path}"
+    full = f"C:/WaslAI_AI/waslai/{file_path}"
     if not os.path.exists(full):
         log(label, "FAILED", f"File not found: {file_path}")
         return

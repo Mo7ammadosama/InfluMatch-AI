@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — AI Router
+WaslAI.jo — AI Router
 Matching, RAG queries, content analysis endpoints
 """
 from fastapi import APIRouter, Depends, HTTPException
@@ -70,7 +70,7 @@ async def ai_chat(
 
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         system = (
-            "You are an AI assistant for InfluMatch.jo, a B2B influencer marketing platform for Jordan. "
+            "You are an AI assistant for WaslAI.jo, a B2B influencer marketing platform for Jordan. "
             "You help merchants and influencers with campaign planning, pricing, and matching in the Jordanian market. "
             "You respond in Arabic or English based on the user's language. "
             "Currency is Jordanian Dinar (JOD). VAT is 16%."

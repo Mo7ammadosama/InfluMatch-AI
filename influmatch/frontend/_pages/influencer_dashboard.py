@@ -22,7 +22,7 @@ def render():
         <div style="font-size:2.5rem">🌟</div>
         <div>
           <div style="font-size:1.4rem;font-weight:700;color:#8b5cf6">أهلاً، {name}</div>
-          <div style="color:#a0a0b0;font-size:0.85rem">بوابة المؤثر — InfluMatch.jo</div>
+          <div style="color:#a0a0b0;font-size:0.85rem">بوابة المؤثر — WaslAI.jo</div>
         </div>
       </div>
     </div>""", unsafe_allow_html=True)

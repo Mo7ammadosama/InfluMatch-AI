@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Escrow Router
+WaslAI.jo — Escrow Router
 State machine transitions + finance queries
 """
 from fastapi import APIRouter, Depends, HTTPException

@@ -1,4 +1,4 @@
-"""Common response schemas and helpers — InfluMatch.jo"""
+"""Common response schemas and helpers — WaslAI.jo"""
 from math import ceil
 
 

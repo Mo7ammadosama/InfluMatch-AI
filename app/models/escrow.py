@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Escrow Transaction Model
+WaslAI.jo — Escrow Transaction Model
 State-machine controlled fund management
 """
 import enum

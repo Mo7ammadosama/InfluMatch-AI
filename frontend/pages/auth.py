@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Auth Page
+WaslAI.jo — Auth Page
 Login + Registration forms
 """
 import streamlit as st

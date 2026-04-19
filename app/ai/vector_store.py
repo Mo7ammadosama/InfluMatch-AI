@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — ChromaDB Vector Store
+WaslAI.jo — ChromaDB Vector Store
 Persistent local vector DB for influencer/campaign RAG
 """
 import chromadb

@@ -1,4 +1,4 @@
-"""Login & Register page — InfluMatch.jo"""
+"""Login & Register page — WaslAI.jo"""
 import streamlit as st
 from ..utils.api_client import api_post, api_get
 from ..utils.i18n import t
@@ -15,9 +15,9 @@ def render_login():
       </div>
       <div style="font-size:2rem;font-weight:900;letter-spacing:-0.03em;margin-bottom:0.3rem">
         <span style="background:linear-gradient(135deg,#a78bfa,#818cf8);
-                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">Influ</span><span
+                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">Wasl</span><span
              style="background:linear-gradient(135deg,#f59e0b,#fbbf24);
-                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">Match</span><span
+                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">AI</span><span
              style="color:#f59e0b;font-size:1.3rem">.jo</span>
       </div>
       <p style="color:#64748b;font-size:0.82rem;margin:0;letter-spacing:0.04em">
@@ -63,7 +63,7 @@ def render_login():
                         st.error(f"❌ {detail}")
 
         st.markdown("---")
-        st.caption("Admin: admin@influmatch.jo / Admin@2024")
+        st.caption("Admin: admin@waslai.jo / Admin@2024")
 
     # ── Register Tab ─────────────────────────────────────────────
     with tab2:

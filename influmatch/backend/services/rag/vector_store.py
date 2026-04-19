@@ -9,7 +9,7 @@ from backend.core.config import get_settings
 
 settings = get_settings()
 
-class InfluMatchVectorStore:
+class WaslAIVectorStore:
     def __init__(self):
         self.client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
         self.encoder = SentenceTransformer("all-MiniLM-L6-v2")

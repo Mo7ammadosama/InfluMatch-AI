@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Embedding Engine
+WaslAI.jo — Embedding Engine
 sentence-transformers: all-MiniLM-L6-v2
 """
 from loguru import logger

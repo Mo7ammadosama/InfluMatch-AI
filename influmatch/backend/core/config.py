@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Core Configuration
+WaslAI.jo — Core Configuration
 Module 02 | Pydantic Settings — reads from .env
 """
 from pydantic_settings import BaseSettings
@@ -8,18 +8,18 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # App
-    app_name: str = "InfluMatch.jo"
+    app_name: str = "WaslAI.jo"
     app_version: str = "1.0.0"
     debug: bool = True
     port: int = 8080
 
     # Security
-    secret_key: str = "aria-influmatch-secret-2024-jordan"
+    secret_key: str = "aria-waslai-secret-2024-jordan"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440
 
     # Database
-    database_url: str = "sqlite:///./influmatch.db"
+    database_url: str = "sqlite:///./waslai.db"
 
     # AI Keys
     anthropic_api_key: str = ""

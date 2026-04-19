@@ -79,15 +79,15 @@ class TestRAGSystem:
     """Test RAG vector store"""
 
     def test_vector_store_init(self):
-        from backend.services.rag.vector_store import InfluMatchVectorStore
-        store = InfluMatchVectorStore()
+        from backend.services.rag.vector_store import WaslAIVectorStore
+        store = WaslAIVectorStore()
         assert store.contracts_col is not None
         assert store.policies_col is not None
         print("RAG vector store initialized: PASS")
 
     def test_document_ingestion(self):
-        from backend.services.rag.vector_store import InfluMatchVectorStore
-        store = InfluMatchVectorStore()
+        from backend.services.rag.vector_store import WaslAIVectorStore
+        store = WaslAIVectorStore()
         store.ingest_document(
             "Test contract for Jordan market compliance",
             "contracts",

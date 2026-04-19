@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Campaigns Router
+WaslAI.jo — Campaigns Router
 Full campaign lifecycle management
 """
 from fastapi import APIRouter, Depends, HTTPException

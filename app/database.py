@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Database Engine & Session Factory
+WaslAI.jo — Database Engine & Session Factory
 SQLAlchemy 2.0 async — SQLite (dev) / PostgreSQL (prod-ready)
 """
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker

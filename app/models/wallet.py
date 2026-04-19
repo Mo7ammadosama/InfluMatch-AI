@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Wallet & Points Loyalty Engine Model
+WaslAI.jo — Wallet & Points Loyalty Engine Model
 """
 import enum
 import uuid

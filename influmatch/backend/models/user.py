@@ -1,4 +1,4 @@
-"""InfluMatch.jo User Model"""
+"""WaslAI.jo User Model"""
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum
 from sqlalchemy.orm import relationship
 from datetime import datetime

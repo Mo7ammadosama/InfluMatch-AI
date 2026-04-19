@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Escrow State Machine Tests
+WaslAI.jo — Escrow State Machine Tests
 PENDING → FUNDED → LOCKED → RELEASED
 """
 import pytest

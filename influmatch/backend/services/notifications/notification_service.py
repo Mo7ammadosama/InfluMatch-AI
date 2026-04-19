@@ -16,7 +16,7 @@ class NotificationService:
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;
                     background:#f9f9f9;border-radius:10px;padding:20px;">
             <div style="background:#533483;border-radius:8px;padding:12px;text-align:center;">
-                <h2 style="color:white;margin:0;">InfluMatch.jo</h2>
+                <h2 style="color:white;margin:0;">WaslAI.jo</h2>
             </div>
             <div style="padding:20px;color:#1a1a2e;direction:rtl;text-align:right;">
                 <p style="font-size:16px;">{body_ar}</p>
@@ -26,7 +26,7 @@ class NotificationService:
                 <p style="font-size:13px;">{body_en}</p>
             </div>
             <p style="text-align:center;color:#aaa;font-size:11px;">
-                InfluMatch.jo | Jordan Influencer Platform
+                WaslAI.jo | Jordan Influencer Platform
             </p>
         </div>
         </body></html>
@@ -77,16 +77,16 @@ class NotificationService:
     def notify_campaign_accepted(self, merchant_email: str, influencer_phone: str, campaign_title: str):
         self.send_email(
             to       = merchant_email,
-            subject  = f"InfluMatch.jo — تم قبول الحملة: {campaign_title}",
+            subject  = f"WaslAI.jo — تم قبول الحملة: {campaign_title}",
             body_ar  = f"تهانينا! تم قبول حملتك <b>{campaign_title}</b> من قِبَل المؤثر.",
             body_en  = f"Your campaign <b>{campaign_title}</b> has been accepted by the influencer.",
         )
-        self.send_whatsapp(influencer_phone, f"تم قبول الحملة: {campaign_title} | InfluMatch.jo")
+        self.send_whatsapp(influencer_phone, f"تم قبول الحملة: {campaign_title} | WaslAI.jo")
 
     def notify_payment_transferred(self, influencer_email: str, amount_jod: float):
         self.send_email(
             to       = influencer_email,
-            subject  = "InfluMatch.jo — تم تحويل مستحقاتك",
+            subject  = "WaslAI.jo — تم تحويل مستحقاتك",
             body_ar  = f"تم إصدار دفعة بقيمة <b>{amount_jod:.3f} JOD</b> إلى حسابك.",
             body_en  = f"A payment of <b>{amount_jod:.3f} JOD</b> has been released to your account.",
         )
@@ -95,7 +95,7 @@ class NotificationService:
         for email in [merchant_email, influencer_email]:
             self.send_email(
                 to       = email,
-                subject  = f"InfluMatch.jo — نزاع مرفوع: {campaign_title}",
+                subject  = f"WaslAI.jo — نزاع مرفوع: {campaign_title}",
                 body_ar  = f"تم رفع نزاع بشأن الحملة <b>{campaign_title}</b>. سيقوم فريق ARIA بالمراجعة خلال 48 ساعة.",
                 body_en  = f"A dispute was raised for campaign <b>{campaign_title}</b>. ARIA team will review within 48h.",
             )
@@ -103,7 +103,7 @@ class NotificationService:
     def notify_milestone_released(self, influencer_email: str, milestone_title: str, amount_jod: float):
         self.send_email(
             to       = influencer_email,
-            subject  = f"InfluMatch.jo — تم إصدار مرحلة: {milestone_title}",
+            subject  = f"WaslAI.jo — تم إصدار مرحلة: {milestone_title}",
             body_ar  = f"تم إصدار مرحلة <b>{milestone_title}</b> بقيمة <b>{amount_jod:.3f} JOD</b>.",
             body_en  = f"Milestone <b>{milestone_title}</b> released: <b>{amount_jod:.3f} JOD</b>.",
         )

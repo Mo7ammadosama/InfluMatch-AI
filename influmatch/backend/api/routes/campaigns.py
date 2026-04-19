@@ -189,7 +189,7 @@ async def activate_campaign(
             .where(Merchant.id == campaign.merchant_id)
         )
         merchant_user = merchant_user_res.scalar_one_or_none()
-        merchant_email = merchant_user.email if merchant_user else "platform@influmatch.jo"
+        merchant_email = merchant_user.email if merchant_user else "platform@waslai.jo"
         NotificationService().notify_campaign_accepted(
             merchant_email, "+962790000000", campaign.title_ar or campaign.title_en or ""
         )
@@ -262,9 +262,9 @@ async def upload_campaign_report(
                 .where(Merchant.id == camp.merchant_id)
             )
             merchant_user = merchant_user_res.scalar_one_or_none()
-            merchant_email = merchant_user.email if merchant_user else "platform@influmatch.jo"
+            merchant_email = merchant_user.email if merchant_user else "platform@waslai.jo"
         else:
-            merchant_email = "platform@influmatch.jo"
+            merchant_email = "platform@waslai.jo"
         NotificationService().notify_milestone_released(merchant_email, "تقرير جديد من المؤثر", 0.0)
     except Exception as exc:
         logger.warning(f"[ARIA::CAMPAIGNS] Notification failed: {exc}")

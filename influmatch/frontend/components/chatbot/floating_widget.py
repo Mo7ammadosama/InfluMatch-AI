@@ -17,7 +17,7 @@ def render_chatbot():
     user_id    = st.session_state.get("user_id")   # may be None for unauthenticated
     msgs       = st.session_state.get("chat_messages", [])
 
-    with st.expander("⚡ InfluMatchGPT", expanded=True):
+    with st.expander("⚡ WaslAI GPT", expanded=True):
         # Message history
         chat_container = st.container()
         with chat_container:
@@ -56,7 +56,7 @@ def render_chatbot():
         if send and user_input.strip():
             msgs.append({"role": "user", "content": user_input})
             st.session_state["chat_messages"] = msgs
-            with st.spinner("⚡ InfluMatchGPT يفكر... / Thinking..."):
+            with st.spinner("⚡ WaslAI GPT يفكر... / Thinking..."):
                 status_code, resp = api_post(
                     "/api/chatbot/chat",
                     json={

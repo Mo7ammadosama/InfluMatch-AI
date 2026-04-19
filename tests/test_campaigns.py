@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Campaign Tests
+WaslAI.jo — Campaign Tests
 create → list → get → update
 """
 import pytest

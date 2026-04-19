@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Database Seed Script
+WaslAI.jo — Database Seed Script
 Populates dev database with realistic Jordan market data
 Run: python data/seed/seed_data.py
 """
@@ -73,11 +73,11 @@ SEED_INFLUENCERS = [
     },
 ]
 
-DEFAULT_PASSWORD = "InfluMatch@2024"
+DEFAULT_PASSWORD = "WaslAI@2024"
 
 
 async def seed():
-    print("🌱 Seeding InfluMatch.jo database...")
+    print("🌱 Seeding WaslAI.jo database...")
     await create_tables()
 
     async with AsyncSessionLocal() as db:

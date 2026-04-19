@@ -3,7 +3,7 @@
 import asyncio, sys
 from pathlib import Path
 
-ROOT = Path(__file__).parent.parent / "influmatch"
+ROOT = Path(__file__).parent.parent / "waslai"
 sys.path.insert(0, str(ROOT))
 
 async def init():
@@ -19,7 +19,7 @@ async def init():
         result = await db.execute(select(User).where(User.username == "godmode_admin"))
         if not result.scalar_one_or_none():
             admin = User(
-                email="admin@influmatch.jo",
+                email="admin@waslai.jo",
                 username="godmode_admin",
                 hashed_password=get_password_hash("aria_admin_2024"),
                 role=UserRole.ADMIN,
@@ -30,7 +30,7 @@ async def init():
             )
             db.add(admin)
             await db.commit()
-            print("[DB] Admin user created: admin@influmatch.jo / aria_admin_2024")
+            print("[DB] Admin user created: admin@waslai.jo / aria_admin_2024")
         else:
             print("[DB] Admin user already exists")
 

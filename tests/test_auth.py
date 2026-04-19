@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Auth Tests
+WaslAI.jo — Auth Tests
 register → login → token → /me
 """
 import pytest

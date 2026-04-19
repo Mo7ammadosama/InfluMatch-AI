@@ -1,4 +1,4 @@
-"""Async HTTP client for InfluMatch API"""
+"""Async HTTP client for WaslAI API"""
 import httpx
 import streamlit as st
 

@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Escrow Service
+WaslAI.jo — Escrow Service
 State machine: PENDING → FUNDED → LOCKED → RELEASED / REFUNDED
 """
 from datetime import datetime

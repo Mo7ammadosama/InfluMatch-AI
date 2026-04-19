@@ -18,7 +18,7 @@ logger.remove()
 logger.add(sys.stdout,
     format="<green>{time:HH:mm:ss}</green> | <level>{level}</level> | <cyan>{name}</cyan> | {message}",
     level="DEBUG" if settings.debug else "INFO", colorize=True)
-logger.add("logs/influmatch_{time:YYYY-MM-DD}.log", rotation="1 day", retention="30 days", serialize=True)
+logger.add("logs/waslai_{time:YYYY-MM-DD}.log", rotation="1 day", retention="30 days", serialize=True)
 
 guardian = GuardianAgent(AsyncSessionLocal)
 
@@ -27,10 +27,10 @@ async def _seed_admin(session):
     from .models.user import User, UserRole
     from .models.wallet import LoyaltyWallet
     from .core.security import get_password_hash
-    result = await session.execute(select(User).where(User.email == "admin@influmatch.jo"))
+    result = await session.execute(select(User).where(User.email == "admin@waslai.jo"))
     if not result.scalar_one_or_none():
         admin = User(
-            email="admin@influmatch.jo",
+            email="admin@waslai.jo",
             username="admin",
             hashed_password=get_password_hash("Admin@2024"),
             role=UserRole.ADMIN,
@@ -41,12 +41,12 @@ async def _seed_admin(session):
         await session.flush()
         session.add(LoyaltyWallet(user_id=admin.id))
         await session.commit()
-        logger.success("[ARIA::SEED] Admin user created: admin@influmatch.jo")
+        logger.success("[ARIA::SEED] Admin user created: admin@waslai.jo")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("=" * 55)
-    logger.info("ARIA INFLUMATCH.JO PLATFORM STARTING")
+    logger.info("ARIA WASLAI.JO PLATFORM STARTING")
     logger.info("=" * 55)
     await init_db()
     logger.success("Database initialized")
@@ -54,13 +54,13 @@ async def lifespan(app: FastAPI):
         await _seed_admin(session)
     guardian.start()
     logger.success("Guardian Agent ONLINE")
-    logger.success(f"InfluMatch.jo READY | port={settings.port} | market=Jordan")
+    logger.success(f"WaslAI.jo READY | port={settings.port} | market=Jordan")
     yield
     guardian.shutdown()
     logger.info("Platform shutdown complete")
 
 app = FastAPI(
-    title="InfluMatch.jo API", version="1.0.0",
+    title="WaslAI.jo API", version="1.0.0",
     description="ARIA-Powered Influencer Marketing Platform — Jordan",
     docs_url="/docs", redoc_url="/redoc", lifespan=lifespan,
 )
@@ -88,7 +88,7 @@ for r in _routers:
 
 @app.get("/", tags=["Health"])
 async def root():
-    return {"platform": "InfluMatch.jo", "aria": "ONLINE", "market": "Jordan", "currency": "JOD"}
+    return {"platform": "WaslAI.jo", "aria": "ONLINE", "market": "Jordan", "currency": "JOD"}
 
 @app.get("/health", tags=["Health"])
 async def health():

@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Stripe Payment Simulation
+WaslAI.jo — Stripe Payment Simulation
 Test mode — JOD currency simulation (Stripe uses minor units)
 1 JOD = 100 fils (treated as cents in Stripe API)
 """
@@ -23,7 +23,7 @@ async def create_payment_intent(amount_jod: float, metadata: dict | None = None)
             currency="jod",
             payment_method_types=["card"],
             metadata=metadata or {},
-            description=f"InfluMatch.jo Escrow | {amount_jod} JOD",
+            description=f"WaslAI.jo Escrow | {amount_jod} JOD",
         )
         logger.info(f"Stripe PaymentIntent created: {intent.id} | {amount_jod} JOD")
         return {"payment_intent_id": intent.id, "client_secret": intent.client_secret, "status": intent.status}

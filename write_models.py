@@ -1,7 +1,7 @@
-"""ARIA Model Writer — run from influmatch/ directory"""
+"""ARIA Model Writer — run from waslai/ directory"""
 import os
 
-BASE = "C:/InfluMatch_AI/influmatch"
+BASE = "C:/WaslAI_AI/waslai"
 
 def w(rel_path, content):
     path = os.path.join(BASE, rel_path)

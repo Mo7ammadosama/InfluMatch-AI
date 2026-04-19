@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Influencers Router
+WaslAI.jo — Influencers Router
 CRUD + availability + search
 """
 from fastapi import APIRouter, Depends, HTTPException, Query

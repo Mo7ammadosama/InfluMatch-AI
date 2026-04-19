@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Influencer Model
+WaslAI.jo — Influencer Model
 Content creator entity — Jordan & MENA region
 """
 import uuid

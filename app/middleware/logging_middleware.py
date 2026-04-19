@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Request/Response Logging Middleware
+WaslAI.jo — Request/Response Logging Middleware
 Structured JSON logs via loguru
 """
 import time

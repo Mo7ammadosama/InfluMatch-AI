@@ -9,7 +9,7 @@ sys.path.insert(0, str(ROOT))
 
 class TestMilestoneSystem:
     def test_milestone_sum_validation(self):
-        from influmatch.backend.api.routes.milestones import validate_milestone_percentages
+        from waslai.backend.api.routes.milestones import validate_milestone_percentages
 
         with pytest.raises(ValueError, match="100%"):
             validate_milestone_percentages([20.0, 40.0, 30.0])  # sum=90
@@ -24,7 +24,7 @@ class TestMilestoneSystem:
         print("\nPASS: Milestone sum validation: rejects != 100%, accepts == 100%")
 
     def test_milestone_release_updates_escrow(self):
-        from influmatch.backend.models.milestone import CampaignMilestone, MilestoneStatus
+        from waslai.backend.models.milestone import CampaignMilestone, MilestoneStatus
 
         milestone = CampaignMilestone(
             campaign_id = 1,

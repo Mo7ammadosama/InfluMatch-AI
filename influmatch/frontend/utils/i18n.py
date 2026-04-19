@@ -2,7 +2,7 @@
 import streamlit as st
 
 LABELS = {
-    "app_name":       {"ar": "إنفلو ماتش",       "en": "InfluMatch.jo"},
+    "app_name":       {"ar": "إنفلو ماتش",       "en": "WaslAI.jo"},
     "login":          {"ar": "تسجيل الدخول",      "en": "Login"},
     "register":       {"ar": "إنشاء حساب",        "en": "Register"},
     "logout":         {"ar": "خروج",              "en": "Logout"},

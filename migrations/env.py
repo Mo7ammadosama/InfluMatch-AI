@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Alembic Migration Environment
+WaslAI.jo — Alembic Migration Environment
 """
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
@@ -7,12 +7,12 @@ from alembic import context
 import sys
 import os
 
-# Ensure project root is on path so influmatch package is importable
+# Ensure project root is on path so waslai package is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import Base and all models so Alembic can detect schema changes
-from influmatch.backend.core.database import Base  # noqa: E402
-from influmatch.backend.models import (  # noqa: F401,E402
+from waslai.backend.core.database import Base  # noqa: E402
+from waslai.backend.models import (  # noqa: F401,E402
     User, Merchant, Influencer,
     Campaign, CampaignStatus, CampaignInfluencer,
     Contract, ContractStatus,

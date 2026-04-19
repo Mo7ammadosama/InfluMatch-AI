@@ -15,7 +15,7 @@ def render():
         <div style="font-size:2.5rem">🏪</div>
         <div>
           <div style="font-size:1.4rem;font-weight:700;color:#f59e0b">مرحباً، {name}</div>
-          <div style="color:#a0a0b0;font-size:0.85rem">لوحة تحكم التاجر — InfluMatch.jo</div>
+          <div style="color:#a0a0b0;font-size:0.85rem">لوحة تحكم التاجر — WaslAI.jo</div>
         </div>
       </div>
     </div>""", unsafe_allow_html=True)

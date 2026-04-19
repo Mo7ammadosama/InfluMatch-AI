@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Wallet & Loyalty Points Service
+WaslAI.jo — Wallet & Loyalty Points Service
 """
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select

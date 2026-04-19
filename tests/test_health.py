@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Health Check & Root Tests
+WaslAI.jo — Health Check & Root Tests
 """
 import pytest
 from httpx import AsyncClient

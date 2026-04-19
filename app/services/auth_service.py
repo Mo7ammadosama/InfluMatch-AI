@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Auth Service
+WaslAI.jo — Auth Service
 JWT token management + password hashing
 """
 from datetime import datetime, timedelta

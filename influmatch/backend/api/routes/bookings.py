@@ -1,4 +1,4 @@
-"""Booking API — InfluMatch.jo | Merchant books Influencer directly"""
+"""Booking API — WaslAI.jo | Merchant books Influencer directly"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func

@@ -55,9 +55,9 @@ def render_sidebar():
               </div><br>
               <div style="font-weight:800;font-size:1.2rem;letter-spacing:-0.02em;line-height:1.2">
                 <span style="background:linear-gradient(135deg,#a78bfa,#818cf8);
-                             -webkit-background-clip:text;-webkit-text-fill-color:transparent">Influ</span><span
+                             -webkit-background-clip:text;-webkit-text-fill-color:transparent">Wasl</span><span
                      style="background:linear-gradient(135deg,#f59e0b,#fbbf24);
-                             -webkit-background-clip:text;-webkit-text-fill-color:transparent">Match</span><span
+                             -webkit-background-clip:text;-webkit-text-fill-color:transparent">AI</span><span
                      style="color:#f59e0b;font-size:0.9rem">.jo</span>
               </div>
               <div style="font-size:0.62rem;color:#475569;letter-spacing:0.1em;
@@ -87,7 +87,7 @@ def render_sidebar():
             "merchant":   {"label": "تاجر",  "icon": "🏪", "color": "#f59e0b", "desc": "لوحة تحكم التاجر"},
             "influencer": {"label": "مؤثر",  "icon": "🌟", "color": "#8b5cf6", "desc": "بوابة المؤثر"},
             "admin":      {"label": "مدير",  "icon": "⚡", "color": "#ef4444", "desc": "مركز تحكم ARIA"},
-        }.get(role, {"label": "زائر", "icon": "👤", "color": "#6b7280", "desc": "InfluMatch.jo"})
+        }.get(role, {"label": "زائر", "icon": "👤", "color": "#6b7280", "desc": "WaslAI.jo"})
 
         st.sidebar.markdown(f"""
 <div style="background:linear-gradient(135deg,rgba(0,0,0,0.4),rgba(0,0,0,0.2));
@@ -129,7 +129,7 @@ def render_sidebar():
         _render_notifications(role)
 
         # ARIA Chatbot toggle
-        if st.button("⚡  InfluMatchGPT", use_container_width=True, key="sidebar_chatbot_toggle"):
+        if st.button("⚡  WaslAI GPT", use_container_width=True, key="sidebar_chatbot_toggle"):
             st.session_state["chat_open"] = not st.session_state.get("chat_open", False)
             st.rerun()
 

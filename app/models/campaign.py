@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Campaign Model
+WaslAI.jo — Campaign Model
 Marketing campaign lifecycle entity
 """
 import enum

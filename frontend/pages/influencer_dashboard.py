@@ -1,5 +1,5 @@
 """
-InfluMatch.jo — Influencer Dashboard
+WaslAI.jo — Influencer Dashboard
 Available Campaigns, Active Deals, Earnings, Profile
 """
 import streamlit as st

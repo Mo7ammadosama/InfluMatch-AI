@@ -1,7 +1,7 @@
 """Module 12 — Streamlit Frontend Writer"""
 import os
 
-BASE = "C:/InfluMatch_AI/influmatch"
+BASE = "C:/WaslAI_AI/waslai"
 
 def w(rel_path, content):
     path = os.path.join(BASE, rel_path)
@@ -12,7 +12,7 @@ def w(rel_path, content):
 
 # ── frontend/assets/css/style.css ──────────────────────────────────────────
 w("frontend/assets/css/style.css", """
-/* InfluMatch.jo — Global CSS */
+/* WaslAI.jo — Global CSS */
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
 
 :root {
@@ -145,7 +145,7 @@ section[data-testid="stSidebar"] { background: var(--surface) !important; border
 
 # ── frontend/utils/api_client.py ────────────────────────────────────────────
 w("frontend/utils/__init__.py", "")
-w("frontend/utils/api_client.py", '''"""Async HTTP client for InfluMatch API"""
+w("frontend/utils/api_client.py", '''"""Async HTTP client for WaslAI API"""
 import httpx
 import streamlit as st
 
@@ -219,7 +219,7 @@ w("frontend/utils/i18n.py", '''"""Bilingual label lookup — Arabic / English"""
 import streamlit as st
 
 LABELS = {
-    "app_name":       {"ar": "إنفلو ماتش",       "en": "InfluMatch.jo"},
+    "app_name":       {"ar": "إنفلو ماتش",       "en": "WaslAI.jo"},
     "login":          {"ar": "تسجيل الدخول",      "en": "Login"},
     "register":       {"ar": "إنشاء حساب",        "en": "Register"},
     "logout":         {"ar": "خروج",              "en": "Logout"},
@@ -283,7 +283,7 @@ def render_navbar():
         st.markdown(f"""
         <div style="display:flex;align-items:center;gap:8px;padding:8px 0">
             <span style="font-size:1.6rem">🎯</span>
-            <span style="font-size:1.1rem;font-weight:700;color:#A78BFA">InfluMatch.jo</span>
+            <span style="font-size:1.1rem;font-weight:700;color:#A78BFA">WaslAI.jo</span>
             <span style="font-size:0.7rem;color:#64748b">{status_dot} API</span>
         </div>
         """, unsafe_allow_html=True)
@@ -350,7 +350,7 @@ def render_sidebar():
         st.markdown("""
         <div style="text-align:center;padding:1rem 0 0.5rem">
             <span style="font-size:2.5rem">🎯</span><br>
-            <span style="font-weight:700;font-size:1.1rem;color:#A78BFA">InfluMatch.jo</span><br>
+            <span style="font-weight:700;font-size:1.1rem;color:#A78BFA">WaslAI.jo</span><br>
             <span style="font-size:0.7rem;color:#64748B">AI Influencer Platform</span>
         </div>
         """, unsafe_allow_html=True)
@@ -584,7 +584,7 @@ def render_login():
     st.markdown(f"""
     <div style="text-align:center;padding:2rem 0 1rem">
         <span style="font-size:3rem">🎯</span>
-        <h2 style="color:#A78BFA;margin:0.5rem 0">InfluMatch.jo</h2>
+        <h2 style="color:#A78BFA;margin:0.5rem 0">WaslAI.jo</h2>
         <p style="color:#94A3B8;font-size:0.9rem">{'منصة التسويق عبر المؤثرين في الأردن' if lang=='ar' else 'Jordan Influencer Marketing Platform'}</p>
     </div>
     """, unsafe_allow_html=True)
@@ -655,7 +655,7 @@ def render_home():
         <div style="font-size:4rem;margin-bottom:0.5rem">🎯</div>
         <h1 style="font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#A78BFA,#7C3AED);
                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0 0 0.5rem">
-            InfluMatch.jo
+            WaslAI.jo
         </h1>
         <p style="font-size:1.1rem;color:#94A3B8;max-width:600px;margin:0 auto 1.5rem">
             {'منصة تسويق ذكية تربط التجار بالمؤثرين في الأردن — مدعومة بالذكاء الاصطناعي ARIA' if lang=='ar'
@@ -691,7 +691,7 @@ def render_home():
     st.markdown("<br>", unsafe_allow_html=True)
 
     # How it works
-    st.markdown(f"### {'كيف يعمل InfluMatch؟' if lang=='ar' else 'How InfluMatch Works'}")
+    st.markdown(f"### {'كيف يعمل WaslAI؟' if lang=='ar' else 'How WaslAI Works'}")
     c1, c2, c3, c4 = st.columns(4)
     steps = [
         ("1️⃣", "Create Campaign", "أنشئ حملتك"),
@@ -1139,7 +1139,7 @@ def render():
 # ── frontend/app.py ─────────────────────────────────────────────────────────
 w("frontend/__init__.py", "")
 w("frontend/app.py", '''"""
-InfluMatch.jo — Streamlit Frontend
+WaslAI.jo — Streamlit Frontend
 Module 12 | Entry Point
 Run: streamlit run frontend/app.py --server.port 8501
 """
@@ -1149,11 +1149,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import streamlit as st
 
 st.set_page_config(
-    page_title="InfluMatch.jo",
+    page_title="WaslAI.jo",
     page_icon="🎯",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items={"About": "InfluMatch.jo — AI Influencer Platform for Jordan"}
+    menu_items={"About": "WaslAI.jo — AI Influencer Platform for Jordan"}
 )
 
 from frontend.utils.session import init_session, is_logged_in, get_role
@@ -1219,13 +1219,13 @@ else:
 ''')
 
 # ── scripts/init_db.py ───────────────────────────────────────────────────────
-w("../scripts/init_db.py", '''"""Initialize InfluMatch database"""
+w("../scripts/init_db.py", '''"""Initialize WaslAI database"""
 import asyncio, sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 async def main():
-    from influmatch.backend.core.database import init_db
-    from influmatch.backend.core.config import get_settings
+    from waslai.backend.core.database import init_db
+    from waslai.backend.core.config import get_settings
     settings = get_settings()
     print(f"[ARIA] Initializing DB: {settings.database_url}")
     await init_db()
@@ -1243,7 +1243,7 @@ CONTRACTS_AR = """
 عقد خدمات التسويق عبر المؤثرين
 بموجب هذا العقد، يلتزم المؤثر بتقديم المحتوى الإعلاني المتفق عليه في المدة المحددة.
 يخضع هذا العقد لأحكام قانون المعاملات الإلكترونية الأردني رقم 15 لسنة 2015.
-يتم الدفع عبر منصة InfluMatch.jo بعد الموافقة على المحتوى والتحقق منه.
+يتم الدفع عبر منصة WaslAI.jo بعد الموافقة على المحتوى والتحقق منه.
 معدل ضريبة القيمة المضافة: 16% وفقاً للتشريعات الأردنية.
 في حال النزاع، يتم اللجوء إلى التحكيم وفقاً لأحكام قانون التحكيم الأردني.
 """
@@ -1252,13 +1252,13 @@ CONTRACTS_EN = """
 Influencer Marketing Service Agreement
 The Influencer agrees to deliver agreed content within the specified timeline.
 This contract is governed by Jordan Electronic Transactions Law No. 15 of 2015.
-Payment is processed via InfluMatch.jo escrow after content approval and verification.
+Payment is processed via WaslAI.jo escrow after content approval and verification.
 VAT rate: 16% as per Jordanian tax regulations.
 Disputes resolved through arbitration per Jordanian Arbitration Law.
 """
 
 POLICIES_AR = """
-سياسة InfluMatch.jo للمؤثرين - السوق الأردني
+سياسة WaslAI.jo للمؤثرين - السوق الأردني
 1. يجب أن يكون المحتوى أصيلاً وغير مضلل
 2. الإفصاح الإلزامي عن المحتوى المدفوع (شراكة برعاية)
 3. الالتزام بقوانين حماية المستهلك الأردنية
@@ -1267,7 +1267,7 @@ POLICIES_AR = """
 """
 
 POLICIES_EN = """
-InfluMatch.jo Influencer Policy - Jordan Market
+WaslAI.jo Influencer Policy - Jordan Market
 1. Content must be authentic and non-deceptive
 2. Mandatory disclosure of paid content (#ad #sponsored)
 3. Compliance with Jordan Consumer Protection Law
@@ -1277,8 +1277,8 @@ InfluMatch.jo Influencer Policy - Jordan Market
 
 def seed():
     try:
-        from influmatch.backend.services.rag.vector_store import InfluMatchVectorStore
-        store = InfluMatchVectorStore()
+        from waslai.backend.services.rag.vector_store import WaslAIVectorStore
+        store = WaslAIVectorStore()
         store.add_document("contracts", CONTRACTS_AR, {"lang": "ar", "type": "contract_template"})
         store.add_document("contracts", CONTRACTS_EN, {"lang": "en", "type": "contract_template"})
         store.add_document("policies", POLICIES_AR, {"lang": "ar", "type": "policy"})
@@ -1291,14 +1291,14 @@ seed()
 ''')
 
 # ── scripts/start_all.py ─────────────────────────────────────────────────────
-w("../scripts/start_all.py", '''"""Start InfluMatch.jo — API + Frontend"""
+w("../scripts/start_all.py", '''"""Start WaslAI.jo — API + Frontend"""
 import subprocess, sys, os, time, webbrowser
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-INFLUMATCH = os.path.join(ROOT, "influmatch")
+WASLAI = os.path.join(ROOT, "waslai")
 
 print("=" * 60)
-print("  🎯 InfluMatch.jo — Starting Platform")
+print("  🎯 WaslAI.jo — Starting Platform")
 print("=" * 60)
 
 # 1. Init DB
@@ -1310,7 +1310,7 @@ print("\\n[2/3] Starting FastAPI backend (port 8000)...")
 api = subprocess.Popen(
     [sys.executable, "-m", "uvicorn", "backend.main:app",
      "--reload", "--host", "0.0.0.0", "--port", "8000"],
-    cwd=INFLUMATCH
+    cwd=WASLAI
 )
 
 time.sleep(3)
@@ -1320,11 +1320,11 @@ print("\\n[3/3] Starting Streamlit frontend (port 8501)...")
 ui = subprocess.Popen(
     [sys.executable, "-m", "streamlit", "run", "frontend/app.py",
      "--server.port", "8501", "--server.headless", "true"],
-    cwd=INFLUMATCH
+    cwd=WASLAI
 )
 
 time.sleep(2)
-print("\\n✅ InfluMatch.jo is running!")
+print("\\n✅ WaslAI.jo is running!")
 print("   📡 API:      http://localhost:8000")
 print("   📚 API Docs: http://localhost:8000/docs")
 print("   🌐 Frontend: http://localhost:8501")
@@ -1344,17 +1344,17 @@ w("../docker-compose.yml", """version: '3.9'
 services:
   api:
     build:
-      context: ./influmatch
+      context: ./waslai
       dockerfile: Dockerfile
-    container_name: influmatch_api
+    container_name: waslai_api
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite:///./influmatch.db
+      - DATABASE_URL=sqlite:///./waslai.db
       - DEBUG=false
     volumes:
-      - ./influmatch:/app
-      - influmatch_data:/app/data
+      - ./waslai:/app
+      - waslai_data:/app/data
     command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -1364,9 +1364,9 @@ services:
 
   frontend:
     build:
-      context: ./influmatch
+      context: ./waslai
       dockerfile: Dockerfile.frontend
-    container_name: influmatch_ui
+    container_name: waslai_ui
     ports:
       - "8501:8501"
     environment:
@@ -1376,7 +1376,7 @@ services:
     command: streamlit run frontend/app.py --server.port 8501 --server.headless true
 
 volumes:
-  influmatch_data:
+  waslai_data:
 """)
 
 # ── Dockerfile ──────────────────────────────────────────────────────────────
@@ -1425,7 +1425,7 @@ class TestBase(DeclarativeBase):
 @pytest_asyncio.fixture(scope="session")
 async def test_engine():
     engine = create_async_engine(TEST_DB_URL, echo=False)
-    from influmatch.backend.core.database import Base
+    from waslai.backend.core.database import Base
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
@@ -1440,8 +1440,8 @@ async def db_session(test_engine):
 
 @pytest_asyncio.fixture
 async def client():
-    from influmatch.backend.main import app
-    from influmatch.backend.core.database import get_db, init_db
+    from waslai.backend.main import app
+    from waslai.backend.core.database import get_db, init_db
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
 ''')
@@ -1467,7 +1467,7 @@ import pytest
 
 TEST_USER = {
     "full_name": "Test Merchant",
-    "email": "test_merchant@influmatch.jo",
+    "email": "test_merchant@waslai.jo",
     "password": "SecurePass123!",
     "role": "merchant"
 }

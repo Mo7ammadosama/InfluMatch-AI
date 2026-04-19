@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""ARIA InfluMatch.jo — One-Command Launcher"""
+"""ARIA WaslAI.jo — One-Command Launcher"""
 import subprocess, sys, os, time, signal
 from pathlib import Path
 
-ROOT = Path(__file__).parent.parent / "influmatch"
+ROOT = Path(__file__).parent.parent / "waslai"
 os.chdir(ROOT)
 
 CYAN = "\033[96m"; GREEN = "\033[92m"; RED = "\033[91m"
@@ -12,7 +12,7 @@ YELLOW = "\033[93m"; RESET = "\033[0m"; BOLD = "\033[1m"
 def banner():
     print(f"""{CYAN}{BOLD}
 +--------------------------------------------------------------+
-|   ARIA - InfluMatch.jo Platform Launcher v1.0.0             |
+|   ARIA - WaslAI.jo Platform Launcher v1.0.0             |
 |   Jordan Influencer Marketing Platform                       |
 |   Powered by Claude AI + FastAPI + Streamlit                 |
 +--------------------------------------------------------------+
@@ -68,7 +68,7 @@ def start_services():
 
     print(f"""{GREEN}{BOLD}
 +--------------------------------------------------------------+
-|  ARIA InfluMatch.jo Platform ONLINE                         |
+|  ARIA WaslAI.jo Platform ONLINE                         |
 |                                                              |
 |  FastAPI Backend:   http://localhost:8000                    |
 |  API Documentation: http://localhost:8000/docs               |

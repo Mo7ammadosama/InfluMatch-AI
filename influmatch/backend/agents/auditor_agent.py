@@ -7,7 +7,7 @@ from backend.core.config import get_settings
 
 settings = get_settings()
 
-AUDIT_SYSTEM = '''You are ARIA AI Auditor for InfluMatch.jo Jordan. Respond ONLY in this JSON format:
+AUDIT_SYSTEM = '''You are ARIA AI Auditor for WaslAI.jo Jordan. Respond ONLY in this JSON format:
 {"audit_passed":true,"overall_score":0,"checks":{"brand_mentioned":true,"hashtags_present":true,"content_quality":0,"engagement_authentic":true,"platform_compliant":true},"issues_found":[],"recommendations":[],"arabic_caption_quality":0,"rejection_reason":null,"confidence":0.9}'''
 
 class AIAuditorAgent:
