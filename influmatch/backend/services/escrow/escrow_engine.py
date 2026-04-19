@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Dict
+from typing import Dict, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from loguru import logger
@@ -10,6 +10,60 @@ from backend.core.config import get_settings
 
 settings = get_settings()
 PLATFORM_COMMISSION = 0.10
+_STRIPE_DUMMY_VALUES = ("", "sk_test_your_key", "sk_test_placeholder")
+
+
+def _stripe_enabled() -> bool:
+    key = settings.stripe_test_key or ""
+    return key not in _STRIPE_DUMMY_VALUES and key.startswith("sk_")
+
+
+def _stripe_charge(amount_jod: float, description: str) -> Optional[str]:
+    """
+    Attempt Stripe PaymentIntent. Returns payment_intent_id or None on failure.
+    Gracefully skips if Stripe not configured.
+    """
+    if not _stripe_enabled():
+        return None
+    try:
+        import stripe
+        stripe.api_key = settings.stripe_test_key
+        # Stripe uses smallest currency unit — JOD has 3 decimal places (fils)
+        amount_fils = int(round(amount_jod * 1000))
+        intent = stripe.PaymentIntent.create(
+            amount      = amount_fils,
+            currency    = "jod",
+            description = description,
+            metadata    = {"platform": "InfluMatch.jo"},
+        )
+        logger.success(f"[ARIA::STRIPE] PaymentIntent created: {intent.id} | {amount_jod} JOD")
+        return intent.id
+    except Exception as exc:
+        logger.warning(f"[ARIA::STRIPE] Charge failed (non-fatal): {exc}")
+        return None
+
+
+def _stripe_transfer(amount_jod: float, connect_account: str, description: str) -> Optional[str]:
+    """
+    Attempt Stripe Transfer to influencer Connect account. Returns transfer_id or None.
+    """
+    if not _stripe_enabled() or not connect_account:
+        return None
+    try:
+        import stripe
+        stripe.api_key = settings.stripe_test_key
+        amount_fils = int(round(amount_jod * 1000))
+        transfer = stripe.Transfer.create(
+            amount      = amount_fils,
+            currency    = "jod",
+            destination = connect_account,
+            description = description,
+        )
+        logger.success(f"[ARIA::STRIPE] Transfer created: {transfer.id} | {amount_jod} JOD → {connect_account}")
+        return transfer.id
+    except Exception as exc:
+        logger.warning(f"[ARIA::STRIPE] Transfer failed (non-fatal): {exc}")
+        return None
 
 VALID_TRANSITIONS = {
     EscrowStatus.PENDING:      [EscrowStatus.FUNDED, EscrowStatus.REFUNDED],
@@ -29,15 +83,29 @@ class EscrowEngine:
         vat = round(amount_jod * settings.vat_rate, 3)
         fee = round(amount_jod * PLATFORM_COMMISSION, 3)
         net = round(amount_jod - fee, 3)
+
+        # Attempt Stripe charge (non-blocking — ledger works regardless)
+        stripe_payment_id = _stripe_charge(
+            amount_jod  = amount_jod,
+            description = f"InfluMatch Escrow — campaign={campaign_id} merchant={merchant_id}",
+        )
+
         escrow = EscrowTransaction(
-            campaign_id=campaign_id, merchant_id=merchant_id,
-            gross_amount=amount_jod, vat_amount=vat, platform_fee=fee, net_amount=net,
-            status=EscrowStatus.FUNDED, funded_at=datetime.utcnow(),
-            auto_release_at=datetime.utcnow() + timedelta(days=settings.escrow_release_days),
+            campaign_id       = campaign_id,
+            merchant_id       = merchant_id,
+            gross_amount      = amount_jod,
+            vat_amount        = vat,
+            platform_fee      = fee,
+            net_amount        = net,
+            status            = EscrowStatus.FUNDED,
+            funded_at         = datetime.utcnow(),
+            auto_release_at   = datetime.utcnow() + timedelta(days=settings.escrow_release_days),
+            stripe_payment_id = stripe_payment_id,
         )
         db.add(escrow)
         await db.flush()
-        logger.success(f"[ARIA::ESCROW] Funded campaign={campaign_id} | {amount_jod} JOD | net={net} JOD")
+        mode = "Stripe+Ledger" if stripe_payment_id else "Ledger-only"
+        logger.success(f"[ARIA::ESCROW] Funded campaign={campaign_id} | {amount_jod} JOD | net={net} JOD | mode={mode}")
         return escrow
 
     async def transition(self, db: AsyncSession, escrow_id: int, target: EscrowStatus, reason: str = None, by: str = "system") -> Dict:
@@ -67,18 +135,51 @@ class EscrowEngine:
             raise ValueError(f"Escrow {escrow_id} not found")
         if escrow.status not in [EscrowStatus.FUNDED, EscrowStatus.IN_PROGRESS, EscrowStatus.UNDER_REVIEW]:
             raise ValueError(f"Cannot release escrow in status: {escrow.status}")
-        escrow.status = EscrowStatus.RELEASED
-        escrow.released_at = datetime.utcnow()
-        escrow.released_by = released_by
-        await db.commit()
-        logger.success(f"[ARIA::ESCROW] Released escrow={escrow_id} | by={released_by} | net={escrow.net_amount} JOD")
+
+        # Attempt Stripe transfer to influencer's Connect account (non-blocking)
+        stripe_transfer_id = None
+        if escrow.campaign_id:
+            try:
+                from backend.models.campaign import Campaign
+                from backend.models.influencer import Influencer
+                from backend.models.campaign import CampaignInfluencer
+                from sqlalchemy import select as _select
+                # Try to find influencer's Stripe account via booking
+                from backend.models.booking import Booking
+                booking_r = await db.execute(
+                    _select(Booking).where(Booking.escrow_id == escrow_id)
+                )
+                booking = booking_r.scalar_one_or_none()
+                if booking:
+                    inf_r = await db.execute(_select(Influencer).where(Influencer.id == booking.influencer_id))
+                    inf   = inf_r.scalar_one_or_none()
+                    if inf and getattr(inf, "stripe_connect_account_id", None):
+                        stripe_transfer_id = _stripe_transfer(
+                            amount_jod      = float(escrow.net_amount),
+                            connect_account = inf.stripe_connect_account_id,
+                            description     = f"InfluMatch payout escrow={escrow_id}",
+                        )
+            except Exception as exc:
+                logger.warning(f"[ARIA::STRIPE] Transfer lookup failed (non-fatal): {exc}")
+
+        escrow.status             = EscrowStatus.RELEASED
+        escrow.released_at        = datetime.utcnow()
+        escrow.released_by        = released_by
+        if stripe_transfer_id:
+            escrow.stripe_transfer_id = stripe_transfer_id
+
+        # No commit here — caller owns the transaction boundary
+        mode = "Stripe+Ledger" if stripe_transfer_id else "Ledger-only"
+        logger.success(f"[ARIA::ESCROW] Released escrow={escrow_id} | by={released_by} | net={escrow.net_amount} JOD | mode={mode}")
         return {
-            "escrow_id"   : escrow_id,
-            "status"      : "RELEASED",
-            "net_amount"  : escrow.net_amount,
-            "released_by" : released_by,
-            "released_at" : escrow.released_at.isoformat(),
-            "currency"    : "JOD"
+            "escrow_id"          : escrow_id,
+            "status"             : "RELEASED",
+            "net_amount"         : escrow.net_amount,
+            "released_by"        : released_by,
+            "released_at"        : escrow.released_at.isoformat(),
+            "stripe_transfer_id" : stripe_transfer_id,
+            "payment_mode"       : mode,
+            "currency"           : "JOD",
         }
 
     async def raise_dispute(self, db: AsyncSession, escrow_id: int, raised_by_id: int, reason: str) -> EscrowTransaction:
@@ -94,7 +195,7 @@ class EscrowEngine:
         escrow.dispute_raised_by = raised_by_id
         escrow.dispute_raised_at = datetime.utcnow()
         escrow.dispute_deadline = datetime.utcnow() + timedelta(hours=48)
-        await db.commit()
+        # No commit here — caller owns the transaction boundary
         logger.warning(f"[ARIA::ESCROW] Dispute raised escrow={escrow_id} | by={raised_by_id}")
         return escrow
 

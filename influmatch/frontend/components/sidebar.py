@@ -1,11 +1,13 @@
 """Role-based sidebar navigation — always visible"""
 import streamlit as st
 from ..utils.session import is_logged_in, get_role
+from ..utils.api_client import api_get
 
 MERCHANT_NAV = [
     ("🏠", "dashboard",  "Dashboard / لوحة التحكم"),
     ("📢", "campaigns",  "Campaigns / الحملات"),
     ("🔍", "discover",   "Discover / اكتشف"),
+    ("📅", "bookings",   "My Bookings / حجوزاتي"),
     ("💰", "escrow",     "Escrow / الضمان"),
     ("📄", "contracts",  "Contracts / العقود"),
     ("💎", "wallet",     "Wallet / المحفظة"),
@@ -13,12 +15,14 @@ MERCHANT_NAV = [
 ]
 
 INFLUENCER_NAV = [
-    ("🏠", "dashboard",    "Dashboard / لوحة التحكم"),
-    ("📊", "my_campaigns", "My Campaigns / حملاتي"),
-    ("💼", "profile",      "Profile / الملف الشخصي"),
-    ("💰", "earnings",     "Earnings / الأرباح"),
-    ("📄", "contracts",    "Contracts / العقود"),
-    ("⚙️", "settings",    "Settings / الإعدادات"),
+    ("🏠", "dashboard",      "Dashboard / لوحة التحكم"),
+    ("📢", "open_campaigns", "الحملات المتاحة / Open Campaigns"),
+    ("📊", "my_campaigns",   "My Campaigns / حملاتي"),
+    ("📅", "bookings",       "My Bookings / حجوزاتي"),
+    ("💼", "profile",        "Profile / الملف الشخصي"),
+    ("💰", "earnings",       "Earnings / الأرباح"),
+    ("📄", "contracts",      "Contracts / العقود"),
+    ("⚙️", "settings",      "Settings / الإعدادات"),
 ]
 
 ADMIN_NAV = [
@@ -55,7 +59,7 @@ def render_sidebar():
         logged_in = is_logged_in()
 
         if not logged_in:
-            _render_nav(GUEST_NAV)
+            _render_nav(GUEST_NAV, badge_map={})
             return
 
         role = get_role()
@@ -94,9 +98,23 @@ def render_sidebar():
             INFLUENCER_NAV if role == "influencer" else
             ADMIN_NAV
         )
-        _render_nav(nav)
+
+        # ── Unread message badge on Bookings nav item ─────────────
+        unread_badge: dict = {}
+        try:
+            unread_data = api_get("/api/messages/unread-count/me") or {}
+            unread_n    = int(unread_data.get("unread_count", 0))
+            if unread_n > 0:
+                unread_badge["bookings"] = unread_n
+        except Exception:
+            pass
+
+        _render_nav(nav, badge_map=unread_badge)
 
         st.divider()
+
+        # ── Platform Notifications Bell ───────────────────────
+        _render_notifications(role)
 
         # ARIA Chatbot toggle
         if st.button("🤖  ARIA AI Assistant", use_container_width=True, key="sidebar_chatbot_toggle"):
@@ -110,12 +128,52 @@ def render_sidebar():
                 logout()
 
 
-def _render_nav(nav):
-    current = st.session_state.get("page", "home")
+def _render_notifications(role: str):
+    """Fetch and display platform-wide notifications in sidebar"""
+    try:
+        notifs = api_get("/api/admin/notifications", params={"role": role}) or []
+    except Exception:
+        return
+    if not notifs:
+        return
+
+    latest = notifs[0]
+    msg    = latest.get("message_ar") or latest.get("message_en") or ""
+    ts     = str(latest.get("created_at", ""))[:16]
+
+    st.markdown(f"""
+    <div style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(83,52,131,0.1));
+                border:1px solid rgba(139,92,246,0.4);border-radius:10px;
+                padding:0.6rem 0.8rem;margin-bottom:0.5rem">
+      <div style="font-size:0.65rem;color:#8b5cf6;font-weight:700;margin-bottom:0.2rem">
+        📢 إشعار من المنصة
+      </div>
+      <div style="font-size:0.78rem;color:#e0e0f0;line-height:1.4">{msg}</div>
+      <div style="font-size:0.6rem;color:#6b7280;margin-top:0.3rem">{ts}</div>
+    </div>""", unsafe_allow_html=True)
+
+    if len(notifs) > 1 and st.button(f"📋 كل الإشعارات ({len(notifs)})", key="notif_all", use_container_width=True):
+        st.session_state["show_all_notifs"] = not st.session_state.get("show_all_notifs", False)
+
+    if st.session_state.get("show_all_notifs"):
+        for n in notifs[1:]:
+            st.markdown(f"""
+            <div style="background:rgba(26,26,46,0.8);border:1px solid rgba(83,52,131,0.2);
+                        border-radius:8px;padding:0.5rem 0.7rem;margin-bottom:0.4rem">
+              <div style="font-size:0.75rem;color:#c0c0d0">{n.get('message_ar','')}</div>
+              <div style="font-size:0.6rem;color:#6b7280">{str(n.get('created_at',''))[:16]}</div>
+            </div>""", unsafe_allow_html=True)
+
+
+def _render_nav(nav, badge_map: dict = None):
+    badge_map = badge_map or {}
+    current   = st.session_state.get("page", "home")
     for icon, page_key, label in nav:
         is_active = (current == page_key)
-        clicked = st.button(
-            f"{icon}  {label}",
+        badge_n   = badge_map.get(page_key, 0)
+        btn_label = f"{icon}  {label}" + (f"  🔴 {badge_n}" if badge_n else "")
+        clicked   = st.button(
+            btn_label,
             key=f"nav__{page_key}",          # double underscore avoids key clashes
             use_container_width=True,
             type="primary" if is_active else "secondary",

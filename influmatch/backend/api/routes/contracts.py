@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from pydantic import BaseModel
 from typing import List, Optional
 from ...core.database import get_db
 from ...services.rag.rag_chain import SmartContractRAG
+from ...models.contract import Contract, ContractStatus
 from loguru import logger
 
 router = APIRouter(prefix="/contracts", tags=["Smart Contracts"])
@@ -15,19 +17,13 @@ class ContractGenerateRequest(BaseModel):
     campaign_details: dict
     language        : str = "ar"
 
-class ContractGenerateResponse(BaseModel):
-    contract        : str
-    language        : str
-    generated_by    : str = "ARIA_RAG_v1"
-    rag_sources_used: int
-
-@router.post("/generate", response_model=ContractGenerateResponse)
+@router.post("/generate")
 async def generate_smart_contract(
     req: ContractGenerateRequest,
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Generate a RAG-powered smart contract
+    Generate a RAG-powered smart contract and persist to DB.
     Uses ChromaDB + Jordan law context + Claude claude-opus-4-5
     """
     logger.info(
@@ -50,11 +46,29 @@ async def generate_smart_contract(
             f"Length: {len(contract_text)} chars"
         )
 
-        return ContractGenerateResponse(
-            contract          = contract_text,
-            language          = req.language,
-            rag_sources_used  = 5
+        # Persist to DB so /pdf endpoint can fetch real data
+        campaign_id = req.campaign_details.get("campaign_id")
+        new_contract = Contract(
+            campaign_id      = campaign_id,
+            contract_text_ar = contract_text if req.language == "ar" else None,
+            contract_text_en = contract_text if req.language == "en" else None,
+            language_primary = req.language,
+            status           = ContractStatus.DRAFT,
+            generated_by     = "ARIA_RAG_v1",
+            rag_sources_used = "5",
         )
+        db.add(new_contract)
+        await db.flush()
+
+        logger.success(f"[ARIA::CONTRACTS] Saved contract id={new_contract.id}")
+
+        return {
+            "contract_id"     : new_contract.id,
+            "contract"        : contract_text,
+            "language"        : req.language,
+            "generated_by"    : "ARIA_RAG_v1",
+            "rag_sources_used": 5,
+        }
 
     except Exception as e:
         err_str = str(e).lower()
@@ -78,14 +92,18 @@ async def download_contract_pdf(contract_id: int, db: AsyncSession = Depends(get
     campaign_title    = f"حملة رقم {contract_id}"
 
     try:
-        from ...models.contract import Contract
-        from sqlalchemy import select
         row = await db.execute(select(Contract).where(Contract.id == contract_id))
         ct  = row.scalar_one_or_none()
         if ct:
-            contract_text  = ct.content or contract_text
-            amount_jod     = float(ct.amount_jod or 0.0)
-            campaign_title = ct.title or campaign_title
+            contract_text = ct.contract_text_ar or ct.contract_text_en or contract_text
+            # Fetch campaign for budget + title (Contract has no amount_jod/title columns)
+            if ct.campaign_id:
+                from ...models.campaign import Campaign
+                camp_r = await db.execute(select(Campaign).where(Campaign.id == ct.campaign_id))
+                camp   = camp_r.scalar_one_or_none()
+                if camp:
+                    amount_jod     = float(camp.total_budget or 0.0)
+                    campaign_title = camp.title_ar or camp.title_en or campaign_title
     except Exception as exc:
         logger.warning(f"[ARIA::CONTRACTS] DB fetch failed for pdf: {exc}")
 

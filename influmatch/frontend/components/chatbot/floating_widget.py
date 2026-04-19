@@ -1,4 +1,5 @@
 """Floating ARIA Chatbot Widget"""
+import uuid
 import streamlit as st
 from ...utils.api_client import api_post
 from ...utils.i18n import t
@@ -7,8 +8,14 @@ def render_chatbot():
     if not st.session_state.get("chat_open", False):
         return
 
-    lang = st.session_state.get("lang", "ar")
-    msgs = st.session_state.get("chat_messages", [])
+    # Persist session_id across reruns — one UUID per browser session
+    if "chat_session_id" not in st.session_state:
+        st.session_state["chat_session_id"] = str(uuid.uuid4())
+
+    lang       = st.session_state.get("lang", "ar")
+    session_id = st.session_state["chat_session_id"]
+    user_id    = st.session_state.get("user_id")   # may be None for unauthenticated
+    msgs       = st.session_state.get("chat_messages", [])
 
     with st.expander("🤖 ARIA AI Assistant", expanded=True):
         # Message history
@@ -52,7 +59,12 @@ def render_chatbot():
             with st.spinner("🤖 ARIA تفكر... / Thinking..."):
                 status_code, resp = api_post(
                     "/api/chatbot/chat",
-                    json={"message": user_input, "history": msgs[:-1], "language": lang},
+                    json={
+                        "message"   : user_input,
+                        "session_id": session_id,
+                        "user_id"   : user_id,
+                        "language"  : lang,
+                    },
                     timeout=60
                 )
             if status_code == 200:
@@ -66,4 +78,6 @@ def render_chatbot():
 
         if st.button("🗑️ Clear / مسح", key="chatbot_clear"):
             st.session_state["chat_messages"] = []
+            # New session after clearing so history doesn't bleed back from DB
+            st.session_state["chat_session_id"] = str(uuid.uuid4())
             st.rerun()

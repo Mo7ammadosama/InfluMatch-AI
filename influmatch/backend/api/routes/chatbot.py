@@ -1,9 +1,13 @@
 """ARIA Chatbot API — Module 14 | RAG-augmented, bilingual"""
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from pydantic import BaseModel
 from typing import List, Optional
 from anthropic import Anthropic
 from ...core.config import get_settings
+from ...core.database import get_db
+from ...models.chat_history import ChatHistory
 from ...services.rag.vector_store import InfluMatchVectorStore
 from loguru import logger
 
@@ -15,9 +19,11 @@ class ChatMessage(BaseModel):
     content: str
 
 class ChatRequest(BaseModel):
-    message: str
-    history: List[ChatMessage] = []
-    language: str = "ar"
+    message     : str
+    session_id  : Optional[str] = None   # frontend generates UUID once per session
+    user_id     : Optional[int] = None
+    history     : List[ChatMessage] = []  # kept for backward compat; DB is authoritative
+    language    : str = "ar"
     context_type: Optional[str] = None
 
 class ChatResponse(BaseModel):
@@ -57,14 +63,31 @@ ARIA_SYSTEM = """
 """
 
 @router.post("/chat", response_model=ChatResponse)
-async def chat_with_aria(request: ChatRequest):
-    """ARIA Chatbot — context-aware, bilingual (AR/EN), RAG-augmented"""
+async def chat_with_aria(
+    request: ChatRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """ARIA Chatbot — context-aware, bilingual (AR/EN), RAG-augmented, DB-persisted"""
     client = Anthropic(api_key=settings.anthropic_api_key)
-    logger.info(f"[ARIA::CHATBOT] Message | lang={request.language}")
+    logger.info(f"[ARIA::CHATBOT] Message | lang={request.language} | session={request.session_id}")
 
     # Detect language
     arabic_chars = sum(1 for c in request.message if "\u0600" <= c <= "\u06FF")
     lang_detected = "ar" if arabic_chars > len(request.message) * 0.2 else "en"
+
+    # Load history from DB when session_id is provided (last 6 rounds = 12 messages)
+    if request.session_id:
+        history_r = await db.execute(
+            select(ChatHistory)
+            .where(ChatHistory.session_id == request.session_id)
+            .order_by(ChatHistory.created_at.asc())
+            .limit(12)
+        )
+        db_history = history_r.scalars().all()
+        messages = [{"role": m.role, "content": m.content} for m in db_history]
+    else:
+        # Fallback: use client-supplied history for backward compat
+        messages = [{"role": m.role, "content": m.content} for m in request.history[-6:]]
 
     # RAG context injection
     rag_context = ""
@@ -85,8 +108,6 @@ async def chat_with_aria(request: ChatRequest):
         except Exception as e:
             logger.warning(f"[ARIA::CHATBOT] RAG failed: {e}")
 
-    # Build messages
-    messages = [{"role": m.role, "content": m.content} for m in request.history[-6:]]
     user_content = request.message + (rag_context if rag_context else "")
     messages.append({"role": "user", "content": user_content})
 
@@ -110,6 +131,24 @@ async def chat_with_aria(request: ChatRequest):
                 reply = "خدمة ARIA غير متاحة مؤقتاً بسبب حد الاستخدام. يرجى المحاولة لاحقاً. / ARIA service temporarily unavailable. Please try again later."
             else:
                 reply = "عذراً، حدث خطأ في ARIA. يرجى المحاولة مرة أخرى. / ARIA encountered an error. Please try again."
+
+    # Persist conversation to DB when session_id provided
+    if request.session_id:
+        db.add(ChatHistory(
+            session_id = request.session_id,
+            user_id    = request.user_id,
+            role       = "user",
+            content    = request.message,   # store raw message, not RAG-augmented
+            language   = lang_detected,
+        ))
+        db.add(ChatHistory(
+            session_id = request.session_id,
+            user_id    = request.user_id,
+            role       = "assistant",
+            content    = reply,
+            language   = lang_detected,
+        ))
+        # get_db() context manager commits at end of request
 
     return ChatResponse(
         response=reply,

@@ -26,8 +26,10 @@ from frontend._pages.auth_page import render_login
 from frontend._pages.merchant_dashboard import render as render_merchant
 from frontend._pages.influencer_dashboard import render as render_influencer
 from frontend._pages.discover_page import render as render_discover
+from frontend._pages.open_campaigns_page import render as render_open_campaigns
 from frontend._pages.wallet_page import render as render_wallet
 from frontend._pages.god_mode_page import render as render_god_mode
+from frontend._pages.bookings_page import render as render_bookings
 
 # ── Helper renderers ─────────────────────────────────────────
 
@@ -138,6 +140,7 @@ def _render_contracts_page():
                 "merchant_name"   : merchant_name,
                 "influencer_name" : influencer_name,
                 "campaign_details": {
+                    "campaign_id": selected_id,
                     "title"      : campaign_titles[selected_id],
                     "budget"     : campaign.get("total_budget"),
                     "niche"      : campaign.get("niche"),
@@ -146,15 +149,47 @@ def _render_contracts_page():
                 "language": contract_lang
             })
         if status == 200:
+            contract_id   = resp.get("contract_id")
+            contract_text = resp.get("contract", "")
             st.markdown(f"""
             <div class="glass-card" style="border-color:rgba(0,255,136,0.3)">
               <div style="color:#00ff88;font-weight:700;margin-bottom:0.5rem">
-                ✅ تم إنشاء العقد | المصادر المستخدمة: {resp.get('rag_sources_used', 0)}
+                ✅ تم إنشاء العقد #{contract_id} | المصادر المستخدمة: {resp.get('rag_sources_used', 0)}
               </div>
             </div>""", unsafe_allow_html=True)
-            st.text_area("📄 نص العقد / Contract Text", resp.get("contract",""), height=400)
-            st.download_button("⬇️ تحميل العقد / Download", resp.get("contract",""),
-                               file_name=f"contract_{selected_id}.txt")
+            st.text_area("📄 نص العقد / Contract Text", contract_text, height=400)
+
+            dl_col1, dl_col2 = st.columns(2)
+            with dl_col1:
+                st.download_button(
+                    "⬇️ تحميل نص / Download TXT",
+                    contract_text,
+                    file_name=f"contract_{contract_id or selected_id}.txt",
+                    use_container_width=True,
+                )
+            with dl_col2:
+                if contract_id:
+                    if st.button("📄 تحميل PDF", key="dl_pdf", use_container_width=True, type="primary"):
+                        import httpx as _hx
+                        token = st.session_state.get("token", "")
+                        try:
+                            r_pdf = _hx.get(
+                                f"http://localhost:8000/api/contracts/{contract_id}/pdf",
+                                headers={"Authorization": f"Bearer {token}"},
+                                timeout=20,
+                            )
+                            if r_pdf.status_code == 200:
+                                st.download_button(
+                                    "⬇️ حفظ PDF",
+                                    data=r_pdf.content,
+                                    file_name=f"contract_{contract_id}.pdf",
+                                    mime="application/pdf",
+                                    key="save_pdf",
+                                )
+                            else:
+                                st.error(f"PDF error {r_pdf.status_code}")
+                        except Exception as _e:
+                            st.error(f"PDF error: {_e}")
         else:
             err_msg = resp.get("detail", "") if isinstance(resp, dict) else str(resp)
             if any(k in err_msg.lower() for k in ["credit", "billing", "unavailable", "temporarily"]):
@@ -364,7 +399,24 @@ def _render_settings_page():
             with col4:
                 rate_reel   = st.number_input("Rate/Reel (JOD)", min_value=0.0, value=0.0, step=5.0, key="i_rr")
                 is_available = st.checkbox("Available for campaigns / متاح", value=True, key="i_avail")
+
+            # ── Audience Demographics ──────────────────────────────────────
+            st.markdown("**👥 Audience Demographics / ديموغرافيا الجمهور**")
+            st.caption("These help merchants find you with relevant campaigns / تساعد التجار على إيجادك")
+            dcol1, dcol2 = st.columns(2)
+            with dcol1:
+                female_pct = st.slider(
+                    "Female audience % / نسبة الإناث",
+                    min_value=0, max_value=100, value=50, step=5,
+                    key="i_female_pct",
+                    help="Percentage of female followers"
+                )
+            with dcol2:
+                age_18_24 = st.slider("18–24 age group %", min_value=0, max_value=100, value=35, step=5, key="i_age1")
+                age_25_34 = st.slider("25–34 age group %", min_value=0, max_value=100, value=35, step=5, key="i_age2")
+
             if st.form_submit_button("💾 Update Profile & Rescore", use_container_width=True):
+                age_35plus = max(0, 100 - age_18_24 - age_25_34)
                 payload = {k: v for k, v in {
                     "instagram_handle"          : ig_handle or None,
                     "instagram_followers"       : int(ig_followers) if ig_followers else None,
@@ -376,6 +428,8 @@ def _render_settings_page():
                     "rate_per_story"            : rate_story if rate_story else None,
                     "rate_per_reel"             : rate_reel if rate_reel else None,
                     "is_available"              : is_available,
+                    "audience_gender_split"     : {"female": female_pct, "male": 100 - female_pct},
+                    "audience_age_split"        : {"18-24": age_18_24, "25-34": age_25_34, "35+": age_35plus},
                 }.items() if v is not None}
                 s, r = api_patch("/api/influencers/me", json=payload)
                 if s == 200:
@@ -436,7 +490,11 @@ elif page in ("login", "register"):
     render_login()
 
 elif page == "browse":
-    render_discover()
+    if role == "influencer":
+        st.session_state["page"] = "open_campaigns"
+        st.rerun()
+    else:
+        render_discover()
 
 elif page == "dashboard":
     if not logged_in:
@@ -459,7 +517,27 @@ elif page in ("campaigns", "my_campaigns"):
         render_influencer()
 
 elif page == "discover":
-    render_discover()
+    if role == "influencer":
+        st.session_state["page"] = "open_campaigns"
+        st.rerun()
+    else:
+        render_discover()
+
+elif page == "open_campaigns":
+    if not logged_in:
+        render_login()
+    elif role == "influencer":
+        render_open_campaigns()
+    else:
+        # merchants don't need this page — redirect to discover
+        st.session_state["page"] = "discover"
+        st.rerun()
+
+elif page == "bookings":
+    if not logged_in:
+        render_login()
+    else:
+        render_bookings()
 
 elif page == "booking_wizard":
     if not logged_in:

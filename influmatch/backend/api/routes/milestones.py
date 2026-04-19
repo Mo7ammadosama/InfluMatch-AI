@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime
 
 from ...core.database import get_db
+from ...schemas.common import make_page
 from ...models.milestone import CampaignMilestone, MilestoneStatus
 from ...models.campaign import Campaign
 from ...services.escrow.escrow_engine import EscrowEngine
@@ -75,12 +76,28 @@ async def create_milestones(
     return milestones
 
 
-@router.get("/{campaign_id}", response_model=List[MilestoneOut])
-async def list_milestones(campaign_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(CampaignMilestone).where(CampaignMilestone.campaign_id == campaign_id)
+@router.get("/{campaign_id}")
+async def list_milestones(
+    campaign_id : int,
+    skip        : int          = 0,
+    limit       : int          = 20,
+    db          : AsyncSession = Depends(get_db),
+):
+    count_r = await db.execute(
+        select(func.count(CampaignMilestone.id))
+        .where(CampaignMilestone.campaign_id == campaign_id)
     )
-    return result.scalars().all()
+    total = count_r.scalar_one()
+
+    result = await db.execute(
+        select(CampaignMilestone)
+        .where(CampaignMilestone.campaign_id == campaign_id)
+        .offset(skip).limit(limit)
+    )
+    milestones = result.scalars().all()
+
+    data = [MilestoneOut.model_validate(m).model_dump() for m in milestones]
+    return make_page(data, total, skip, limit)
 
 
 @router.post("/{milestone_id}/release")

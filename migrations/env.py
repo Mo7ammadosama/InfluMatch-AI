@@ -7,10 +7,22 @@ from alembic import context
 import sys
 import os
 
+# Ensure project root is on path so influmatch package is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.database import Base
-from app.models import *  # noqa: F401,F403 — import all models to register them
+# Import Base and all models so Alembic can detect schema changes
+from influmatch.backend.core.database import Base  # noqa: E402
+from influmatch.backend.models import (  # noqa: F401,E402
+    User, Merchant, Influencer,
+    Campaign, CampaignStatus, CampaignInfluencer,
+    Contract, ContractStatus,
+    EscrowTransaction, EscrowStatus,
+    LoyaltyWallet, WalletTransaction, TransactionType,
+    CampaignMilestone, MilestoneStatus,
+    CampaignReport, ReportStatus,
+    Booking, BookingStatus,
+    Message,
+)
 
 config = context.config
 if config.config_file_name is not None:
@@ -21,7 +33,12 @@ target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
     url = config.get_main_option("sqlalchemy.url")
-    context.configure(url=url, target_metadata=target_metadata, literal_binds=True, dialect_opts={"paramstyle": "named"})
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
     with context.begin_transaction():
         context.run_migrations()
 

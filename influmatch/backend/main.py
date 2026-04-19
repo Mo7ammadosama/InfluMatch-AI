@@ -1,12 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
 from loguru import logger
 import sys
 
 from .core.config import get_settings
 from .core.database import init_db, AsyncSessionLocal
-from .api.routes import auth, merchants, influencers, campaigns, contracts, escrow, wallet, admin, chatbot, milestones, bookings
+from .api.routes import auth, merchants, influencers, campaigns, contracts, escrow, wallet, admin, chatbot, milestones, bookings, messages
 from .api.middleware.auth_middleware import LoggingMiddleware
 from .api.middleware.rate_limiter import RateLimiter
 from .agents.guardian_agent import GuardianAgent
@@ -70,10 +71,20 @@ app.add_middleware(CORSMiddleware,
     allow_origins=["http://localhost:8501", "http://127.0.0.1:8501"],
     allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
-for r in [auth.router, merchants.router, influencers.router, campaigns.router,
-          contracts.router, escrow.router, wallet.router, admin.router, chatbot.router,
-          milestones.router, bookings.router]:
-    app.include_router(r, prefix="/api")
+_routers = [
+    auth.router, merchants.router, influencers.router, campaigns.router,
+    contracts.router, escrow.router, wallet.router, admin.router, chatbot.router,
+    milestones.router, bookings.router, messages.router,
+]
+
+# v1 — current version (all new clients should use /api/v1/...)
+for r in _routers:
+    app.include_router(r, prefix="/api/v1")
+
+# Legacy /api prefix — preserved for backward compatibility with existing frontend
+# TODO: remove once frontend fully migrates to /api/v1
+for r in _routers:
+    app.include_router(r, prefix="/api", include_in_schema=False)
 
 @app.get("/", tags=["Health"])
 async def root():

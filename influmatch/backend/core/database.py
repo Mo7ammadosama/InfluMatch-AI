@@ -50,6 +50,8 @@ async def get_db():
 
 
 async def init_db():
+    # create_all kept for local dev convenience.
+    # In production, run: alembic upgrade head
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    logger.success("[ARIA::DB] Tables created successfully")
+    logger.success("[ARIA::DB] Tables ready")

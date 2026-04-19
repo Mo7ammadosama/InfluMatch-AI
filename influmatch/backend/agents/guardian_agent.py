@@ -64,6 +64,7 @@ class GuardianAgent:
                             "account_age_days"          : inf.account_age_days,
                         },
                         niche=inf.niche or "general",
+                        content_quality=getattr(inf, "content_quality_score", 70.0) or 70.0,
                     )
                     inf.aria_score = score_result["aria_score"]
                     inf.aria_tier  = score_result["tier"]

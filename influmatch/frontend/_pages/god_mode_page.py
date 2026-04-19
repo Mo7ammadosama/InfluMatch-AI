@@ -3,7 +3,7 @@ import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
 from datetime import datetime
-from ..utils.api_client import api_get, api_post, api_patch, api_delete
+from ..utils.api_client import api_get, api_post, api_patch, api_delete, api_list
 from ..utils.session import get_role
 
 def render():
@@ -125,15 +125,33 @@ def render():
                     st.error(f"تم تجميد {r.get('frozen_count', 0)} escrow")
                 else:
                     st.error(str(r))
-        if st.button("Blast Notification", use_container_width=True):
-            st.warning("قيد التطوير — Notification blast pending")
-        if st.button("Rebuild RAG Index", use_container_width=True):
-            st.warning("قيد التطوير — RAG rebuild endpoint pending")
+        st.markdown("**Blast Notification**")
+        blast_msg = st.text_area("الرسالة / Message", placeholder="اكتب الإشعار هنا...", key="blast_msg", height=80)
+        blast_role = st.selectbox("الجمهور", ["all", "merchant", "influencer"], key="blast_role")
+        if st.button("📢 إرسال الإشعار", use_container_width=True, type="primary"):
+            if blast_msg.strip():
+                s, r = api_post("/api/admin/notification/blast", json={
+                    "message_ar": blast_msg, "target_role": blast_role
+                })
+                if s == 200:
+                    st.success(f"✅ أُرسل لـ {r.get('sent', 0)} مستخدم")
+                else:
+                    st.error(str(r.get("detail", r)))
+            else:
+                st.warning("اكتب الرسالة أولاً")
+        st.divider()
+        if st.button("🔄 Rebuild RAG Index", use_container_width=True):
+            with st.spinner("جاري إعادة بناء الفهرس..."):
+                s, r = api_post("/api/admin/rag/rebuild", json={})
+            if s == 200:
+                st.success("✅ تم إعادة بناء RAG بنجاح")
+            else:
+                st.error(str(r.get("detail", r)))
 
     with p3:
         st.markdown("**Data Exports**")
-        users_data     = api_get("/api/admin/users") or []
-        campaigns_data = api_get("/api/campaigns/") or []
+        users_data     = api_list("/api/admin/users")
+        campaigns_data = api_list("/api/campaigns/")
         if users_data:
             import json as _json
             st.download_button(
@@ -164,7 +182,7 @@ def render():
     with tab1:
         st.markdown("#### إدارة المستخدمين")
         search = st.text_input("بحث بالاسم أو الإيميل", placeholder="admin@influmatch.jo", key="user_search")
-        users = api_get("/api/admin/users") or []
+        users = api_list("/api/admin/users")
         if search:
             users = [u for u in users if search.lower() in
                      (u.get("email", "") + u.get("full_name_en", "") + u.get("username", "")).lower()]
@@ -231,7 +249,7 @@ def render():
         all_statuses = ["الكل", "draft", "active", "in_progress", "under_review",
                         "completed", "disputed", "cancelled"]
         status_filter = st.selectbox("فلتر الحالة", all_statuses, key="camp_status_filter")
-        campaigns = api_get("/api/campaigns/") or []
+        campaigns = api_list("/api/campaigns/")
         if status_filter != "الكل":
             campaigns = [c for c in campaigns if c.get("status") == status_filter]
 
@@ -276,7 +294,7 @@ def render():
     # TAB 3 — DISPUTES
     with tab3:
         st.markdown("#### النزاعات النشطة")
-        disputes = api_get("/api/admin/disputes") or []
+        disputes = api_list("/api/admin/disputes")
         if not disputes:
             st.success("لا توجد نزاعات مفتوحة — المنصة بخير")
         else:

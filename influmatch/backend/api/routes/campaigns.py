@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from typing import List, Optional
 from datetime import datetime
 import os
@@ -11,6 +11,7 @@ from ...models.user import User, UserRole
 from ...models.merchant import Merchant
 from ...models.influencer import Influencer
 from ...schemas.campaign import CampaignCreate, CampaignResponse
+from ...schemas.common import make_page
 from ...agents.guardian_agent import GuardianAgent
 from ...services.escrow.escrow_engine import EscrowEngine
 from ..dependencies.auth_deps import get_current_user, get_optional_user
@@ -107,7 +108,7 @@ async def list_my_campaigns(
     ]
 
 
-@router.get("/", response_model=List[CampaignResponse])
+@router.get("/")
 async def list_campaigns(
     skip: int = 0,
     limit: int = 20,
@@ -115,8 +116,8 @@ async def list_campaigns(
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_optional_user)
 ):
-    """List campaigns — role-based filtering: admin=all, merchant=own, influencer/public=active"""
-    query = select(Campaign)
+    """List campaigns (paginated) — role-based filtering: admin=all, merchant=own, influencer/public=active"""
+    base_q = select(Campaign)
 
     if current_user:
         role = current_user.role
@@ -124,23 +125,27 @@ async def list_campaigns(
             m_res = await db.execute(select(Merchant).where(Merchant.user_id == current_user.id))
             merchant = m_res.scalar_one_or_none()
             if not merchant:
-                return []
-            query = query.where(Campaign.merchant_id == merchant.id)
+                return make_page([], 0, skip, limit)
+            base_q = base_q.where(Campaign.merchant_id == merchant.id)
         elif role == UserRole.INFLUENCER:
             if not status:
-                query = query.where(Campaign.status.in_([CampaignStatus.ACTIVE, CampaignStatus.DRAFT]))
+                base_q = base_q.where(Campaign.status.in_([CampaignStatus.ACTIVE, CampaignStatus.DRAFT]))
         # ADMIN — no filter, sees all
     else:
-        # Unauthenticated: active/draft only
         if not status:
-            query = query.where(Campaign.status.in_([CampaignStatus.ACTIVE, CampaignStatus.DRAFT]))
+            base_q = base_q.where(Campaign.status.in_([CampaignStatus.ACTIVE, CampaignStatus.DRAFT]))
 
     if status:
-        query = query.where(Campaign.status == status)
+        base_q = base_q.where(Campaign.status == status)
 
-    query = query.offset(skip).limit(limit)
-    result = await db.execute(query)
-    return result.scalars().all()
+    count_r = await db.execute(select(func.count()).select_from(base_q.subquery()))
+    total   = count_r.scalar_one()
+
+    result    = await db.execute(base_q.offset(skip).limit(limit))
+    campaigns = result.scalars().all()
+
+    data = [CampaignResponse.model_validate(c).model_dump() for c in campaigns]
+    return make_page(data, total, skip, limit)
 
 
 @router.get("/{campaign_id}", response_model=CampaignResponse)

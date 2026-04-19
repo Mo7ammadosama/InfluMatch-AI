@@ -44,6 +44,18 @@ def api_delete(path: str):
     except Exception as e:
         return 500, {"detail": str(e)}
 
+def api_list(path: str, params: dict = None) -> list:
+    """Call api_get and extract the 'data' array from paginated responses.
+    Falls back gracefully if the endpoint still returns a bare list.
+    """
+    result = api_get(path, params=params)
+    if isinstance(result, list):
+        return result
+    if isinstance(result, dict) and "data" in result:
+        return result["data"]
+    return []
+
+
 def check_api_health():
     try:
         r = httpx.get(f"{API_BASE}/health", timeout=5)

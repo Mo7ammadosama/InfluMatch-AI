@@ -146,18 +146,62 @@ def render():
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab3:
-        st.markdown("#### معلوماتي على المنصة")
-        if profile:
-            c1, c2 = st.columns(2)
-            with c1:
-                st.metric("المدينة", profile.get("city", "—"))
-                st.metric("التخصص", profile.get("niche", "—"))
-            with c2:
-                st.metric("Instagram", f"{profile.get('instagram_followers',0):,} متابع")
-                st.metric("TikTok", f"{profile.get('tiktok_followers',0):,} متابع")
-        else:
+        if not profile:
             st.warning("لم يتم إعداد ملفك الشخصي بعد")
             if st.button("إعداد الملف الشخصي", type="primary"):
+                st.session_state["page"] = "settings"
+                st.rerun()
+        else:
+            # ── Social stats ────────────────────────────────────────
+            st.markdown("#### 📱 الحسابات الاجتماعية")
+            s1, s2, s3, s4 = st.columns(4)
+            s1.metric("المدينة",   profile.get("city",  "—"))
+            s2.metric("التخصص",   profile.get("niche",  "—"))
+            s3.metric("Instagram", f"{profile.get('instagram_followers',0):,} متابع")
+            s4.metric("TikTok",    f"{profile.get('tiktok_followers',0):,} متابع")
+
+            st.markdown("---")
+
+            # ── ARIA Score breakdown ────────────────────────────────
+            st.markdown("#### 🤖 تفاصيل نقاط ARIA")
+            eng  = float(profile.get("engagement_score",   0) or 0)
+            auth = float(profile.get("authenticity_score", 0) or 0)
+            rel  = float(profile.get("relevance_score",    0) or 0)
+            del_ = float(profile.get("delivery_score",     0) or 0)
+            cq   = float(profile.get("content_quality_score", 70) or 70)
+
+            def _score_bar(label, val, max_val, color):
+                pct = min(int(val / max_val * 100), 100)
+                st.markdown(f"""
+                <div style="margin-bottom:0.8rem">
+                  <div style="display:flex;justify-content:space-between;
+                              font-size:0.8rem;color:#a0a0b0;margin-bottom:0.3rem">
+                    <span>{label}</span><span style="color:{color};font-weight:700">{val:.1f} / {max_val}</span>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.07);border-radius:6px;height:8px;overflow:hidden">
+                    <div style="width:{pct}%;height:100%;background:{color};
+                                border-radius:6px;transition:width .4s ease"></div>
+                  </div>
+                </div>""", unsafe_allow_html=True)
+
+            _score_bar("⚡ Engagement Score",     eng,  30,  "#f59e0b")
+            _score_bar("🛡️ Authenticity Score",  auth, 25,  "#8b5cf6")
+            _score_bar("🎯 Relevance Score",      rel,  10,  "#3b82f6")
+            _score_bar("📦 Delivery Score",       del_, 15,  "#00ff88")
+            _score_bar("🎨 Content Quality",      cq,   100, "#ec4899")
+
+            st.markdown(f"""
+            <div style="background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.25);
+                        border-radius:12px;padding:0.8rem 1.2rem;margin-top:0.5rem;
+                        display:flex;justify-content:space-between;align-items:center">
+              <span style="color:#a0a0b0;font-size:0.85rem">ARIA Score الإجمالي</span>
+              <span style="font-size:1.6rem;font-weight:800;color:#00ff88">
+                {profile.get('aria_score', 0):.1f}
+              </span>
+            </div>""", unsafe_allow_html=True)
+
+            st.markdown("---")
+            if st.button("✏️ تعديل الملف الشخصي / Edit Profile", use_container_width=True):
                 st.session_state["page"] = "settings"
                 st.rerun()
 

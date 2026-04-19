@@ -45,6 +45,8 @@ class Influencer(Base):
     audience_age_split     = Column(JSON, nullable=True)   # {"18-24":40,"25-34":35,"35+":25}
     available_from         = Column(DateTime, nullable=True)
     available_until        = Column(DateTime, nullable=True)
+    stripe_connect_account_id = Column(String, nullable=True)   # Stripe Connect acct_xxx
+    content_quality_score     = Column(Float, default=70.0)     # last AI audit score (0-100)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user = relationship("User", back_populates="influencer_profile")

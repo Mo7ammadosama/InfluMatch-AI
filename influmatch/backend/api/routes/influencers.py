@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 from typing import List, Optional
 from pydantic import BaseModel
 from ...core.database import get_db
+from ...schemas.common import make_page
 from ...models.influencer import Influencer
 from ...models.user import User
 from ...services.scoring.influencer_scorer import ARIAInfluencerScorer
@@ -41,6 +42,8 @@ class InfluencerUpdate(BaseModel):
     rate_per_story             : Optional[float] = None
     rate_per_reel              : Optional[float] = None
     is_available               : Optional[bool]  = None
+    audience_gender_split      : Optional[dict]  = None   # {"female":70,"male":30}
+    audience_age_split         : Optional[dict]  = None   # {"18-24":40,"25-34":35,"35+":25}
 
 @router.post("/", status_code=201)
 async def create_influencer_profile(
@@ -137,7 +140,8 @@ async def update_my_influencer_profile(
             "monthly_growth_rate"       : inf.monthly_growth_rate,
             "account_age_days"          : inf.account_age_days,
         },
-        niche=inf.niche or "general"
+        niche=inf.niche or "general",
+        content_quality=getattr(inf, "content_quality_score", 70.0) or 70.0,
     )
     inf.aria_score         = score_result["aria_score"]
     inf.aria_tier          = score_result["tier"]
@@ -167,19 +171,22 @@ async def list_influencers(
     limit       : int            = 20,
     db          : AsyncSession   = Depends(get_db)
 ):
-    """List influencers with ARIA scoring filters"""
-    query = select(Influencer)
+    """List influencers with ARIA scoring filters (paginated)"""
+    base_q = select(Influencer)
 
     if niche:
-        query = query.where(Influencer.niche.ilike(f"%{niche}%"))
+        base_q = base_q.where(Influencer.niche.ilike(f"%{niche}%"))
     if min_score:
-        query = query.where(Influencer.aria_score >= min_score)
+        base_q = base_q.where(Influencer.aria_score >= min_score)
     if city:
-        query = query.where(Influencer.city.ilike(f"%{city}%"))
+        base_q = base_q.where(Influencer.city.ilike(f"%{city}%"))
 
-    query = query.offset(skip).limit(limit)
-    result = await db.execute(query)
-    return result.scalars().all()
+    count_r = await db.execute(select(func.count()).select_from(base_q.subquery()))
+    total   = count_r.scalar_one()
+
+    result      = await db.execute(base_q.offset(skip).limit(limit))
+    influencers = result.scalars().all()
+    return make_page(influencers, total, skip, limit)
 
 @router.post("/match")
 async def match_influencers(
@@ -207,13 +214,15 @@ async def smart_search(
     payload : dict,
     db      : AsyncSession = Depends(get_db),
 ):
-    """Natural language influencer search with ARIA scoring + niche/city boost"""
-    brief       = payload.get("brief", "")
-    budget_max  = float(payload.get("budget_max", 9999) or 9999)
-    city_filter = payload.get("city", "")
-    top_k       = int(payload.get("top_k", 10) or 10)
+    """Natural language influencer search with ARIA scoring + niche/city/demographics boost"""
+    brief          = payload.get("brief", "")
+    budget_max     = float(payload.get("budget_max", 9999) or 9999)
+    city_filter    = payload.get("city", "")
+    gender_filter  = payload.get("audience_gender", "")   # إناث | ذكور | مختلط | ""
+    age_filter     = payload.get("audience_age", "")      # 18-24 | 25-34 | 35+  | ""
+    top_k          = int(payload.get("top_k", 10) or 10)
 
-    stmt = select(Influencer).where(Influencer.is_available == True)
+    stmt = select(Influencer).where(Influencer.is_available != False)
     if city_filter:
         stmt = stmt.where(Influencer.city.ilike(f"%{city_filter}%"))
     if budget_max < 9999:
@@ -221,16 +230,44 @@ async def smart_search(
             (Influencer.rate_per_post == None) | (Influencer.rate_per_post <= budget_max)
         )
 
-    result  = await db.execute(stmt.limit(50))
+    result  = await db.execute(stmt.limit(100))
     all_inf = result.scalars().all()
 
     if not all_inf:
         return {"results": [], "total": 0, "brief": brief}
 
+    # Normalise Arabic gender filter names to keys used in the JSON column
+    _GENDER_MAP = {"إناث": "female", "ذكور": "male", "mختلط": "mixed"}
+    gender_key  = _GENDER_MAP.get(gender_filter, gender_filter.lower() if gender_filter else "")
+
     scored = []
     brief_lower = brief.lower()
     for inf in all_inf:
         score = float(inf.aria_score or 0)
+        gender_data = inf.audience_gender_split or {}
+        age_data    = inf.audience_age_split    or {}
+
+        # ── Demographic filtering (hard filter when data exists) ──────────
+        if gender_filter and gender_filter not in ("الكل", "all", ""):
+            if not gender_data:
+                continue   # No demographic data — exclude if filter active
+            if gender_key == "female" and gender_data.get("female", 0) <= 50:
+                continue
+            elif gender_key == "male" and gender_data.get("male", 0) <= 50:
+                continue
+            elif gender_key in ("mixed", "مختلط"):
+                female_pct = gender_data.get("female", 0)
+                if not (30 <= female_pct <= 70):
+                    continue
+            score += 25   # Demographic match bonus
+
+        if age_filter and age_filter not in ("الكل", "all", ""):
+            if age_data and age_data.get(age_filter, 0) > 30:
+                score += 20
+            elif age_data:
+                continue   # Data exists but doesn't match — exclude
+
+        # ── NLP + location boosts ─────────────────────────────────────────
         if brief_lower and inf.niche and inf.niche.lower() in brief_lower:
             score += 20
         if city_filter and inf.city and city_filter.lower() in inf.city.lower():

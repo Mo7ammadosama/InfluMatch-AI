@@ -1,6 +1,6 @@
 """Merchant Dashboard"""
 import streamlit as st
-from ..utils.api_client import api_get, api_post
+from ..utils.api_client import api_get, api_post, api_list
 from ..utils.i18n import t
 from ..utils.session import get_user
 from ..components.cards.campaign_card import render_campaign_card
@@ -20,7 +20,7 @@ def render():
       </div>
     </div>""", unsafe_allow_html=True)
 
-    campaigns = api_get("/api/campaigns/") or []
+    campaigns = api_list("/api/campaigns/")
     wallet    = api_get("/api/wallet/me") or {}
     escrows   = api_get("/api/escrow/my") or []
     analytics = api_get("/api/merchants/analytics") or {}

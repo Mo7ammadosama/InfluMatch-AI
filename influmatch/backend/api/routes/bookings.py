@@ -1,10 +1,12 @@
 """Booking API — InfluMatch.jo | Merchant books Influencer directly"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from datetime import datetime
 from loguru import logger
 from ...core.database import get_db
+from ...schemas.common import make_page
+from ...agents.auditor_agent import auditor as aria_auditor
 from ...models.user import User
 from ...models.merchant import Merchant
 from ...models.influencer import Influencer
@@ -102,34 +104,35 @@ async def create_booking(
 # ── GET /bookings/my — Role-based booking list ───────────────────────────────
 @router.get("/my")
 async def get_my_bookings(
+    skip         : int          = 0,
+    limit        : int          = 20,
     current_user : User         = Depends(get_current_user),
     db           : AsyncSession = Depends(get_db),
 ):
     role = current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)
 
+    base_q = select(Booking)
     if role == "merchant":
         merch_q  = await db.execute(select(Merchant).where(Merchant.user_id == current_user.id))
         merchant = merch_q.scalar_one_or_none()
         if not merchant:
-            return []
-        result = await db.execute(
-            select(Booking).where(Booking.merchant_id == merchant.id)
-            .order_by(Booking.created_at.desc())
-        )
+            return make_page([], 0, skip, limit)
+        base_q = base_q.where(Booking.merchant_id == merchant.id)
     elif role == "influencer":
         inf_q      = await db.execute(select(Influencer).where(Influencer.user_id == current_user.id))
         influencer = inf_q.scalar_one_or_none()
         if not influencer:
-            return []
-        result = await db.execute(
-            select(Booking).where(Booking.influencer_id == influencer.id)
-            .order_by(Booking.created_at.desc())
-        )
-    else:
-        result = await db.execute(select(Booking).order_by(Booking.created_at.desc()))
+            return make_page([], 0, skip, limit)
+        base_q = base_q.where(Booking.influencer_id == influencer.id)
+    # else admin: no filter — sees all
 
+    count_r = await db.execute(select(func.count()).select_from(base_q.subquery()))
+    total   = count_r.scalar_one()
+
+    result   = await db.execute(base_q.order_by(Booking.created_at.desc()).offset(skip).limit(limit))
     bookings = result.scalars().all()
-    return [
+
+    data = [
         {
             "id"             : b.id,
             "status"         : b.status.value if hasattr(b.status, "value") else b.status,
@@ -146,6 +149,7 @@ async def get_my_bookings(
         }
         for b in bookings
     ]
+    return make_page(data, total, skip, limit)
 
 
 # ── POST /bookings/{id}/confirm — Influencer accepts ─────────────────────────
@@ -198,38 +202,61 @@ async def submit_content(
     booking.content_submitted_at = datetime.utcnow()
     booking.status               = BookingStatus.CONTENT_SUBMITTED
 
-    ai_result = {"approved": False, "score": 0, "notes": "Review pending"}
+    ai_result = {"approved": False, "score": 0, "notes": "Review pending", "verdict": "PENDING"}
+
     if settings.anthropic_api_key and settings.anthropic_api_key not in ("", "your_key_here"):
         try:
-            from anthropic import Anthropic
-            import json as _json
-            client = Anthropic(api_key=settings.anthropic_api_key)
-            review_prompt = f"""أنت مراجع محتوى لمنصة InfluMatch.jo.
-رابط المحتوى: {content_url}
-ملخص الحملة: {booking.brief or 'لا يوجد'}
-المطلوب: {booking.deliverables or []}
+            # Build campaign requirements for the auditor
+            campaign_requirements = {
+                "brand_name_en": "",
+                "hashtags"     : booking.deliverables or [],
+                "niche"        : "general",
+            }
+            if booking.campaign_id:
+                from ...models.campaign import Campaign
+                camp_r = await db.execute(
+                    select(Campaign).where(Campaign.id == booking.campaign_id)
+                )
+                camp = camp_r.scalar_one_or_none()
+                if camp:
+                    campaign_requirements["niche"] = camp.niche or "general"
+                    campaign_requirements["brand_name_en"] = camp.title_en or camp.title_ar or ""
 
-قيّم المحتوى من 0-100 وحدد:
-1. هل المحتوى مناسب؟ (نعم/لا)
-2. درجة الجودة (0-100)
-3. ملاحظات قصيرة
+            submission = {
+                "id"         : booking_id,
+                "platform"   : "instagram",
+                "caption"    : booking.brief or "",
+                "content_url": content_url,
+            }
+            audit = await aria_auditor.audit_content_submission(submission, campaign_requirements)
+            final = audit.get("final_decision", {})
+            combined_score = final.get("combined_score", 0)
+            verdict        = final.get("verdict", "REJECTED")
 
-أجب بـ JSON فقط: {{"approved": true/false, "score": 0-100, "notes": "..."}}"""
-            resp = client.messages.create(
-                model=settings.claude_model, max_tokens=256,
-                messages=[{"role": "user", "content": review_prompt}]
-            )
-            ai_result = _json.loads(resp.content[0].text)
-            if ai_result.get("approved") and ai_result.get("score", 0) >= 70:
+            ai_result = {
+                "approved"    : verdict == "APPROVED",
+                "score"       : combined_score,
+                "verdict"     : verdict,
+                "notes"       : str(audit.get("text_audit", {}).get("recommendations", [])),
+                "auto_approved": final.get("auto_approved", False),
+            }
+
+            if ai_result["approved"] and combined_score >= 70:
                 booking.status              = BookingStatus.CONTENT_APPROVED
                 booking.content_approved_at = datetime.utcnow()
+
+                # Update influencer's content quality score for ARIA re-scoring
+                inf = await db.get(Influencer, booking.influencer_id)
+                if inf:
+                    inf.content_quality_score = combined_score
+
         except Exception as exc:
-            logger.warning(f"[BOOKING] AI review failed: {exc}")
+            logger.warning(f"[BOOKING] AuditorAgent review failed: {exc}")
 
     booking.ai_review_result = ai_result
     db.add(booking)
     await db.commit()
-    logger.success(f"[BOOKING] Content submitted #{booking_id} | AI score={ai_result.get('score', 0)}")
+    logger.success(f"[BOOKING] Content submitted #{booking_id} | score={ai_result.get('score', 0)} | verdict={ai_result.get('verdict')}")
     return {"booking_id": booking_id, "status": booking.status, "ai_review": ai_result}
 
 

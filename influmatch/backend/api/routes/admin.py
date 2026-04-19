@@ -1,22 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import aliased
 from pydantic import BaseModel
 from datetime import datetime
 from ...core.database import get_db
+from ...schemas.common import make_page
 from ...core.config import get_settings
 from ...models.user import User, UserRole
 from ...models.campaign import Campaign, CampaignStatus
 from ...models.escrow import EscrowTransaction, EscrowStatus
+from ..dependencies.auth_deps import get_current_user, require_role
 from loguru import logger
 
 router   = APIRouter(prefix="/admin", tags=["God Mode Admin"])
 settings = get_settings()
 
-def verify_god_mode(token: str = None):
-    """Simple God Mode verification for local dev"""
-    # In production: use JWT role check
-    return True
+# Admin-only dependency — reuse across all protected endpoints
+_admin = Depends(require_role(UserRole.ADMIN))
 
 @router.get("/platform-stats")
 async def get_platform_stats(db: AsyncSession = Depends(get_db)):
@@ -90,13 +91,13 @@ async def get_platform_stats(db: AsyncSession = Depends(get_db)):
     }
 
 @router.post("/force-scoring")
-async def force_influencer_scoring(db: AsyncSession = Depends(get_db)):
+async def force_influencer_scoring(db: AsyncSession = Depends(get_db), _: User = _admin):
     """God Mode: Manually trigger scoring for all influencers"""
     logger.warning("[ARIA::ADMIN] GOD MODE: Force scoring triggered")
     return {"status": "queued", "message": "Scoring job dispatched to Guardian Agent"}
 
 @router.post("/freeze-all-escrows")
-async def freeze_all_escrows(db: AsyncSession = Depends(get_db)):
+async def freeze_all_escrows(db: AsyncSession = Depends(get_db), _: User = _admin):
     """God Mode: Emergency freeze all active escrows"""
     logger.critical("[ARIA::ADMIN] GOD MODE: EMERGENCY ESCROW FREEZE")
     result = await db.execute(
@@ -118,12 +119,16 @@ async def freeze_all_escrows(db: AsyncSession = Depends(get_db)):
 async def list_all_users(
     skip: int = 0,
     limit: int = 50,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    _: User = _admin,
 ):
-    """God Mode: Full user list with all details"""
+    """God Mode: Full user list with all details (paginated)"""
+    count_r = await db.execute(select(func.count(User.id)))
+    total   = count_r.scalar_one()
+
     result = await db.execute(select(User).offset(skip).limit(limit))
-    users = result.scalars().all()
-    return [
+    users  = result.scalars().all()
+    data   = [
         {
             "id"          : u.id,
             "email"       : u.email,
@@ -133,43 +138,41 @@ async def list_all_users(
             "full_name_ar": u.full_name_ar,
             "is_active"   : u.is_active,
             "is_verified" : u.is_verified,
-            "created_at"  : u.created_at.isoformat() if u.created_at else None
+            "created_at"  : u.created_at.isoformat() if u.created_at else None,
         }
         for u in users
     ]
+    return make_page(data, total, skip, limit)
 
 @router.get("/disputes")
-async def get_active_disputes(db: AsyncSession = Depends(get_db)):
-    """God Mode: All disputed escrow transactions with campaign context"""
+async def get_active_disputes(db: AsyncSession = Depends(get_db), _: User = _admin):
+    """God Mode: All disputed escrow transactions with campaign context (single JOIN query)"""
+    CampaignAlias = aliased(Campaign)
     result = await db.execute(
-        select(EscrowTransaction).where(EscrowTransaction.status == EscrowStatus.DISPUTED)
+        select(EscrowTransaction, CampaignAlias)
+        .outerjoin(CampaignAlias, CampaignAlias.id == EscrowTransaction.campaign_id)
+        .where(EscrowTransaction.status == EscrowStatus.DISPUTED)
     )
-    disputed = result.scalars().all()
-    rows = []
-    for e in disputed:
-        campaign = None
-        try:
-            cr = await db.execute(select(Campaign).where(Campaign.id == e.campaign_id))
-            campaign = cr.scalar_one_or_none()
-        except Exception:
-            pass
-        rows.append({
+    rows = [
+        {
             "escrow_id"         : e.id,
             "id"                : e.id,
             "campaign_id"       : e.campaign_id,
-            "title_en"          : campaign.title_en if campaign else None,
-            "title_ar"          : campaign.title_ar if campaign else None,
+            "title_en"          : c.title_en if c else None,
+            "title_ar"          : c.title_ar if c else None,
             "merchant_id"       : e.merchant_id,
             "total_budget"      : float(e.gross_amount or 0),
             "net_amount"        : float(e.net_amount or 0),
             "dispute_reason"    : e.dispute_reason,
             "dispute_raised_at" : e.dispute_raised_at.isoformat() if e.dispute_raised_at else None,
             "status"            : str(e.status),
-        })
+        }
+        for e, c in result.all()
+    ]
     return rows
 
 @router.get("/analytics")
-async def get_platform_analytics(db: AsyncSession = Depends(get_db)):
+async def get_platform_analytics(db: AsyncSession = Depends(get_db), _: User = _admin):
     """God Mode: Real aggregated analytics"""
     from ...models.campaign import Campaign, CampaignStatus
     from ...models.escrow import EscrowTransaction, EscrowStatus
@@ -195,6 +198,7 @@ async def resolve_dispute(
     escrow_id : int,
     body      : DisputeResolveRequest,
     db        : AsyncSession = Depends(get_db),
+    _         : User         = _admin,
 ):
     """God Mode: Admin resolves a disputed escrow transaction"""
     from ...models.escrow import EscrowTransaction, EscrowStatus
@@ -248,7 +252,7 @@ async def resolve_dispute(
 
 
 @router.post("/trigger/{job_name}")
-async def trigger_agent_job(job_name: str):
+async def trigger_agent_job(job_name: str, _: User = _admin):
     """God Mode: Trigger Guardian Agent jobs manually"""
     valid_jobs = ["scoring", "escrow_release", "reaudit"]
     if job_name not in valid_jobs:
@@ -257,12 +261,100 @@ async def trigger_agent_job(job_name: str):
     return {"status": "queued", "job": job_name, "message": f"Job '{job_name}' dispatched to Guardian Agent"}
 
 
+class NotificationBlast(BaseModel):
+    message_ar : str
+    message_en : str = ""
+    target_role: str = "all"   # all | merchant | influencer
+
+@router.post("/notification/blast")
+async def blast_notification(
+    body: NotificationBlast,
+    db  : AsyncSession = Depends(get_db),
+    _   : User         = _admin,
+):
+    """God Mode: Save in-platform notification + attempt email"""
+    from ...models.user import User, UserRole
+    from ...services.notifications.notification_service import NotificationService
+    from sqlalchemy import select, text
+
+    # 1 — Save to DB so all users see it in-platform
+    await db.execute(text("""
+        INSERT INTO platform_notifications (target_role, message_ar, message_en, created_at)
+        VALUES (:role, :msg_ar, :msg_en, datetime('now'))
+    """), {"role": body.target_role, "msg_ar": body.message_ar, "msg_en": body.message_en or body.message_ar})
+    await db.commit()
+
+    # 2 — Attempt email (will log warning if SMTP not configured — non-fatal)
+    query = select(User).where(User.is_active == True)
+    if body.target_role == "merchant":
+        query = query.where(User.role == UserRole.MERCHANT)
+    elif body.target_role == "influencer":
+        query = query.where(User.role == UserRole.INFLUENCER)
+    result = await db.execute(query)
+    users  = result.scalars().all()
+
+    ns = NotificationService()
+    email_sent = 0
+    for u in users:
+        try:
+            ns.send_email(
+                to=u.email,
+                subject="InfluMatch.jo — إشعار من المنصة",
+                body_ar=body.message_ar,
+                body_en=body.message_en or body.message_ar,
+            )
+            email_sent += 1
+        except Exception:
+            pass
+
+    logger.success(f"[ARIA::ADMIN] Blast saved to DB | role={body.target_role} | email_sent={email_sent}/{len(users)}")
+    return {
+        "saved_to_platform": True,
+        "total_users"      : len(users),
+        "email_sent"       : email_sent,
+        "target_role"      : body.target_role,
+        "message"          : f"تم حفظ الإشعار وسيظهر لجميع المستخدمين عند دخولهم للمنصة",
+    }
+
+
+@router.get("/notifications")
+async def get_platform_notifications(role: str = "all", db: AsyncSession = Depends(get_db)):
+    """Fetch platform-wide notifications for a given role"""
+    from sqlalchemy import text
+    rows = await db.execute(text("""
+        SELECT id, message_ar, message_en, target_role, created_at
+        FROM platform_notifications
+        WHERE target_role = 'all' OR target_role = :role
+        ORDER BY created_at DESC
+        LIMIT 10
+    """), {"role": role})
+    results = rows.fetchall()
+    return [
+        {"id": r[0], "message_ar": r[1], "message_en": r[2], "target_role": r[3], "created_at": str(r[4])}
+        for r in results
+    ]
+
+
+@router.post("/rag/rebuild")
+async def rebuild_rag_index(_: User = _admin):
+    """God Mode: Rebuild ChromaDB RAG vector index from scratch"""
+    try:
+        from ...services.rag.vector_store import InfluMatchVectorStore
+        store   = InfluMatchVectorStore()
+        store.rebuild_index()
+        logger.success("[ARIA::ADMIN] RAG index rebuilt successfully")
+        return {"status": "success", "message": "تم إعادة بناء فهرس RAG بنجاح / RAG index rebuilt successfully"}
+    except Exception as exc:
+        logger.error(f"[ARIA::ADMIN] RAG rebuild failed: {exc}")
+        raise HTTPException(status_code=500, detail=f"RAG rebuild failed: {exc}")
+
+
 class RoleUpdateRequest(BaseModel):
     role: str
 
 
 @router.patch("/users/{user_id}/toggle-active")
-async def toggle_user_active(user_id: int, db: AsyncSession = Depends(get_db)):
+async def toggle_user_active(user_id: int, db: AsyncSession = Depends(get_db), _: User = _admin):
     """God Mode: Toggle user active/inactive status"""
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -275,7 +367,7 @@ async def toggle_user_active(user_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @router.patch("/users/{user_id}/role")
-async def update_user_role(user_id: int, body: RoleUpdateRequest, db: AsyncSession = Depends(get_db)):
+async def update_user_role(user_id: int, body: RoleUpdateRequest, db: AsyncSession = Depends(get_db), _: User = _admin):
     """God Mode: Change user role"""
     valid_roles = [r.value for r in UserRole]
     if body.role not in valid_roles:
@@ -291,7 +383,7 @@ async def update_user_role(user_id: int, body: RoleUpdateRequest, db: AsyncSessi
 
 
 @router.delete("/users/{user_id}")
-async def soft_delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
+async def soft_delete_user(user_id: int, db: AsyncSession = Depends(get_db), _: User = _admin):
     """God Mode: Soft-delete user (set is_active=False)"""
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -311,7 +403,7 @@ class CampaignStatusRequest(BaseModel):
 
 @router.patch("/campaigns/{campaign_id}/status")
 async def update_campaign_status(
-    campaign_id: int, body: CampaignStatusRequest, db: AsyncSession = Depends(get_db)
+    campaign_id: int, body: CampaignStatusRequest, db: AsyncSession = Depends(get_db), _: User = _admin
 ):
     """God Mode: Force-update campaign status"""
     valid = [s.value for s in CampaignStatus]
