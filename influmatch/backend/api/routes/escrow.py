@@ -6,6 +6,9 @@ from typing import Optional
 from ...core.database import get_db
 from ...services.escrow.escrow_engine import EscrowEngine
 from ...models.escrow import EscrowTransaction, EscrowStatus
+from ...models.merchant import Merchant
+from ...models.user import User
+from ...api.dependencies.auth_deps import get_current_user
 from loguru import logger
 
 router = APIRouter(prefix="/escrow", tags=["Escrow"])
@@ -19,6 +22,34 @@ class FundRequest(BaseModel):
 class DisputeRequest(BaseModel):
     reason      : str
     raised_by_id: int
+
+@router.get("/my")
+async def get_my_escrows(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get all escrow transactions for the current merchant"""
+    m_res = await db.execute(select(Merchant).where(Merchant.user_id == current_user.id))
+    merchant = m_res.scalar_one_or_none()
+    if not merchant:
+        return []
+    result = await db.execute(
+        select(EscrowTransaction).where(EscrowTransaction.merchant_id == merchant.id)
+    )
+    txs = result.scalars().all()
+    return [
+        {
+            "id"             : tx.id,
+            "campaign_id"    : tx.campaign_id,
+            "status"         : tx.status,
+            "gross_amount"   : tx.gross_amount,
+            "net_amount"     : tx.net_amount,
+            "currency"       : "JOD",
+            "funded_at"      : tx.funded_at.isoformat() if tx.funded_at else None,
+            "auto_release_at": tx.auto_release_at.isoformat() if tx.auto_release_at else None,
+        }
+        for tx in txs
+    ]
 
 @router.post("/fund")
 async def fund_escrow(req: FundRequest, db: AsyncSession = Depends(get_db)):
@@ -81,6 +112,26 @@ async def raise_dispute(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/campaign/{campaign_id}")
+async def get_escrow_by_campaign(campaign_id: int, db: AsyncSession = Depends(get_db)):
+    """Get escrow transaction for a campaign"""
+    result = await db.execute(
+        select(EscrowTransaction).where(EscrowTransaction.campaign_id == campaign_id)
+    )
+    tx = result.scalar_one_or_none()
+    if not tx:
+        raise HTTPException(status_code=404, detail="Escrow not found for this campaign")
+    return {
+        "id"             : tx.id,
+        "campaign_id"    : tx.campaign_id,
+        "status"         : tx.status,
+        "gross_amount"   : tx.gross_amount,
+        "net_amount"     : tx.net_amount,
+        "currency"       : "JOD",
+        "funded_at"      : tx.funded_at.isoformat() if tx.funded_at else None,
+        "auto_release_at": tx.auto_release_at.isoformat() if tx.auto_release_at else None,
+    }
 
 @router.get("/{escrow_id}")
 async def get_escrow_status(escrow_id: int, db: AsyncSession = Depends(get_db)):

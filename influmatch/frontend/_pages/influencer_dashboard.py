@@ -1,6 +1,6 @@
 """Influencer Dashboard"""
 import streamlit as st
-from ..utils.api_client import api_get, api_post
+from ..utils.api_client import api_get, api_post, api_list
 from ..utils.i18n import t
 from ..utils.session import get_user
 
@@ -28,7 +28,7 @@ def render():
     </div>""", unsafe_allow_html=True)
 
     profile   = api_get("/api/influencers/me") or {}
-    campaigns = api_get("/api/campaigns/my") or []
+    campaigns = api_list("/api/campaigns/my")
     wallet    = api_get("/api/wallet/me") or {}
 
     if not profile or profile.get("id") is None:
@@ -37,7 +37,7 @@ def render():
 
     score    = profile.get("aria_score", 0)
     tier     = profile.get("aria_tier", "UNRANKED")
-    earnings = wallet.get("balance_points", 0) * 0.01
+    earnings = wallet.get("available_points", wallet.get("balance_points", 0)) * 0.01
     active   = [c for c in campaigns if c.get("status") == "in_progress"]
 
     tier_color = {"PLATINUM": "#e5e7eb", "GOLD": "#fbbf24", "SILVER": "#9ca3af",
@@ -130,7 +130,7 @@ def render():
                     from ..utils.api_client import api_get as _ag
                     token = st.session_state.get("token", "")
                     r = httpx.post(
-                        f"http://localhost:8000/api/campaigns/{cid}/upload-report",
+                        f"http://localhost:8080/api/campaigns/{cid}/upload-report",
                         files={"file": (uploaded.name, uploaded.read(), uploaded.type)},
                         headers={"Authorization": f"Bearer {token}"},
                         timeout=30

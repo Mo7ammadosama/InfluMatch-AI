@@ -34,9 +34,9 @@ from frontend._pages.bookings_page import render as render_bookings
 # ── Helper renderers ─────────────────────────────────────────
 
 def _render_escrow_page():
-    from frontend.utils.api_client import api_get, api_post
+    from frontend.utils.api_client import api_get, api_post, api_list
     st.markdown("## 💰 Escrow Tracker / متتبع الضمان")
-    campaigns = api_get("/api/campaigns/") or []
+    campaigns = api_list("/api/campaigns/")
     if not campaigns:
         st.info("No campaigns found. / لا توجد حملات.")
         return
@@ -45,7 +45,7 @@ def _render_escrow_page():
         title = c.get("title_en") or c.get("title_ar", "—")
         status = c.get("status", "")
         with st.expander(f"📢 {title} — {status.upper()}"):
-            escrow = api_get(f"/api/escrow/{cid}")
+            escrow = api_get(f"/api/escrow/campaign/{cid}")
             if escrow:
                 col1, col2, col3 = st.columns(3)
                 col1.metric("Gross Amount", f"{escrow.get('gross_amount',0):,.0f} JOD")
@@ -86,7 +86,7 @@ def _render_escrow_page():
 
 
 def _render_contracts_page():
-    from frontend.utils.api_client import api_get, api_post
+    from frontend.utils.api_client import api_get, api_post, api_list
     lang = st.session_state.get("lang", "ar")
 
     # ── Header Banner ──────────────────────────────────────────
@@ -105,7 +105,7 @@ def _render_contracts_page():
       </div>
     </div>""", unsafe_allow_html=True)
 
-    campaigns = api_get("/api/campaigns/") or []
+    campaigns = api_list("/api/campaigns/")
     active = [c for c in campaigns if c.get("status") in ("active", "in_progress", "draft")]
 
     if not active:
@@ -174,7 +174,7 @@ def _render_contracts_page():
                         token = st.session_state.get("token", "")
                         try:
                             r_pdf = _hx.get(
-                                f"http://localhost:8000/api/contracts/{contract_id}/pdf",
+                                f"http://localhost:8080/api/contracts/{contract_id}/pdf",
                                 headers={"Authorization": f"Bearer {token}"},
                                 timeout=20,
                             )
@@ -227,7 +227,7 @@ def _render_contracts_page():
 
 
 def _render_booking_wizard():
-    from frontend.utils.api_client import api_get, api_post
+    from frontend.utils.api_client import api_get, api_post, api_list
     inf = st.session_state.get("booking_influencer", {})
     if not inf:
         st.session_state["page"] = "discover"
@@ -277,7 +277,7 @@ def _render_booking_wizard():
             ["1 Reel", "1 Story", "3 Stories", "TikTok Video", "Instagram Post", "YouTube Short"],
             default=["1 Reel"],
         )
-        campaigns   = api_get("/api/campaigns/") or []
+        campaigns   = api_list("/api/campaigns/")
         camp_opts   = {"بدون حملة محددة": None}
         camp_opts.update({c.get("title_en") or c.get("title_ar", "—"): c.get("id") for c in campaigns})
         sel_camp    = st.selectbox("ربط بحملة (اختياري)", list(camp_opts.keys()))
@@ -350,29 +350,46 @@ def _render_settings_page():
 
     # Role-specific profile updates
     if role == "merchant":
+        from frontend.utils.api_client import api_get as _api_get, api_post as _api_post
         st.markdown("---")
         st.markdown("### 🏪 Business Profile / الملف التجاري")
-        m = api_patch  # just reference
+        merchant_profile = _api_get("/api/merchants/me") or {}
+        profile_exists   = merchant_profile.get("profile_exists", False)
         with st.form("merchant_update_form"):
-            biz_ar = st.text_input("اسم النشاط التجاري (عربي)", key="m_biz_ar")
-            biz_en = st.text_input("Business Name (EN)", key="m_biz_en")
+            biz_ar = st.text_input("اسم النشاط التجاري (عربي)",
+                                   value=merchant_profile.get("business_name_ar", ""), key="m_biz_ar")
+            biz_en = st.text_input("Business Name (EN)",
+                                   value=merchant_profile.get("business_name_en", ""), key="m_biz_en")
             col1, col2 = st.columns(2)
             with col1:
-                industry = st.text_input("Industry / القطاع", key="m_industry")
-                website  = st.text_input("Website", key="m_website", placeholder="https://")
+                industry = st.text_input("Industry / القطاع",
+                                         value=merchant_profile.get("industry", ""), key="m_industry")
+                website  = st.text_input("Website", key="m_website", placeholder="https://",
+                                         value=merchant_profile.get("website", ""))
             with col2:
-                city     = st.text_input("City / المدينة", value="Amman", key="m_city")
+                city = st.text_input("City / المدينة",
+                                     value=merchant_profile.get("city", "Amman"), key="m_city")
             if st.form_submit_button("💾 Save Business Info", use_container_width=True):
-                payload = {k: v for k, v in {
+                data = {k: v for k, v in {
                     "business_name_ar": biz_ar or None,
                     "business_name_en": biz_en or None,
-                    "industry": industry or None,
-                    "website" : website or None,
-                    "city"    : city or None,
+                    "industry"        : industry or None,
+                    "website"         : website or None,
+                    "city"            : city or None,
                 }.items() if v}
-                s, r = api_patch("/api/merchants/me", json=payload)
-                if s == 200:
+                if not profile_exists and biz_ar:
+                    s, r = _api_post("/api/merchants/", json={
+                        "business_name_ar": biz_ar,
+                        "business_name_en": biz_en or None,
+                        "industry"        : industry or None,
+                        "website"         : website or None,
+                        "city"            : city or "Amman",
+                    })
+                else:
+                    s, r = api_patch("/api/merchants/me", json=data)
+                if s in (200, 201):
                     st.success("Business profile updated!")
+                    st.rerun()
                 else:
                     st.error(r.get("detail", "Update failed"))
 

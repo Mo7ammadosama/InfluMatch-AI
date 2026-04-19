@@ -2,7 +2,7 @@
 import httpx
 import streamlit as st
 
-API_BASE = "http://localhost:8000"
+API_BASE = "http://localhost:8080"
 
 def get_headers():
     token = st.session_state.get("token", "")
@@ -10,21 +10,21 @@ def get_headers():
 
 def api_get(path: str, params: dict = None):
     try:
-        r = httpx.get(f"{API_BASE}{path}", headers=get_headers(), params=params, timeout=10)
+        r = httpx.get(f"{API_BASE}{path}", headers=get_headers(), params=params, timeout=10, follow_redirects=True)
         return r.json() if r.status_code == 200 else None
     except Exception:
         return None
 
 def api_post(path: str, data: dict = None, json: dict = None, timeout: int = 60):
     try:
-        r = httpx.post(f"{API_BASE}{path}", headers=get_headers(), data=data, json=json, timeout=timeout)
+        r = httpx.post(f"{API_BASE}{path}", headers=get_headers(), data=data, json=json, timeout=timeout, follow_redirects=True)
         return r.status_code, r.json()
     except Exception as e:
         return 500, {"detail": str(e)}
 
 def api_put(path: str, json: dict = None):
     try:
-        r = httpx.put(f"{API_BASE}{path}", headers=get_headers(), json=json, timeout=10)
+        r = httpx.put(f"{API_BASE}{path}", headers=get_headers(), json=json, timeout=10, follow_redirects=True)
         return r.status_code, r.json()
     except Exception as e:
         return 500, {"detail": str(e)}
@@ -32,14 +32,14 @@ def api_put(path: str, json: dict = None):
 def api_patch(path: str, json: dict = None, params: dict = None):
     try:
         r = httpx.patch(f"{API_BASE}{path}", headers=get_headers(),
-                        json=json, params=params, timeout=10)
+                        json=json, params=params, timeout=10, follow_redirects=True)
         return r.status_code, r.json()
     except Exception as e:
         return 500, {"detail": str(e)}
 
 def api_delete(path: str):
     try:
-        r = httpx.delete(f"{API_BASE}{path}", headers=get_headers(), timeout=10)
+        r = httpx.delete(f"{API_BASE}{path}", headers=get_headers(), timeout=10, follow_redirects=True)
         return r.status_code, r.json() if r.text else {}
     except Exception as e:
         return 500, {"detail": str(e)}

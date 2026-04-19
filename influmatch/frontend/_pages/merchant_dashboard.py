@@ -29,7 +29,7 @@ def render():
     completed = [c for c in campaigns if c.get("status") == "completed"]
     total_spent = sum(e.get("net_amount", 0) for e in escrows)
     locked      = sum(e.get("net_amount", 0) for e in escrows if e.get("status") == "funded")
-    points      = wallet.get("balance_points", 0)
+    points      = wallet.get("available_points", wallet.get("balance_points", 0))
 
     st.markdown("### نظرة عامة")
     k1, k2, k3, k4 = st.columns(4)
@@ -48,7 +48,7 @@ def render():
 
     st.markdown("---")
 
-    tab1, tab2, tab3 = st.tabs(["📢 حملاتي", "💰 ROI والتحليل", "⚡ إجراءات سريعة"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📢 حملاتي", "💰 ROI والتحليل", "⚡ إجراءات سريعة", "➕ حملة جديدة"])
 
     with tab1:
         if not campaigns:
@@ -126,6 +126,10 @@ def render():
             = {points * 0.01:.3f} JOD قابل للاسترداد
           </div>
         </div>""", unsafe_allow_html=True)
+
+    with tab4:
+        lang = st.session_state.get("lang", "ar")
+        _render_create_campaign(lang)
 
 
 def _render_create_campaign(lang):

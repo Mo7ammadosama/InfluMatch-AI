@@ -36,6 +36,16 @@ class InfluMatchVectorStore:
         collection.add(documents=chunks, embeddings=embeddings, ids=ids, metadatas=[metadata]*len(chunks))
         logger.success(f"[ARIA::RAG] Ingested {len(chunks)} chunks | {doc_type}")
 
+    def rebuild_index(self):
+        """Delete all collections and recreate them (admin use only)"""
+        for name in ["smart_contracts", "jordan_policies", "campaign_knowledge"]:
+            try:
+                self.client.delete_collection(name)
+            except Exception:
+                pass
+        self._init_collections()
+        logger.success("[ARIA::RAG] All collections wiped and recreated")
+
     def semantic_search(self, query: str, doc_type: str, top_k: int = 5) -> List[Dict]:
         collection = self._get_collection(doc_type)
         count = collection.count()

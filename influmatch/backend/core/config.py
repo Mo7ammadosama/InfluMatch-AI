@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     app_name: str = "InfluMatch.jo"
     app_version: str = "1.0.0"
     debug: bool = True
-    port: int = 8000
+    port: int = 8080
 
     # Security
     secret_key: str = "aria-influmatch-secret-2024-jordan"

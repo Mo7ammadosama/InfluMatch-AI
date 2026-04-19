@@ -64,14 +64,24 @@ async def create_booking(
     db.add(booking)
     await db.flush()  # get booking.id before escrow
 
-    # Fund escrow — campaign_id may be None for direct bookings (SQLite allows NULL in UNIQUE)
-    engine    = EscrowEngine()
-    escrow_tx = await engine.fund_escrow(
-        db          = db,
-        campaign_id = booking.campaign_id,
-        merchant_id = merchant.id,
-        amount_jod  = rate,
-    )
+    # Fund escrow — reuse existing escrow if one already exists for this campaign
+    engine = EscrowEngine()
+    existing_escrow = None
+    if booking.campaign_id:
+        from ...models.escrow import EscrowTransaction
+        ex_res = await db.execute(
+            select(EscrowTransaction).where(EscrowTransaction.campaign_id == booking.campaign_id)
+        )
+        existing_escrow = ex_res.scalar_one_or_none()
+    if existing_escrow:
+        escrow_tx = existing_escrow
+    else:
+        escrow_tx = await engine.fund_escrow(
+            db          = db,
+            campaign_id = booking.campaign_id,
+            merchant_id = merchant.id,
+            amount_jod  = rate,
+        )
     booking.escrow_id = escrow_tx.id
     await db.commit()
     await db.refresh(booking)

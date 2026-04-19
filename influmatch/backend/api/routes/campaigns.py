@@ -279,6 +279,44 @@ async def upload_campaign_report(
     }
 
 
+@router.post("/{campaign_id}/apply", status_code=201)
+async def apply_to_campaign(
+    campaign_id : int,
+    db          : AsyncSession = Depends(get_db),
+    current_user: User         = Depends(get_current_user),
+):
+    """Influencer applies to join an open campaign"""
+    inf_res = await db.execute(select(Influencer).where(Influencer.user_id == current_user.id))
+    influencer = inf_res.scalar_one_or_none()
+    if not influencer:
+        raise HTTPException(400, "أكمل ملف المؤثر أولاً / Complete your influencer profile first")
+
+    camp_res = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    campaign = camp_res.scalar_one_or_none()
+    if not campaign:
+        raise HTTPException(404, "Campaign not found")
+
+    # Check for duplicate application
+    dup_res = await db.execute(
+        select(CampaignInfluencer).where(
+            CampaignInfluencer.campaign_id == campaign_id,
+            CampaignInfluencer.influencer_id == influencer.id,
+        )
+    )
+    if dup_res.scalar_one_or_none():
+        raise HTTPException(409, "لقد تقدمت لهذه الحملة بالفعل / Already applied")
+
+    assignment = CampaignInfluencer(
+        campaign_id   = campaign_id,
+        influencer_id = influencer.id,
+        status        = "applied",
+    )
+    db.add(assignment)
+    await db.flush()
+    logger.success(f"[ARIA::CAMPAIGNS] Influencer {influencer.id} applied to campaign {campaign_id}")
+    return {"message": "تم إرسال طلبك بنجاح / Application submitted", "campaign_id": campaign_id}
+
+
 @router.get("/{campaign_id}/reports")
 async def get_campaign_reports(campaign_id: int, db: AsyncSession = Depends(get_db)):
     """List all uploaded reports for a campaign (merchant/admin view)"""

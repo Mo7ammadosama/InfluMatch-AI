@@ -7,8 +7,10 @@ from typing import Optional
 from loguru import logger
 from ...core.database import get_db
 from ...core.security import verify_password, create_access_token, get_password_hash
-from ...models.user import User
+from ...models.user import User, UserRole
 from ...models.wallet import LoyaltyWallet
+from ...models.merchant import Merchant
+from ...models.influencer import Influencer
 from ...schemas.auth import Token, UserCreate, UserResponse
 from ..dependencies.auth_deps import get_current_user
 
@@ -33,6 +35,18 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     db.add(user)
     await db.flush()
     db.add(LoyaltyWallet(user_id=user.id))
+
+    # Auto-create role-specific profile so the platform works immediately after signup
+    if user.role == UserRole.MERCHANT:
+        db.add(Merchant(
+            user_id          = user.id,
+            business_name_ar = payload.full_name_ar or payload.username or "تاجر",
+            business_name_en = payload.full_name_en or payload.username,
+            city             = "Amman",
+        ))
+    elif user.role == UserRole.INFLUENCER:
+        db.add(Influencer(user_id=user.id, city="Amman"))
+
     await db.commit()
     await db.refresh(user)
     logger.success(f"[ARIA::AUTH] Registered: {user.email} [{user.role}]")
