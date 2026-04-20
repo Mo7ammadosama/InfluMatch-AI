@@ -39,9 +39,15 @@ def _timeline_html(current_status: str) -> str:
     except ValueError:
         current_idx = -1
 
+    is_terminal = current_status in ("released", "cancelled")
     items = ""
     for i, (status, label_key) in enumerate(TIMELINE_KEYS):
-        cls = "done" if i < current_idx else ("active" if i == current_idx else "")
+        if i < current_idx or (i == current_idx and is_terminal):
+            cls = "done"
+        elif i == current_idx:
+            cls = "active"
+        else:
+            cls = ""
         items += f'<div class="timeline-item {cls}">{t(label_key)}</div>'
     return f'<div class="booking-timeline">{items}</div>'
 
@@ -159,13 +165,23 @@ def render():
             # ── Action buttons ────────────────────────────────────
             if role == "influencer":
                 if status == "pending":
-                    if st.button(f"✅ {t('accept_booking')}", key=f"confirm_{bid}", type="primary"):
-                        s, r = api_post(f"/api/bookings/{bid}/confirm", json={})
-                        if s == 200:
-                            st.success(t("booking_confirmed"))
-                            st.rerun()
-                        else:
-                            st.error(r.get("detail", t("error")))
+                    col_accept, col_cancel = st.columns(2)
+                    with col_accept:
+                        if st.button(f"✅ {t('accept_booking')}", key=f"confirm_{bid}", type="primary", use_container_width=True):
+                            s, r = api_post(f"/api/bookings/{bid}/confirm", json={})
+                            if s == 200:
+                                st.success(t("booking_confirmed"))
+                                st.rerun()
+                            else:
+                                st.error(r.get("detail", t("error")))
+                    with col_cancel:
+                        if st.button(f"❌ {t('cancel_booking')}", key=f"cancel_inf_{bid}", use_container_width=True):
+                            s, r = api_post(f"/api/bookings/{bid}/cancel", json={})
+                            if s == 200:
+                                st.success(t("booking_cancelled"))
+                                st.rerun()
+                            else:
+                                st.error(r.get("detail", t("error")))
 
                 elif status in ("confirmed", "content_submitted"):
                     ai_verdict  = ai_res.get("verdict", "") if ai_res else ""
@@ -209,6 +225,16 @@ def render():
                                 st.warning(t("enter_content_url"))
 
             elif role == "merchant":
+                if status in ("pending", "confirmed", "content_submitted"):
+                    st.markdown("<div style='margin-top:0.5rem'></div>", unsafe_allow_html=True)
+                    if st.button(f"❌ {t('cancel_booking')}", key=f"cancel_merch_{bid}"):
+                        s, r = api_post(f"/api/bookings/{bid}/cancel", json={})
+                        if s == 200:
+                            st.success(t("booking_cancelled"))
+                            st.rerun()
+                        else:
+                            st.error(r.get("detail", t("error")))
+
                 if status == "content_approved":
                     if st.button(f"💰 {t('release_payment')}", key=f"release_{bid}", type="primary"):
                         s, r = api_post(f"/api/bookings/{bid}/release", json={})

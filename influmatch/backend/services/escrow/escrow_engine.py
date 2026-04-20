@@ -168,6 +168,37 @@ class EscrowEngine:
         if stripe_transfer_id:
             escrow.stripe_transfer_id = stripe_transfer_id
 
+        # Credit influencer's loyalty wallet (100 points per JOD)
+        try:
+            from backend.models.booking import Booking
+            from backend.models.wallet import LoyaltyWallet, WalletTransaction, TransactionType
+            booking_r = await db.execute(select(Booking).where(Booking.escrow_id == escrow_id))
+            booking   = booking_r.scalar_one_or_none()
+            if booking:
+                from backend.models.influencer import Influencer as _Inf
+                inf_r   = await db.execute(select(_Inf).where(_Inf.id == booking.influencer_id))
+                inf_obj = inf_r.scalar_one_or_none()
+                if inf_obj:
+                    wallet_r = await db.execute(select(LoyaltyWallet).where(LoyaltyWallet.user_id == inf_obj.user_id))
+                    wallet   = wallet_r.scalar_one_or_none()
+                    if wallet:
+                        pts_earned          = int(float(escrow.net_amount) * 100)
+                        wallet.total_points = (wallet.total_points or 0) + pts_earned
+                        wallet.updated_at   = datetime.utcnow()
+                        balance_after       = (wallet.total_points or 0) - (wallet.redeemed_points or 0) - (wallet.expired_points or 0)
+                        db.add(WalletTransaction(
+                            wallet_id        = wallet.id,
+                            points           = pts_earned,
+                            transaction_type = "EARN_CAMPAIGN_COMPLETED",
+                            balance_after    = balance_after,
+                            description_en   = f"Earned from booking #{booking.id} — {escrow.net_amount} JOD",
+                            description_ar   = f"مكاسب من الحجز #{booking.id} — {escrow.net_amount} دينار",
+                            reference_id     = str(booking.id),
+                        ))
+                        logger.success(f"[ARIA::WALLET] Credited {pts_earned} pts to user={inf_obj.user_id} for escrow={escrow_id}")
+        except Exception as wallet_exc:
+            logger.warning(f"[ARIA::WALLET] Wallet credit failed (non-fatal): {wallet_exc}")
+
         # No commit here — caller owns the transaction boundary
         mode = "Stripe+Ledger" if stripe_transfer_id else "Ledger-only"
         logger.success(f"[ARIA::ESCROW] Released escrow={escrow_id} | by={released_by} | net={escrow.net_amount} JOD | mode={mode}")

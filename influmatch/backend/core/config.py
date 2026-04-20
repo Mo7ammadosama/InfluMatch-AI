@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     # AI Keys
     anthropic_api_key: str = ""
     openai_api_key: str = ""
+    groq_api_key: str = ""
+    gemini_api_key: str = ""
 
     # RAG
     chroma_persist_dir: str = "./data/chroma_db"
@@ -54,7 +56,7 @@ class Settings(BaseSettings):
     whatsapp_token: str   = "stub_token"
 
     model_config = {
-        "env_file": ".env",
+        "env_file": ["influmatch/.env", ".env"],
         "env_file_encoding": "utf-8",
         "case_sensitive": False,
         "extra": "ignore",

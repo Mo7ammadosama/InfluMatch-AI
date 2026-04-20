@@ -69,6 +69,8 @@ LABELS = {
     "resubmit":           {"ar": "إعادة رفع المحتوى",         "en": "Resubmit Content"},
     "submit_content":     {"ar": "رفع المحتوى",               "en": "Submit Content"},
     "accept_booking":     {"ar": "قبول الحجز",                "en": "Accept Booking"},
+    "cancel_booking":     {"ar": "إلغاء الحجز",               "en": "Cancel Booking"},
+    "booking_cancelled":  {"ar": "تم إلغاء الحجز بنجاح",      "en": "Booking cancelled successfully"},
     "manual_approve":     {"ar": "موافقة يدوية وإصدار الدفع", "en": "Manually Approve & Pay"},
 
     # ── Status labels ─────────────────────────────────────────────

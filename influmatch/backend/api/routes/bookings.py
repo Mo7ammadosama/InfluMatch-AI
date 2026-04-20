@@ -218,7 +218,11 @@ async def submit_content(
 
     ai_result = {"approved": False, "score": 0, "notes": "Review pending", "verdict": "PENDING"}
 
-    if settings.anthropic_api_key and settings.anthropic_api_key not in ("", "your_key_here"):
+    has_ai_key = bool(
+        (settings.groq_api_key      and settings.groq_api_key      not in ("", "your_key_here")) or
+        (settings.anthropic_api_key and settings.anthropic_api_key not in ("", "your_key_here"))
+    )
+    if has_ai_key:
         try:
             # Build campaign requirements for the auditor
             campaign_requirements = {
@@ -264,6 +268,24 @@ async def submit_content(
                 inf = await db.get(Influencer, booking.influencer_id)
                 if inf:
                     inf.content_quality_score = combined_score
+
+                # Auto-release escrow when ARIA approves
+                if booking.escrow_id:
+                    try:
+                        engine = EscrowEngine()
+                        await engine.release_to_influencer(
+                            db          = db,
+                            escrow_id   = booking.escrow_id,
+                            released_by = "aria_auto",
+                        )
+                        booking.status     = BookingStatus.RELEASED
+                        booking.updated_at = datetime.utcnow()
+                        if inf:
+                            inf.is_available = True
+                        ai_result["auto_released"] = True
+                        logger.success(f"[BOOKING] Auto-released escrow #{booking.escrow_id} for booking #{booking_id}")
+                    except Exception as release_exc:
+                        logger.warning(f"[BOOKING] Auto-release failed: {release_exc}")
 
         except Exception as exc:
             logger.warning(f"[BOOKING] AuditorAgent review failed: {exc}")
@@ -329,3 +351,46 @@ async def release_booking(
         "net_amount": result.get("net_amount"),
         "message"   : "تم تحويل المبلغ للمؤثر / Amount released to influencer",
     }
+
+
+# ── POST /bookings/{id}/cancel — Cancel a booking ────────────────────────────
+@router.post("/{booking_id}/cancel")
+async def cancel_booking(
+    booking_id   : int,
+    current_user : User         = Depends(get_current_user),
+    db           : AsyncSession = Depends(get_db),
+):
+    b_q     = await db.execute(select(Booking).where(Booking.id == booking_id))
+    booking = b_q.scalar_one_or_none()
+    if not booking:
+        raise HTTPException(404, "Booking not found")
+
+    _st = (booking.status.value if hasattr(booking.status, "value") else str(booking.status)).lower()
+    if _st in ("released", "cancelled"):
+        raise HTTPException(400, f"Cannot cancel booking in status: {_st}")
+
+    # Verify the caller owns this booking
+    role = current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)
+    if role == "merchant":
+        merch_q  = await db.execute(select(Merchant).where(Merchant.user_id == current_user.id))
+        merchant = merch_q.scalar_one_or_none()
+        if not merchant or booking.merchant_id != merchant.id:
+            raise HTTPException(403, "Not your booking")
+    elif role == "influencer":
+        inf_q      = await db.execute(select(Influencer).where(Influencer.user_id == current_user.id))
+        influencer = inf_q.scalar_one_or_none()
+        if not influencer or booking.influencer_id != influencer.id:
+            raise HTTPException(403, "Not your booking")
+
+    booking.status     = BookingStatus.CANCELLED
+    booking.updated_at = datetime.utcnow()
+
+    # Restore influencer availability
+    inf = await db.get(Influencer, booking.influencer_id)
+    if inf:
+        inf.is_available = True
+
+    db.add(booking)
+    await db.commit()
+    logger.success(f"[BOOKING] Cancelled #{booking_id} by {role} user={current_user.id}")
+    return {"booking_id": booking_id, "status": "cancelled", "message": "تم إلغاء الحجز / Booking cancelled"}

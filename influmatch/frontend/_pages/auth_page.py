@@ -38,7 +38,7 @@ def render_login():
                 if not email or not password:
                     st.error(t("fill_all_fields"))
                 else:
-                    status, resp = api_post("/api/auth/login", data={"username": email, "password": password})
+                    status, resp = api_post("/api/v1/auth/login", data={"username": email, "password": password})
                     if status == 200:
                         st.session_state["token"] = resp.get("access_token")
                         st.session_state["role"]  = resp.get("role", "merchant")
@@ -55,7 +55,7 @@ def render_login():
                         st.error(f"❌ {detail}")
 
         st.markdown("---")
-        st.caption("Admin: admin@waslai.jo / Admin@2024")
+        st.caption("Test accounts → Merchant: merchant@waslai.jo | Influencer: influencer@waslai.jo | Password: WaslAI@2026")
 
     # ── Register Tab ─────────────────────────────────────────────
     with tab2:
@@ -83,7 +83,7 @@ def render_login():
                 elif len(password) < 8:
                     st.error(t("password_min"))
                 else:
-                    status, resp = api_post("/api/auth/register", json={
+                    status, resp = api_post("/api/v1/auth/register", json={
                         "email":        email,
                         "username":     username,
                         "password":     password,

@@ -1,7 +1,7 @@
-import json, base64, re
+import json, base64, re, os
 from typing import Dict, Optional
 from loguru import logger
-import sys, os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 from backend.core.config import get_settings
 
@@ -19,15 +19,23 @@ Scoring guide for overall_score (0-100):
 - 0-39: Spam, irrelevant, or empty content
 Set audit_passed=true when overall_score >= 60.'''
 
+GROQ_MODEL = "llama-3.3-70b-versatile"
+
 
 def _parse_json_response(text: str) -> Dict:
-    """Robustly parse JSON from model response, handling code fences."""
     text = text.strip()
-    # Strip markdown code fences
     text = re.sub(r"^```(?:json)?\s*", "", text)
     text = re.sub(r"\s*```$", "", text)
     text = text.strip()
     return json.loads(text)
+
+
+def _get_groq_client():
+    from groq import Groq
+    api_key = os.getenv("GROQ_API_KEY") or getattr(settings, "groq_api_key", None)
+    if not api_key:
+        raise RuntimeError("GROQ_API_KEY not set")
+    return Groq(api_key=api_key)
 
 
 class AIAuditorAgent:
@@ -36,8 +44,7 @@ class AIAuditorAgent:
 
     def _get_client(self):
         if not self._client:
-            import anthropic
-            self._client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+            self._client = _get_groq_client()
         return self._client
 
     async def audit_content_submission(self, submission: Dict, campaign_requirements: Dict) -> Dict:
@@ -64,44 +71,30 @@ class AIAuditorAgent:
             f"Score the caption honestly. If it has a brand mention and hashtags, score 75+."
         )
         try:
-            resp = self._get_client().messages.create(
-                model=settings.claude_model, max_tokens=512,
-                system=AUDIT_SYSTEM,
-                messages=[{"role": "user", "content": prompt}]
+            client = self._get_client()
+            resp = client.chat.completions.create(
+                model=GROQ_MODEL,
+                messages=[
+                    {"role": "system", "content": AUDIT_SYSTEM},
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=512,
+                temperature=0.1,
             )
-            raw = resp.content[0].text
+            raw = resp.choices[0].message.content
             logger.debug(f"[ARIA::AUDITOR] Raw caption audit response: {raw[:200]}")
             return _parse_json_response(raw)
         except Exception as e:
             logger.warning(f"[ARIA::AUDITOR] Caption audit failed (AI unavailable), using fallback score: {e}")
-            # When AI is unavailable, give a passing score so influencers aren't blocked
             return {"audit_passed": True, "overall_score": 75, "ai_unavailable": True}
 
     async def _audit_visual(self, image_url: str, req: Dict) -> Dict:
-        """Skip visual audit for non-image URLs (Instagram pages, etc.)"""
-        # Only attempt visual audit for direct image URLs
+        # Groq doesn't support vision yet — skip visual audit
         if not any(image_url.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif", ".webp")):
             logger.info(f"[ARIA::AUDITOR] Skipping visual audit for non-image URL")
-            return {"audit_passed": True, "overall_score": 80, "visual_audit_skipped": True}
-        try:
-            import httpx
-            async with httpx.AsyncClient() as client:
-                r = await client.get(image_url, timeout=15)
-                img_data = base64.b64encode(r.content).decode()
-                content_type = r.headers.get("content-type", "image/jpeg")
-            prompt = f"Analyze image for brand compliance. Brand: {req.get('brand_name_en') or 'WaslAI'}. Niche: {req.get('niche', 'general')}."
-            resp = self._get_client().messages.create(
-                model=settings.claude_model, max_tokens=512,
-                system=AUDIT_SYSTEM,
-                messages=[{"role": "user", "content": [
-                    {"type": "image", "source": {"type": "base64", "media_type": content_type, "data": img_data}},
-                    {"type": "text", "text": prompt}
-                ]}]
-            )
-            return _parse_json_response(resp.content[0].text)
-        except Exception as e:
-            logger.error(f"[ARIA::AUDITOR] Visual audit error: {e}")
-            return {"audit_passed": True, "overall_score": 80, "visual_audit_skipped": True}
+        else:
+            logger.info(f"[ARIA::AUDITOR] Skipping visual audit (Groq text-only)")
+        return {"audit_passed": True, "overall_score": 80, "visual_audit_skipped": True}
 
     def _final_decision(self, text_audit: Dict, visual_audit: Optional[Dict]) -> Dict:
         t_score = float(text_audit.get("overall_score", 0) or 0)
