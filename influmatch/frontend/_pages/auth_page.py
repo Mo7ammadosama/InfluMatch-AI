@@ -3,8 +3,8 @@ import streamlit as st
 from ..utils.api_client import api_post, api_get
 from ..utils.i18n import t
 
+
 def render_login():
-    lang = st.session_state.get("lang", "ar")
     st.markdown("""
     <div style="text-align:center;padding:2.5rem 0 1.5rem">
       <div style="display:inline-flex;align-items:center;justify-content:center;
@@ -20,46 +20,38 @@ def render_login():
                      -webkit-background-clip:text;-webkit-text-fill-color:transparent">AI</span><span
              style="color:#f59e0b;font-size:1.3rem">.jo</span>
       </div>
-      <p style="color:#64748b;font-size:0.82rem;margin:0;letter-spacing:0.04em">
-        منصة التسويق عبر المؤثرين في الأردن &nbsp;&middot;&nbsp; Jordan Influencer Marketing Platform
+      <p style="color:#64748b;font-size:0.85rem;margin:0;letter-spacing:0.02em">
+        {tagline}
       </p>
     </div>
-    """, unsafe_allow_html=True)
+    """.replace("{tagline}", t("tagline")), unsafe_allow_html=True)
 
     tab1, tab2 = st.tabs(["🔑 " + t("login"), "📝 " + t("register")])
 
     # ── Login Tab ────────────────────────────────────────────────
     with tab1:
         with st.form("login_form"):
-            email    = st.text_input(t("email"), placeholder="you@example.com")
-            password = st.text_input(t("password"), type="password")
+            email     = st.text_input(t("email"), placeholder="you@example.com")
+            password  = st.text_input(t("password"), type="password")
             submitted = st.form_submit_button(t("login"), use_container_width=True, type="primary")
             if submitted:
                 if not email or not password:
-                    st.error("يرجى ملء جميع الحقول / Please fill all fields")
+                    st.error(t("fill_all_fields"))
                 else:
-                    status, resp = api_post(
-                        "/api/auth/login",
-                        data={"username": email, "password": password}
-                    )
+                    status, resp = api_post("/api/auth/login", data={"username": email, "password": password})
                     if status == 200:
                         st.session_state["token"] = resp.get("access_token")
                         st.session_state["role"]  = resp.get("role", "merchant")
-                        # Fetch full user profile
                         me = api_get("/api/auth/me")
                         if me:
                             st.session_state["user"] = me
                             st.session_state["role"] = me.get("role", "merchant")
                         st.session_state["page"] = "dashboard"
-                        display_name = (
-                            (me or {}).get("full_name_en") or
-                            (me or {}).get("full_name_ar") or
-                            email.split("@")[0]
-                        )
-                        st.success(f"✅ أهلاً {display_name}!")
+                        display_name = (me or {}).get("full_name_en") or (me or {}).get("full_name_ar") or email.split("@")[0]
+                        st.success(f"✅ {t('login_success')} {display_name}!")
                         st.rerun()
                     else:
-                        detail = resp.get("detail", "فشل تسجيل الدخول / Login failed")
+                        detail = resp.get("detail", t("login_failed"))
                         st.error(f"❌ {detail}")
 
         st.markdown("---")
@@ -70,45 +62,41 @@ def render_login():
         with st.form("register_form"):
             col1, col2 = st.columns(2)
             with col1:
-                full_name_en = st.text_input("Full Name (English)", placeholder="Mohammad Osama")
+                full_name_en = st.text_input(t("full_name_en"), placeholder="Mohammad Osama")
             with col2:
-                full_name_ar = st.text_input("الاسم الكامل (عربي)", placeholder="محمد أسامة")
+                full_name_ar = st.text_input(t("full_name_ar"), placeholder="محمد أسامة")
 
-            username = st.text_input(
-                "Username / اسم المستخدم",
-                placeholder="mohammados",
-                help="Unique username, no spaces"
-            )
+            username = st.text_input(t("username"), placeholder="mohammados", help="Unique username, no spaces")
             email    = st.text_input(t("email"), placeholder="you@example.com")
             password = st.text_input(t("password"), type="password")
-            phone    = st.text_input("Phone / الهاتف", placeholder="+962791234567")
+            phone    = st.text_input(t("phone"), placeholder="+962791234567")
             role     = st.selectbox(
                 t("role"),
                 ["merchant", "influencer"],
-                format_func=lambda x: "🏪 Merchant / تاجر" if x == "merchant" else "⭐ Influencer / مؤثر"
+                format_func=lambda x: f"🏪 {t('merchant')}" if x == "merchant" else f"⭐ {t('influencer')}"
             )
 
             submitted = st.form_submit_button(t("register"), use_container_width=True, type="primary")
             if submitted:
                 if not all([username, email, password]):
-                    st.error("البريد الإلكتروني، اسم المستخدم، وكلمة المرور مطلوبة")
+                    st.error(t("fill_all_fields"))
                 elif len(password) < 8:
-                    st.error("كلمة المرور يجب أن تكون 8 أحرف على الأقل / Password must be at least 8 characters")
+                    st.error(t("password_min"))
                 else:
                     status, resp = api_post("/api/auth/register", json={
-                        "email"        : email,
-                        "username"     : username,
-                        "password"     : password,
-                        "role"         : role,
-                        "full_name_en" : full_name_en or None,
-                        "full_name_ar" : full_name_ar or None,
-                        "phone"        : phone or None,
+                        "email":        email,
+                        "username":     username,
+                        "password":     password,
+                        "role":         role,
+                        "full_name_en": full_name_en or None,
+                        "full_name_ar": full_name_ar or None,
+                        "phone":        phone or None,
                     })
                     if status in (200, 201):
-                        st.success("✅ تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول / Account created! Please login.")
+                        st.success(f"✅ {t('register_success')}")
                         st.balloons()
                     elif status == 409:
-                        st.warning("⚠️ البريد الإلكتروني مسجل مسبقاً / Email already registered")
+                        st.warning(f"⚠️ {t('email_taken')}")
                     else:
-                        detail = resp.get("detail", "فشل التسجيل / Registration failed")
+                        detail = resp.get("detail", t("register_failed"))
                         st.error(f"❌ {detail}")
