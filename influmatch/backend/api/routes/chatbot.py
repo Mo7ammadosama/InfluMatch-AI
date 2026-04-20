@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
 from typing import List, Optional
-from anthropic import Anthropic
 from ...core.config import get_settings
 from ...core.database import get_db
 from ...models.chat_history import ChatHistory
@@ -68,7 +67,8 @@ async def chat_with_aria(
     db: AsyncSession = Depends(get_db),
 ):
     """ARIA Chatbot — context-aware, bilingual (AR/EN), RAG-augmented, DB-persisted"""
-    client = Anthropic(api_key=settings.anthropic_api_key)
+    from groq import Groq
+    client = Groq(api_key=settings.groq_api_key)
     logger.info(f"[ARIA::CHATBOT] Message | lang={request.language} | session={request.session_id}")
 
     # Detect language
@@ -95,7 +95,7 @@ async def chat_with_aria(
     policy_kw = ["سياسة","قانون","عقد","شرط","ضمان","دفع","policy","law","contract","terms","escrow","payment"]
     needs_rag = any(kw in request.message.lower() for kw in policy_kw)
 
-    if needs_rag and settings.anthropic_api_key:
+    if needs_rag and settings.groq_api_key:
         try:
             store = WaslAIVectorStore()
             doc_type = "contracts" if any(w in request.message for w in ["عقد","contract","اتفاقية"]) else "policies"
@@ -111,26 +111,22 @@ async def chat_with_aria(
     user_content = request.message + (rag_context if rag_context else "")
     messages.append({"role": "user", "content": user_content})
 
-    if not settings.anthropic_api_key or settings.anthropic_api_key == "your_key_here":
-        reply = "ARIA AI غير مفعّل — أضف ANTHROPIC_API_KEY في ملف .env / ARIA AI not activated — add ANTHROPIC_API_KEY to .env"
+    if not settings.groq_api_key:
+        reply = "ARIA AI غير مفعّل — أضف GROQ_API_KEY في ملف .env / ARIA AI not activated — add GROQ_API_KEY to .env"
     else:
         try:
-            logger.info(f"[ARIA::CHATBOT] Calling Claude API | model={settings.claude_model} | msgs={len(messages)}")
-            resp = client.messages.create(
-                model=settings.claude_model,
+            logger.info(f"[ARIA::CHATBOT] Calling Groq API | msgs={len(messages)}")
+            resp = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
                 max_tokens=1024,
-                system=ARIA_SYSTEM,
-                messages=messages
+                temperature=0.7,
+                messages=[{"role": "system", "content": ARIA_SYSTEM}] + messages,
             )
-            reply = resp.content[0].text
-            logger.success(f"[ARIA::CHATBOT] Response | tokens={resp.usage.output_tokens}")
+            reply = resp.choices[0].message.content
+            logger.success(f"[ARIA::CHATBOT] Response | tokens={resp.usage.completion_tokens}")
         except Exception as e:
-            err_str = str(e).lower()
             logger.error(f"[ARIA::CHATBOT] API error: {type(e).__name__}: {e}")
-            if any(k in err_str for k in ["credit", "billing", "402", "invalid_request_error", "400"]):
-                reply = "خدمة ARIA غير متاحة مؤقتاً بسبب حد الاستخدام. يرجى المحاولة لاحقاً. / ARIA service temporarily unavailable. Please try again later."
-            else:
-                reply = "عذراً، حدث خطأ في ARIA. يرجى المحاولة مرة أخرى. / ARIA encountered an error. Please try again."
+            reply = "عذراً، حدث خطأ في ARIA. يرجى المحاولة مرة أخرى. / ARIA encountered an error. Please try again."
 
     # Persist conversation to DB when session_id provided
     if request.session_id:
