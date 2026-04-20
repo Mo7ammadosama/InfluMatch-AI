@@ -27,7 +27,7 @@ def render():
 </div>""", unsafe_allow_html=True)
 
     # ── REAL PLATFORM STATS ──
-    stats = api_get("/api/admin/platform-stats") or {}
+    stats = api_get("/api/v1/admin/platform-stats") or {}
     st.markdown("### Platform Pulse — Live")
 
     cols = st.columns(5)
@@ -103,13 +103,13 @@ def render():
     with p1:
         st.markdown("**Manual Triggers**")
         if st.button("Force Influencer Scoring", use_container_width=True):
-            s, r = api_post("/api/admin/trigger/scoring", json={})
+            s, r = api_post("/api/v1/admin/trigger/scoring", json={})
             st.success(r.get("message", "Queued")) if s == 200 else st.error(str(r))
         if st.button("Force Escrow Release", use_container_width=True):
-            s, r = api_post("/api/admin/trigger/escrow_release", json={})
+            s, r = api_post("/api/v1/admin/trigger/escrow_release", json={})
             st.success(r.get("message", "Queued")) if s == 200 else st.error(str(r))
         if st.button("Re-Audit Content", use_container_width=True):
-            s, r = api_post("/api/admin/trigger/reaudit", json={})
+            s, r = api_post("/api/v1/admin/trigger/reaudit", json={})
             st.success(r.get("message", "Queued")) if s == 200 else st.error(str(r))
 
     with p2:
@@ -119,7 +119,7 @@ def render():
                 st.session_state["freeze_confirm"] = True
                 st.warning("اضغط مرة أخرى للتأكيد!")
             else:
-                s, r = api_post("/api/admin/freeze-all-escrows", json={})
+                s, r = api_post("/api/v1/admin/freeze-all-escrows", json={})
                 st.session_state["freeze_confirm"] = False
                 if s == 200:
                     st.error(f"تم تجميد {r.get('frozen_count', 0)} escrow")
@@ -130,7 +130,7 @@ def render():
         blast_role = st.selectbox("الجمهور", ["all", "merchant", "influencer"], key="blast_role")
         if st.button("📢 إرسال الإشعار", use_container_width=True, type="primary"):
             if blast_msg.strip():
-                s, r = api_post("/api/admin/notification/blast", json={
+                s, r = api_post("/api/v1/admin/notification/blast", json={
                     "message_ar": blast_msg, "target_role": blast_role
                 })
                 if s == 200:
@@ -142,7 +142,7 @@ def render():
         st.divider()
         if st.button("🔄 Rebuild RAG Index", use_container_width=True):
             with st.spinner("جاري إعادة بناء الفهرس..."):
-                s, r = api_post("/api/admin/rag/rebuild", json={})
+                s, r = api_post("/api/v1/admin/rag/rebuild", json={})
             if s == 200:
                 st.success("✅ تم إعادة بناء RAG بنجاح")
             else:
@@ -150,8 +150,8 @@ def render():
 
     with p3:
         st.markdown("**Data Exports**")
-        users_data     = api_list("/api/admin/users")
-        campaigns_data = api_list("/api/campaigns/")
+        users_data     = api_list("/api/v1/admin/users")
+        campaigns_data = api_list("/api/v1/campaigns/")
         if users_data:
             import json as _json
             st.download_button(
@@ -182,7 +182,7 @@ def render():
     with tab1:
         st.markdown("#### إدارة المستخدمين")
         search = st.text_input("بحث بالاسم أو الإيميل", placeholder="admin@waslai.jo", key="user_search")
-        users = api_list("/api/admin/users")
+        users = api_list("/api/v1/admin/users")
         if search:
             users = [u for u in users if search.lower() in
                      (u.get("email", "") + u.get("full_name_en", "") + u.get("username", "")).lower()]
@@ -216,7 +216,7 @@ def render():
                         new_role = st.selectbox("تغيير الدور", role_options,
                                                 index=cur_idx, key=f"role_sel_{uid}")
                         if st.button("حفظ الدور", key=f"save_role_{uid}", use_container_width=True):
-                            s, r = api_patch(f"/api/admin/users/{uid}/role", json={"role": new_role})
+                            s, r = api_patch(f"/api/v1/admin/users/{uid}/role", json={"role": new_role})
                             if s == 200:
                                 st.success(f"الدور الجديد: {new_role}")
                                 st.rerun()
@@ -226,7 +226,7 @@ def render():
                     with uc3:
                         toggle_lbl = "تعطيل" if is_active else "تفعيل"
                         if st.button(toggle_lbl, key=f"toggle_{uid}", use_container_width=True):
-                            s, r = api_patch(f"/api/admin/users/{uid}/toggle-active", json={})
+                            s, r = api_patch(f"/api/v1/admin/users/{uid}/toggle-active", json={})
                             if s == 200:
                                 st.success(f"is_active = {r.get('is_active')}")
                                 st.rerun()
@@ -236,7 +236,7 @@ def render():
                     with uc4:
                         if role_val != "admin":
                             if st.button("حذف", key=f"del_{uid}", use_container_width=True):
-                                s, r = api_delete(f"/api/admin/users/{uid}")
+                                s, r = api_delete(f"/api/v1/admin/users/{uid}")
                                 if s == 200:
                                     st.success("تم الحذف")
                                     st.rerun()
@@ -249,7 +249,7 @@ def render():
         all_statuses = ["الكل", "draft", "active", "in_progress", "under_review",
                         "completed", "disputed", "cancelled"]
         status_filter = st.selectbox("فلتر الحالة", all_statuses, key="camp_status_filter")
-        campaigns = api_list("/api/campaigns/")
+        campaigns = api_list("/api/v1/campaigns/")
         if status_filter != "الكل":
             campaigns = [c for c in campaigns if c.get("status") == status_filter]
 
@@ -283,7 +283,7 @@ def render():
                                                   index=editable_statuses.index(cur_s),
                                                   key=f"cstatus_{cid}")
                         if st.button("حفظ", key=f"save_c_{cid}", use_container_width=True):
-                            s, r = api_patch(f"/api/admin/campaigns/{cid}/status",
+                            s, r = api_patch(f"/api/v1/admin/campaigns/{cid}/status",
                                              json={"status": new_status})
                             if s == 200:
                                 st.success(f"الحالة الجديدة: {new_status}")
@@ -294,7 +294,7 @@ def render():
     # TAB 3 — DISPUTES
     with tab3:
         st.markdown("#### النزاعات النشطة")
-        disputes = api_list("/api/admin/disputes")
+        disputes = api_list("/api/v1/admin/disputes")
         if not disputes:
             st.success("لا توجد نزاعات مفتوحة — المنصة بخير")
         else:
@@ -318,7 +318,7 @@ def render():
                             if not reason.strip():
                                 st.warning("أدخل سبب القرار أولاً")
                             else:
-                                s, r = api_post(f"/api/admin/disputes/{eid}/resolve",
+                                s, r = api_post(f"/api/v1/admin/disputes/{eid}/resolve",
                                                 json={"decision": "MERCHANT", "reason": reason})
                                 if s == 200:
                                     st.success(f"تم الاسترداد للتاجر | {r.get('amount_jod', 0):.3f} JOD")
@@ -331,7 +331,7 @@ def render():
                             if not reason.strip():
                                 st.warning("أدخل سبب القرار أولاً")
                             else:
-                                s, r = api_post(f"/api/admin/disputes/{eid}/resolve",
+                                s, r = api_post(f"/api/v1/admin/disputes/{eid}/resolve",
                                                 json={"decision": "INFLUENCER", "reason": reason})
                                 if s == 200:
                                     st.success(f"تم الإفراج للمؤثر | {r.get('amount_jod', 0):.3f} JOD")
@@ -342,7 +342,7 @@ def render():
     # TAB 4 — ANALYTICS (real endpoint)
     with tab4:
         st.markdown("#### تحليلات المنصة")
-        analytics = api_get("/api/admin/analytics") or {}
+        analytics = api_get("/api/v1/admin/analytics") or {}
         daily = analytics.get("daily_campaigns", [])
 
         if daily:
