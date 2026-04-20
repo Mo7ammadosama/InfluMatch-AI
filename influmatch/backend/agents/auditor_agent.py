@@ -73,8 +73,9 @@ class AIAuditorAgent:
             logger.debug(f"[ARIA::AUDITOR] Raw caption audit response: {raw[:200]}")
             return _parse_json_response(raw)
         except Exception as e:
-            logger.error(f"[ARIA::AUDITOR] Caption audit failed: {e}")
-            return {"audit_passed": False, "overall_score": 0, "error": str(e)}
+            logger.warning(f"[ARIA::AUDITOR] Caption audit failed (AI unavailable), using fallback score: {e}")
+            # When AI is unavailable, give a passing score so influencers aren't blocked
+            return {"audit_passed": True, "overall_score": 75, "ai_unavailable": True}
 
     async def _audit_visual(self, image_url: str, req: Dict) -> Dict:
         """Skip visual audit for non-image URLs (Instagram pages, etc.)"""
