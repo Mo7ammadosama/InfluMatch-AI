@@ -1,0 +1,227 @@
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 6% 7%;
+    --foreground: 220 14% 92%;
+    --card: 240 6% 9%;
+    --card-foreground: 220 14% 92%;
+    --popover: 240 6% 10%;
+    --popover-foreground: 220 14% 92%;
+    --primary: 263 70% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 14%;
+    --secondary-foreground: 220 14% 80%;
+    --muted: 240 5% 14%;
+    --muted-foreground: 220 10% 55%;
+    --accent: 240 5% 18%;
+    --accent-foreground: 220 14% 92%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 5% 16%;
+    --input: 240 5% 16%;
+    --ring: 263 70% 50%;
+    --radius: 10px;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #0c0c13;
+    color: #e8e8f0;
+    font-family: "Cairo", "Inter", system-ui, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  [dir="rtl"] {
+    font-family: "Cairo", system-ui, sans-serif;
+  }
+
+  [dir="rtl"] input,
+  [dir="rtl"] textarea,
+  [dir="rtl"] select {
+    text-align: right;
+  }
+
+  [dir="rtl"] .kpi-label,
+  [dir="rtl"] .kpi-value {
+    direction: rtl;
+  }
+}
+
+@layer components {
+  /* Glass cards */
+  .glass-card {
+    @apply bg-bg-raised border border-white/5 rounded-xl shadow-aria;
+  }
+
+  .aria-card {
+    @apply bg-bg-raised border border-white/5 rounded-xl p-5 shadow-aria;
+  }
+
+  /* KPI block */
+  .kpi-block {
+    @apply bg-bg-raised border border-white/5 rounded-xl p-5 text-center;
+  }
+
+  .kpi-value {
+    @apply text-3xl font-bold text-white leading-tight;
+  }
+
+  .kpi-label {
+    @apply text-xs text-white/50 uppercase tracking-widest mt-1;
+  }
+
+  /* Banners */
+  .merchant-banner {
+    @apply bg-gradient-to-r from-amber-900/60 to-amber-800/30 border border-amber-500/20 rounded-xl p-5;
+  }
+
+  .influencer-banner {
+    @apply bg-gradient-to-r from-violet-900/60 to-violet-800/30 border border-violet-500/20 rounded-xl p-5;
+  }
+
+  .admin-banner {
+    @apply bg-gradient-to-r from-red-900/60 to-red-800/30 border border-red-500/20 rounded-xl p-5;
+  }
+
+  /* Influencer card */
+  .inf-card {
+    @apply bg-bg-raised border border-white/5 rounded-xl overflow-hidden shadow-aria
+           transition-all duration-200 hover:border-violet-500/30 hover:shadow-glow;
+    border-top: 3px solid #7c3aed;
+  }
+
+  /* Score ring */
+  .score-ring {
+    @apply inline-flex items-center justify-center rounded-full font-bold text-white;
+    background: conic-gradient(#7c3aed var(--pct, 0%), #1d1d26 0%);
+    padding: 3px;
+  }
+
+  .score-ring-inner {
+    @apply rounded-full bg-bg-base flex items-center justify-center;
+  }
+
+  /* Tier badges */
+  .tier-platinum {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold;
+    background: linear-gradient(135deg, #e5e7eb, #9ca3af);
+    color: #111;
+  }
+
+  .tier-gold {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold;
+    background: linear-gradient(135deg, #fbbf24, #d97706);
+    color: #111;
+  }
+
+  .tier-silver {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold;
+    background: linear-gradient(135deg, #9ca3af, #6b7280);
+    color: #fff;
+  }
+
+  .tier-bronze {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold;
+    background: linear-gradient(135deg, #b45309, #92400e);
+    color: #fff;
+  }
+
+  /* Booking timeline */
+  .booking-timeline {
+    @apply relative flex flex-col gap-0 my-4;
+  }
+
+  .timeline-item {
+    @apply flex items-start gap-3 pb-5 relative;
+  }
+
+  .timeline-item::before {
+    content: "";
+    @apply absolute left-3 top-6 bottom-0 w-0.5 bg-white/10;
+  }
+
+  .timeline-item:last-child::before {
+    display: none;
+  }
+
+  .timeline-dot {
+    @apply w-6 h-6 rounded-full border-2 border-white/20 bg-bg-overlay flex-shrink-0 mt-0.5;
+  }
+
+  .timeline-item.done .timeline-dot {
+    @apply bg-green-500 border-green-400;
+  }
+
+  .timeline-item.active .timeline-dot {
+    @apply bg-violet-500 border-violet-400 shadow-glow;
+  }
+
+  /* Stats grid */
+  .stats-grid {
+    @apply grid grid-cols-2 gap-2 text-center;
+  }
+
+  .stats-grid-item {
+    @apply bg-bg-overlay rounded-lg p-2;
+  }
+
+  /* Status pills */
+  .status-pending {
+    @apply inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-500/15 text-yellow-400;
+  }
+
+  .status-active {
+    @apply inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/15 text-green-400;
+  }
+
+  .status-completed {
+    @apply inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/15 text-blue-400;
+  }
+
+  .status-disputed {
+    @apply inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/15 text-red-400;
+  }
+
+  .status-confirmed {
+    @apply inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-violet-500/15 text-violet-400;
+  }
+
+  /* Page fade */
+  .page-enter {
+    @apply animate-fade-in;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #111119;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a38;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a3a50;
+  }
+}
