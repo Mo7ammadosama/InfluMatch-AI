@@ -17,7 +17,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err: AxiosError) => {
-    if (err.response?.status === 401) {
+    const isAuthEndpoint = err.config?.url?.includes("/auth/login");
+    if (err.response?.status === 401 && !isAuthEndpoint) {
       _cachedToken = undefined;
       Cookies.remove("waslai_token");
       if (typeof window !== "undefined") window.location.href = "/login";
@@ -57,6 +58,8 @@ export const updateCampaign = (id: number, data: object) =>
 export const deleteCampaign = (id: number) => api.delete(`/v1/campaigns/${id}`);
 export const activateCampaign = (id: number) =>
   api.post(`/v1/campaigns/${id}/activate`);
+export const applyToCampaign = (id: number) =>
+  api.post(`/v1/campaigns/${id}/apply`);
 
 // Influencers
 export const getInfluencers = (params?: object) =>

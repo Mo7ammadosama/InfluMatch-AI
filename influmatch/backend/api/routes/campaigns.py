@@ -159,6 +159,7 @@ async def get_campaign(campaign_id: int, db: AsyncSession = Depends(get_db)):
     return campaign
 
 
+@router.post("/{campaign_id}/activate")
 @router.patch("/{campaign_id}/activate")
 async def activate_campaign(
     campaign_id: int,
@@ -315,6 +316,29 @@ async def apply_to_campaign(
     await db.flush()
     logger.success(f"[ARIA::CAMPAIGNS] Influencer {influencer.id} applied to campaign {campaign_id}")
     return {"message": "تم إرسال طلبك بنجاح / Application submitted", "campaign_id": campaign_id}
+
+
+@router.delete("/{campaign_id}", status_code=200)
+async def delete_campaign(
+    campaign_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Merchant soft-deletes (cancels) their own campaign"""
+    res = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    campaign = res.scalar_one_or_none()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
+    m_res = await db.execute(select(Merchant).where(Merchant.user_id == current_user.id))
+    merchant = m_res.scalar_one_or_none()
+    if not merchant or campaign.merchant_id != merchant.id:
+        raise HTTPException(status_code=403, detail="Not your campaign")
+
+    campaign.status = CampaignStatus.CANCELLED
+    await db.commit()
+    logger.info(f"[ARIA::CAMPAIGNS] Campaign {campaign_id} cancelled by merchant {merchant.id}")
+    return {"deleted": True, "campaign_id": campaign_id}
 
 
 @router.get("/{campaign_id}/reports")

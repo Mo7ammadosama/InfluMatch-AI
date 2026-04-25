@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel
 from typing import Optional
 from loguru import logger
@@ -26,6 +27,9 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == payload.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Email already registered")
+    uname_r = await db.execute(select(User).where(User.username == payload.username))
+    if uname_r.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="Username already taken")
     user = User(
         email=payload.email, username=payload.username,
         hashed_password=get_password_hash(payload.password),
@@ -33,7 +37,11 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
         full_name_en=payload.full_name_en, phone=payload.phone,
     )
     db.add(user)
-    await db.flush()
+    try:
+        await db.flush()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="Email or username already exists")
     db.add(LoyaltyWallet(user_id=user.id))
 
     # Auto-create role-specific profile so the platform works immediately after signup

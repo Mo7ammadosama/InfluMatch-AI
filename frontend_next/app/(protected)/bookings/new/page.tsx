@@ -38,7 +38,7 @@ export default function NewBookingPage() {
     } else {
       router.replace("/discover");
     }
-    getCampaigns().then((r) => setCampaigns(r.data?.items ?? r.data ?? [])).catch(() => {});
+    getCampaigns().then((r) => setCampaigns(r.data?.data ?? r.data ?? [])).catch(() => {});
   }, [router]);
 
   function toggleDeliverable(d: string) {

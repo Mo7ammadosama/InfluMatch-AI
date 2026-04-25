@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useApp } from "@/components/layout/providers";
 import { Button } from "@/components/ui/button";
-import { getCampaigns, getMyCampaigns, activateCampaign, deleteCampaign } from "@/lib/api";
+import { getCampaigns, getMyCampaigns, activateCampaign, deleteCampaign, applyToCampaign } from "@/lib/api";
 import { Campaign } from "@/lib/types";
 import { fmtJOD, statusClass } from "@/lib/utils";
 import { toast } from "sonner";
@@ -14,13 +14,16 @@ export default function CampaignsPage() {
   const { user, lang } = useApp();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState<number | null>(null);
 
   const isMerchant = user?.role === "merchant";
+  const isAdmin    = user?.role === "admin";
 
   async function load() {
     setLoading(true);
     try {
-      const r = isMerchant ? await getMyCampaigns() : await getCampaigns({ status: "ACTIVE" });
+      // admin sees all campaigns, merchant sees own, influencer sees active
+      const r = isMerchant ? await getMyCampaigns() : await getCampaigns(isAdmin ? {} : { status: "active" });
       // getMyCampaigns returns array directly; getCampaigns returns {data:[...]}
       const list = Array.isArray(r.data) ? r.data : (r.data?.data ?? []);
       setCampaigns(list);
@@ -40,6 +43,19 @@ export default function CampaignsPage() {
       load();
     } catch {
       toast.error(lang === "ar" ? "فشل التفعيل" : "Activation failed");
+    }
+  }
+
+  async function handleApply(id: number) {
+    setApplying(id);
+    try {
+      await applyToCampaign(id);
+      toast.success(lang === "ar" ? "تم إرسال طلبك!" : "Application submitted!");
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(detail ?? (lang === "ar" ? "فشل التقديم" : "Application failed"));
+    } finally {
+      setApplying(null);
     }
   }
 
@@ -106,7 +122,9 @@ export default function CampaignsPage() {
                   </Button>
                 )}
                 {!isMerchant && c.status === "ACTIVE" && (
-                  <Button size="sm">{lang === "ar" ? "تقديم" : "Apply"}</Button>
+                  <Button size="sm" disabled={applying === c.id} onClick={() => handleApply(c.id)}>
+                    {applying === c.id ? "..." : lang === "ar" ? "تقديم" : "Apply"}
+                  </Button>
                 )}
               </div>
             </div>

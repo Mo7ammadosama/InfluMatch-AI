@@ -417,3 +417,14 @@ async def update_campaign_status(
     await db.commit()
     logger.info(f"[ARIA::ADMIN] Campaign {campaign_id} status -> {body.status}")
     return {"campaign_id": campaign_id, "new_status": campaign.status}
+
+@router.get("/jobs")
+async def list_jobs(_: User = _admin):
+    """Return available background job names"""
+    return {
+        "jobs": [
+            {"name": "scoring",       "description": "Re-score all influencers with ARIA"},
+            {"name": "escrow_release","description": "Auto-release mature escrow funds"},
+            {"name": "reaudit",       "description": "Re-audit pending content submissions"},
+        ]
+    }

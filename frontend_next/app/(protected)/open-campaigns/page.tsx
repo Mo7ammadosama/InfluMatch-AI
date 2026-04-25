@@ -5,7 +5,7 @@ import { useApp } from "@/components/layout/providers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getCampaigns } from "@/lib/api";
+import { getCampaigns, applyToCampaign } from "@/lib/api";
 import { Campaign } from "@/lib/types";
 import { fmtJOD, statusClass } from "@/lib/utils";
 import { toast } from "sonner";
@@ -16,6 +16,20 @@ export default function OpenCampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ niche: "", city: "" });
+  const [applying, setApplying] = useState<number | null>(null);
+
+  async function handleApply(campaignId: number) {
+    setApplying(campaignId);
+    try {
+      await applyToCampaign(campaignId);
+      toast.success(lang === "ar" ? "تم إرسال طلبك!" : "Application submitted!");
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(detail ?? (lang === "ar" ? "فشل التقديم" : "Application failed"));
+    } finally {
+      setApplying(null);
+    }
+  }
 
   useEffect(() => {
     loadCampaigns();
@@ -24,7 +38,7 @@ export default function OpenCampaignsPage() {
   async function loadCampaigns() {
     setLoading(true);
     try {
-      const r = await getCampaigns({ status: "ACTIVE" });
+      const r = await getCampaigns({ status: "active" });
       setCampaigns(Array.isArray(r.data) ? r.data : (r.data?.data ?? []));
     } catch {
       toast.error("Failed to load campaigns");
@@ -111,8 +125,8 @@ export default function OpenCampaignsPage() {
                 <span className="text-amber-400 font-semibold text-sm">
                   {fmtJOD(c.budget_per_influencer ?? 0)} / influencer
                 </span>
-                <Button size="sm">
-                  {lang === "ar" ? "تقديم" : "Apply"}
+                <Button size="sm" disabled={applying === c.id} onClick={() => handleApply(c.id)}>
+                  {applying === c.id ? "..." : lang === "ar" ? "تقديم" : "Apply"}
                 </Button>
               </div>
             </div>
