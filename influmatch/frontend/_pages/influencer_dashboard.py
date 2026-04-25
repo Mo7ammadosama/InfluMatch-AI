@@ -61,7 +61,7 @@ def render():
         st.markdown(f"""
         <div class="aria-card" style="text-align:center">
           <div style="color:#a0a0b0;font-size:0.75rem;margin-bottom:0.5rem">{t('earnings_lbl')}</div>
-          <div style="font-size:1.3rem;font-weight:700;color:#00ff88">{earnings:.3f} JOD</div>
+          <div style="font-size:1.3rem;font-weight:700;color:#22c55e">{earnings:.3f} JOD</div>
         </div>""", unsafe_allow_html=True)
     with col_active:
         st.markdown(f"""
@@ -81,7 +81,7 @@ def render():
                 st.rerun()
         else:
             for c in campaigns:
-                status_color = {"in_progress": "#f59e0b", "active": "#00ff88",
+                status_color = {"in_progress": "#f59e0b", "active": "#22c55e",
                                 "completed": "#8b5cf6", "disputed": "#ef4444"}.get(c.get("status", ""), "#6b7280")
                 title = (c.get("title_en") if lang == "en" else c.get("title_ar")) or c.get("title_en") or c.get("title", "—")
                 col1, col2 = st.columns([4, 1])
@@ -179,7 +179,7 @@ def render():
             _score_bar(t("engagement_score"),   eng,  30,  "#f59e0b")
             _score_bar(t("authenticity_score"), auth, 25,  "#8b5cf6")
             _score_bar(t("relevance_score"),    rel,  10,  "#3b82f6")
-            _score_bar(t("delivery_score"),     del_, 15,  "#00ff88")
+            _score_bar(t("delivery_score"),     del_, 15,  "#22c55e")
             _score_bar(t("content_quality"),    cq,   100, "#ec4899")
 
             st.markdown(f"""
@@ -187,7 +187,7 @@ def render():
                         border-radius:12px;padding:0.8rem 1.2rem;margin-top:0.5rem;
                         display:flex;justify-content:space-between;align-items:center">
               <span style="color:#a0a0b0;font-size:0.85rem">{t('aria_total')}</span>
-              <span style="font-size:1.6rem;font-weight:800;color:#00ff88">
+              <span style="font-size:1.6rem;font-weight:800;color:#22c55e">
                 {profile.get('aria_score', 0):.1f}
               </span>
             </div>""", unsafe_allow_html=True)

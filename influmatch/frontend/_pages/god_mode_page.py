@@ -51,7 +51,7 @@ def render():
     c1, c2, c3, c4 = st.columns(4)
     for col, label, val, color in [
         (c1, "إجمالي حجم Escrow",  f"{stats.get('total_escrow_volume_jod', 0):.3f} JOD", "#f59e0b"),
-        (c2, "عمولات المنصة",       f"{stats.get('total_platform_fees_jod', 0):.3f} JOD", "#00ff88"),
+        (c2, "عمولات المنصة",       f"{stats.get('total_platform_fees_jod', 0):.3f} JOD", "#22c55e"),
         (c3, "نزاعات مفتوحة",       stats.get("open_disputes", 0),                        "#ef4444"),
         (c4, "مستخدمون اليوم",      stats.get("new_users_today", 0),                       "#8b5cf6"),
     ]:
@@ -70,7 +70,7 @@ def render():
     rag_raw      = stats.get("rag_system", "unknown")
 
     def _sc(s):
-        return "#00ff88" if s.lower() in ("active", "ready", "online") else "#ef4444"
+        return "#22c55e" if s.lower() in ("active", "ready", "online") else "#ef4444"
 
     with a1:
         st.markdown(f"""
@@ -259,7 +259,7 @@ def render():
             for c in campaigns:
                 cid   = c.get("id")
                 title = c.get("title_en") or c.get("title_ar") or f"Campaign #{cid}"
-                s_color = {"active": "#00ff88", "in_progress": "#f59e0b",
+                s_color = {"active": "#22c55e", "in_progress": "#f59e0b",
                            "completed": "#8b5cf6", "disputed": "#ef4444",
                            "draft": "#6b7280", "cancelled": "#374151",
                            "under_review": "#3b82f6"}.get(c.get("status", ""), "#6b7280")

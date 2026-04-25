@@ -51,22 +51,21 @@ def render_sidebar():
         # ── Brand ─────────────────────────────────────────────
         st.markdown(
             """
-            <div style="text-align:center;padding:1.2rem 0 0.8rem">
-              <div style="display:inline-flex;align-items:center;justify-content:center;
-                          width:52px;height:52px;border-radius:16px;margin-bottom:0.7rem;
-                          background:linear-gradient(135deg,#7c3aed,#4f46e5);
-                          box-shadow:0 4px 24px rgba(124,58,237,0.5)">
-                <span style="font-size:1.6rem;line-height:1">&#9889;</span>
-              </div><br>
-              <div style="font-weight:800;font-size:1.2rem;letter-spacing:-0.02em;line-height:1.2">
-                <span style="background:linear-gradient(135deg,#a78bfa,#818cf8);
-                             -webkit-background-clip:text;-webkit-text-fill-color:transparent">Wasl</span><span
-                     style="background:linear-gradient(135deg,#f59e0b,#fbbf24);
-                             -webkit-background-clip:text;-webkit-text-fill-color:transparent">AI</span><span
-                     style="color:#f59e0b;font-size:0.9rem">.jo</span>
+            <div style="padding:1.2rem 0.5rem 0.8rem">
+              <div style="display:flex;align-items:center;gap:0.75rem">
+                <div style="width:36px;height:36px;border-radius:8px;
+                            background:#1e1e2c;border:1px solid rgba(255,255,255,0.1);
+                            display:flex;align-items:center;justify-content:center;
+                            font-size:1.1rem;flex-shrink:0">&#9889;</div>
+                <div>
+                  <div style="font-weight:800;font-size:1.05rem;letter-spacing:-0.01em;line-height:1.2;color:#f1f1f5">
+                    WaslAI<span style="color:#f59e0b">.jo</span>
+                  </div>
+                  <div style="font-size:0.6rem;color:#4b5563;letter-spacing:0.08em;text-transform:uppercase">
+                    Influencer Platform
+                  </div>
+                </div>
               </div>
-              <div style="font-size:0.62rem;color:#475569;letter-spacing:0.1em;
-                          text-transform:uppercase;margin-top:0.3rem">AI &middot; Influencer &middot; Marketing</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -97,18 +96,14 @@ def render_sidebar():
         }.get(role, {"label": "User", "icon": "👤", "color": "#6b7280", "desc": "WaslAI.jo"})
 
         st.sidebar.markdown(f"""
-<div style="background:linear-gradient(135deg,rgba(0,0,0,0.4),rgba(0,0,0,0.2));
-            border:1px solid {role_meta['color']}33;border-radius:12px;
-            padding:0.8rem 1rem;margin-bottom:1rem;
-            border-left:4px solid {role_meta['color']}">
-  <div style="display:flex;align-items:center;gap:0.5rem">
-    <span style="font-size:1.3rem">{role_meta['icon']}</span>
-    <div>
-      <div style="color:{role_meta['color']};font-weight:700;font-size:0.9rem">
-        {name} · {role_meta['label']}
-      </div>
-      <div style="color:#a0a0b0;font-size:0.7rem">{role_meta['desc']}</div>
-    </div>
+<div style="background:#17171f;border:1px solid rgba(255,255,255,0.07);
+            border-left:3px solid {role_meta['color']};border-radius:8px;
+            padding:0.65rem 0.9rem;margin-bottom:0.75rem">
+  <div style="color:{role_meta['color']};font-weight:700;font-size:0.82rem;margin-bottom:0.1rem">
+    {name}
+  </div>
+  <div style="color:#4b5563;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em">
+    {role_meta['label']}
   </div>
 </div>""", unsafe_allow_html=True)
 
@@ -163,14 +158,13 @@ def _render_notifications(role: str):
     notif_label = "📢 Platform Notification" if lang == "en" else "📢 إشعار من المنصة"
 
     st.markdown(f"""
-    <div style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(83,52,131,0.1));
-                border:1px solid rgba(139,92,246,0.4);border-radius:10px;
+    <div style="background:#17171f;border:1px solid rgba(124,58,237,0.2);
+                border-left:3px solid #7c3aed;border-radius:8px;
                 padding:0.6rem 0.8rem;margin-bottom:0.5rem">
-      <div style="font-size:0.65rem;color:#8b5cf6;font-weight:700;margin-bottom:0.2rem">
-        {notif_label}
-      </div>
-      <div style="font-size:0.78rem;color:#e0e0f0;line-height:1.4">{msg}</div>
-      <div style="font-size:0.6rem;color:#6b7280;margin-top:0.3rem">{ts}</div>
+      <div style="font-size:0.6rem;color:#7c3aed;font-weight:700;margin-bottom:0.2rem;
+                  text-transform:uppercase;letter-spacing:0.06em">{notif_label}</div>
+      <div style="font-size:0.76rem;color:#d1d5db;line-height:1.4">{msg}</div>
+      <div style="font-size:0.6rem;color:#4b5563;margin-top:0.3rem">{ts}</div>
     </div>""", unsafe_allow_html=True)
 
     all_label = f"📋 {t('all_notifications')} ({len(notifs)})"
@@ -181,10 +175,10 @@ def _render_notifications(role: str):
         for n in notifs[1:]:
             n_msg = (n.get("message_en") if lang == "en" else n.get("message_ar")) or ""
             st.markdown(f"""
-            <div style="background:rgba(26,26,46,0.8);border:1px solid rgba(83,52,131,0.2);
-                        border-radius:8px;padding:0.5rem 0.7rem;margin-bottom:0.4rem">
-              <div style="font-size:0.75rem;color:#c0c0d0">{n_msg}</div>
-              <div style="font-size:0.6rem;color:#6b7280">{str(n.get('created_at',''))[:16]}</div>
+            <div style="background:#17171f;border:1px solid rgba(255,255,255,0.06);
+                        border-radius:6px;padding:0.45rem 0.65rem;margin-bottom:0.35rem">
+              <div style="font-size:0.74rem;color:#d1d5db">{n_msg}</div>
+              <div style="font-size:0.6rem;color:#4b5563">{str(n.get('created_at',''))[:16]}</div>
             </div>""", unsafe_allow_html=True)
 
 

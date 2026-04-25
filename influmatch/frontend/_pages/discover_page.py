@@ -11,13 +11,13 @@ def render():
     # ── HERO SEARCH BAR ──────────────────────────────────────────────────────
     st.markdown("""
     <div class="search-container">
-      <div style="text-align:center;margin-bottom:1.5rem">
-        <div style="font-size:1.5rem;font-weight:800;
-                    background:linear-gradient(135deg,#f59e0b,#8b5cf6);
-                    -webkit-background-clip:text;-webkit-text-fill-color:transparent">
-          🔍 ابحث عن المؤثر المناسب لعملك
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:0.6rem;font-weight:700;color:#4b5563;text-transform:uppercase;
+                    letter-spacing:0.1em;margin-bottom:0.3rem">DISCOVER</div>
+        <div style="font-size:1.2rem;font-weight:700;color:#f1f1f5">
+          ابحث عن المؤثر المناسب لعملك
         </div>
-        <div style="color:#6b7280;font-size:0.85rem;margin-top:0.3rem">
+        <div style="color:#4b5563;font-size:0.8rem;margin-top:0.25rem">
           Find the Perfect Influencer — Powered by ARIA AI
         </div>
       </div>
@@ -87,8 +87,8 @@ def render():
             influencers = results_data.get("results", []) if s == 200 else []
             if s == 200 and influencers:
                 st.markdown(
-                    f"<div style='color:#00ff88;font-size:0.85rem;margin-bottom:1rem'>"
-                    f"✨ وجد ARIA {len(influencers)} مؤثر مناسب لطلبك</div>",
+                    f"<div style='color:#22c55e;font-size:0.82rem;margin-bottom:1rem'>"
+                    f"ARIA وجد {len(influencers)} مؤثر مناسب لطلبك</div>",
                     unsafe_allow_html=True,
                 )
         else:
@@ -117,7 +117,7 @@ def render():
             available   = inf.get("is_available", True)
             match_score = inf.get("match_score", "")
 
-            avail_color = "#00ff88" if available else "#ef4444"
+            avail_color = "#22c55e" if available else "#ef4444"
             avail_text  = "متاح ✓"  if available else "محجوز ✗"
 
             match_badge = (

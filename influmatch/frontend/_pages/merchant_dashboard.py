@@ -64,7 +64,7 @@ def render():
                 st.rerun()
         else:
             for c in campaigns[:10]:
-                status_color = {"active": "#00ff88", "in_progress": "#f59e0b",
+                status_color = {"active": "#22c55e", "in_progress": "#f59e0b",
                                 "completed": "#8b5cf6", "draft": "#6b7280",
                                 "disputed": "#ef4444"}.get(c.get("status", "draft"), "#6b7280")
                 title = (c.get("title_en") if lang == "en" else c.get("title_ar")) or c.get("title_en") or "—"

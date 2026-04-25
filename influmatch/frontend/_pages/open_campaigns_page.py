@@ -81,7 +81,7 @@ def render():
             desc     = (c.get("description_en") if lang == "en" else c.get("description_ar")) or c.get("description_en") or ""
             city     = c.get("city") or ""
 
-            status_color = "#00ff88" if status in ("ACTIVE", "OPEN") else "#f59e0b"
+            status_color = "#22c55e" if status in ("ACTIVE", "OPEN") else "#f59e0b"
 
             st.markdown(f"""
             <div class="glass-card" style="margin-bottom:0.5rem">

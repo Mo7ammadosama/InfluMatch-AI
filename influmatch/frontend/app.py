@@ -153,7 +153,7 @@ def _render_contracts_page():
             contract_text = resp.get("contract", "")
             st.markdown(f"""
             <div class="glass-card" style="border-color:rgba(0,255,136,0.3)">
-              <div style="color:#00ff88;font-weight:700;margin-bottom:0.5rem">
+              <div style="color:#22c55e;font-weight:700;margin-bottom:0.5rem">
                 ✅ تم إنشاء العقد #{contract_id} | المصادر المستخدمة: {resp.get('rag_sources_used', 0)}
               </div>
             </div>""", unsafe_allow_html=True)

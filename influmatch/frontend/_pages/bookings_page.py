@@ -7,8 +7,8 @@ STATUS_COLOR = {
     "pending"          : "#f59e0b",
     "confirmed"        : "#8b5cf6",
     "content_submitted": "#3b82f6",
-    "content_approved" : "#00ff88",
-    "released"         : "#00ff88",
+    "content_approved" : "#22c55e",
+    "released"         : "#22c55e",
     "disputed"         : "#ef4444",
     "cancelled"        : "#6b7280",
 }
@@ -134,7 +134,7 @@ def render():
                     approved  = ai_res.get("approved", False)
                     auto_ok   = ai_res.get("auto_approved", False)
                     notes     = str(ai_res.get("notes", "") or "")[:120]
-                    v_color   = "#00ff88" if verdict == "APPROVED" else ("#ef4444" if verdict == "REJECTED" else "#f59e0b")
+                    v_color   = "#22c55e" if verdict == "APPROVED" else ("#ef4444" if verdict == "REJECTED" else "#f59e0b")
                     v_icon    = "✅" if approved else ("❌" if verdict == "REJECTED" else "⏳")
                     bar_pct   = min(int(score_val), 100)
 
