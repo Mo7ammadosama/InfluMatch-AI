@@ -112,11 +112,21 @@ export const policyQA = (question: string, language: string) =>
   api.post(`/v1/contracts/policy-qa?question=${encodeURIComponent(question)}&language=${language}`);
 
 // Admin
-export const getPlatformStats = () => api.get("/v1/admin/platform-stats");
-export const getAdminUsers = () => api.get("/v1/admin/users");
-export const getAdminDisputes = () => api.get("/v1/admin/disputes");
-export const resolveDispute = (id: number, data: object) =>
-  api.post(`/v1/admin/disputes/${id}/resolve`, data);
+export const getPlatformStats    = () => api.get("/v1/admin/platform-stats");
+export const getAdminUsers       = () => api.get("/v1/admin/users");
+export const getAdminDisputes    = () => api.get("/v1/admin/disputes");
+export const resolveDispute      = (escrowId: number, decision: string, reason: string) =>
+  api.post(`/v1/admin/disputes/${escrowId}/resolve`, { decision, reason });
+export const toggleUserActive    = (id: number) => api.patch(`/v1/admin/users/${id}/toggle-active`);
+export const changeUserRole      = (id: number, role: string) => api.patch(`/v1/admin/users/${id}/role`, { role });
+export const deleteUser          = (id: number) => api.delete(`/v1/admin/users/${id}`);
+export const triggerJob          = (job: "scoring" | "escrow_release" | "reaudit") =>
+  api.post(`/v1/admin/trigger/${job}`);
+export const rebuildRag          = () => api.post("/v1/admin/rag/rebuild");
+export const blastNotification   = (data: { message_ar: string; message_en?: string; target_role: string }) =>
+  api.post("/v1/admin/notification/blast", data);
+export const forceUpdateCampaign = (id: number, status: string) =>
+  api.patch(`/v1/admin/campaigns/${id}/status`, { status });
 
 // Messages
 export const getBookingMessages = (bookingId: number) =>
