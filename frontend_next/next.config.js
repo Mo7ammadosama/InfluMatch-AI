@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Prevent Next.js from redirecting /api/ trailing slashes — the FastAPI
+  // backend handles its own slash normalization and the two redirects
+  // create a loop in the browser.
+  skipTrailingSlashRedirect: true,
   async rewrites() {
     return [
       {

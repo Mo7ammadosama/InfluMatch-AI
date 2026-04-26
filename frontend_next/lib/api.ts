@@ -63,7 +63,7 @@ export const applyToCampaign = (id: number) =>
 
 // Influencers
 export const getInfluencers = (params?: object) =>
-  api.get("/v1/influencers", { params });
+  api.get("/v1/influencers/", { params });
 export const getInfluencerMe = () => api.get("/v1/influencers/me");
 export const updateInfluencerMe = (data: object) =>
   api.patch("/v1/influencers/me", data);
