@@ -68,7 +68,11 @@ app = FastAPI(
 app.add_middleware(RateLimiter, calls=200, period=60)
 app.add_middleware(LoggingMiddleware)
 app.add_middleware(CORSMiddleware,
-    allow_origins=["http://localhost:8501", "http://127.0.0.1:8501", "http://localhost:8080"],
+    allow_origins=[
+        "http://localhost:3000", "http://127.0.0.1:3000",  # Next.js dev
+        "http://localhost:8501", "http://127.0.0.1:8501",  # Streamlit legacy
+        "http://localhost:8080",                            # old proxy
+    ],
     allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 _routers = [
