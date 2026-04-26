@@ -63,6 +63,7 @@ app = FastAPI(
     title="WaslAI.jo API", version="1.0.0",
     description="ARIA-Powered Influencer Marketing Platform — Jordan",
     docs_url="/docs", redoc_url="/redoc", lifespan=lifespan,
+    redirect_slashes=False,
 )
 
 app.add_middleware(RateLimiter, calls=200, period=60)
