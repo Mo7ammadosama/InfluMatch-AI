@@ -128,8 +128,14 @@ export default function DiscoverPage() {
             <InfluencerCard key={inf.id} influencer={inf} lang={lang} onBook={handleBook} />
           ))}
           {influencers.length === 0 && (
-            <div className="col-span-3 text-center text-white/30 text-sm py-12">
-              {lang === "ar" ? "لا نتائج. حاول بحثاً مختلفاً." : "No results. Try a different search."}
+            <div className="col-span-3 text-center text-white/30 text-sm py-12 space-y-3">
+              <div>{lang === "ar" ? "لا نتائج. حاول بحثاً مختلفاً." : "No results. Try a different search."}</div>
+              <button
+                onClick={loadInfluencers}
+                className="text-violet-400 hover:text-violet-300 text-xs underline underline-offset-2"
+              >
+                {lang === "ar" ? "إعادة المحاولة" : "Retry"}
+              </button>
             </div>
           )}
         </div>
