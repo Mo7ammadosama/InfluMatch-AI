@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  getMyBookings, confirmBooking, submitContent, approveContent,
+  getMyBookings, confirmBooking, cancelBooking, submitContent, approveContent,
   getBookingMessages, sendMessage,
 } from "@/lib/api";
 import { Booking, Message } from "@/lib/types";
@@ -140,6 +140,20 @@ export default function BookingsPage() {
                   <Button size="sm" variant="success"
                     onClick={() => action(() => approveContent(b.id), lang === "ar" ? "تمت الموافقة!" : "Approved!")}>
                     ✅ {lang === "ar" ? "موافقة على المحتوى" : "Approve Content"}
+                  </Button>
+                )}
+
+                {["PENDING", "CONFIRMED"].includes(b.status) && user?.role === "merchant" && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-red-400/60 hover:text-red-400 hover:bg-red-400/10"
+                    onClick={() => {
+                      if (!confirm(lang === "ar" ? "إلغاء هذا الحجز؟" : "Cancel this booking?")) return;
+                      action(() => cancelBooking(b.id), lang === "ar" ? "تم الإلغاء!" : "Booking cancelled!");
+                    }}
+                  >
+                    ✕ {lang === "ar" ? "إلغاء" : "Cancel"}
                   </Button>
                 )}
               </div>

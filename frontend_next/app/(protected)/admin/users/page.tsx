@@ -16,6 +16,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<number | null>(null);
+  const [rolePickerId, setRolePickerId] = useState<number | null>(null);
 
   async function load() {
     setLoading(true);
@@ -44,12 +45,9 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function handleRole(id: number, currentRole: string) {
-    const newRole = window.prompt(
-      `Change role (current: ${currentRole})\nOptions: ${ROLES.join(", ")}`,
-      currentRole
-    );
-    if (!newRole || newRole === currentRole || !ROLES.includes(newRole)) return;
+  async function handleRole(id: number, newRole: string, currentRole: string) {
+    if (newRole === currentRole) { setRolePickerId(null); return; }
+    setRolePickerId(null);
     setActing(id);
     try {
       await changeUserRole(id, newRole);
@@ -144,15 +142,27 @@ export default function AdminUsersPage() {
               </Button>
 
               {/* Change role */}
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 text-xs text-violet-400/70 hover:text-violet-400 hover:bg-violet-400/10"
-                disabled={acting === u.id || u.role === "admin"}
-                onClick={() => handleRole(u.id, u.role)}
-              >
-                {lang === "ar" ? "تغيير الدور" : "Role"}
-              </Button>
+              {rolePickerId === u.id ? (
+                <select
+                  autoFocus
+                  defaultValue={u.role}
+                  onBlur={() => setRolePickerId(null)}
+                  onChange={(e) => handleRole(u.id, e.target.value, u.role)}
+                  className="h-7 rounded-md border border-violet-500/40 bg-[#1a1a26] text-violet-300 text-xs px-1 focus:outline-none focus:border-violet-400"
+                >
+                  {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs text-violet-400/70 hover:text-violet-400 hover:bg-violet-400/10"
+                  disabled={acting === u.id || u.role === "admin"}
+                  onClick={() => setRolePickerId(u.id)}
+                >
+                  {lang === "ar" ? "الدور" : "Role"}
+                </Button>
+              )}
 
               {/* Delete (soft) */}
               {u.role !== "admin" && (

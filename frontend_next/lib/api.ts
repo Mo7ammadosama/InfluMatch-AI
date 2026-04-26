@@ -86,6 +86,8 @@ export const getMyBookings = () => api.get("/v1/bookings/my");
 export const getBooking = (id: number) => api.get(`/v1/bookings/${id}`);
 export const confirmBooking = (id: number) =>
   api.post(`/v1/bookings/${id}/confirm`);
+export const cancelBooking = (id: number) =>
+  api.post(`/v1/bookings/${id}/cancel`);
 export const submitContent = (id: number, data: object) =>
   api.post(`/v1/bookings/${id}/submit-content`, data);
 export const approveContent = (id: number) =>

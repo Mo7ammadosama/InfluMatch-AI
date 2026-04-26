@@ -180,14 +180,20 @@ export default function MerchantDashboard() {
                 <Label>{lang === "ar" ? "الوصف" : "Description"}</Label>
                 <Textarea value={newCamp.description_en} onChange={(e) => setNewCamp((p) => ({ ...p, description_en: e.target.value }))} placeholder="Campaign brief..." rows={3} />
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1.5">
-                  <Label>{lang === "ar" ? "التخصص" : "Niche"}</Label>
-                  <Input value={newCamp.niche} onChange={(e) => setNewCamp((p) => ({ ...p, niche: e.target.value }))} placeholder="fashion, tech..." />
-                </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>{lang === "ar" ? "الميزانية الكلية (JOD)" : "Total Budget (JOD)"}</Label>
                   <Input type="number" value={newCamp.total_budget} onChange={(e) => setNewCamp((p) => ({ ...p, total_budget: e.target.value }))} placeholder="500" min={0} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{lang === "ar" ? "ميزانية المؤثر (JOD)" : "Budget / Influencer (JOD)"}</Label>
+                  <Input type="number" value={newCamp.budget_per_influencer} onChange={(e) => setNewCamp((p) => ({ ...p, budget_per_influencer: e.target.value }))} placeholder="100" min={0} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>{lang === "ar" ? "التخصص" : "Niche"}</Label>
+                  <Input value={newCamp.niche} onChange={(e) => setNewCamp((p) => ({ ...p, niche: e.target.value }))} placeholder="fashion, tech..." />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{lang === "ar" ? "تاريخ الانتهاء" : "End Date"}</Label>

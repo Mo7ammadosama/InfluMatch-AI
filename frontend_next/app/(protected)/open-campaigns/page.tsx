@@ -49,8 +49,10 @@ export default function OpenCampaignsPage() {
 
   const filtered = campaigns.filter((c) => {
     const n = filters.niche.toLowerCase();
+    const ci = filters.city.toLowerCase();
     const matchNiche = !n || (c.niche?.toLowerCase().includes(n) ?? false);
-    return matchNiche;
+    const matchCity = !ci || ((c as { city?: string }).city?.toLowerCase().includes(ci) ?? false);
+    return matchNiche && matchCity;
   });
 
   return (

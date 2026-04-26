@@ -297,13 +297,21 @@ export default function SettingsPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label>Instagram Followers</Label>
                 <Input
                   type="number"
                   value={influencerForm.instagram_followers}
                   onChange={(e) => setInfluencerForm((f) => ({ ...f, instagram_followers: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>TikTok Followers</Label>
+                <Input
+                  type="number"
+                  value={influencerForm.tiktok_followers}
+                  onChange={(e) => setInfluencerForm((f) => ({ ...f, tiktok_followers: e.target.value }))}
                 />
               </div>
               <div className="space-y-1.5">
