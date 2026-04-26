@@ -163,6 +163,7 @@ async def update_my_influencer_profile(
 
 
 @router.get("/")
+@router.get("")
 async def list_influencers(
     niche       : Optional[str]  = Query(None),
     min_score   : Optional[float]= Query(None),
