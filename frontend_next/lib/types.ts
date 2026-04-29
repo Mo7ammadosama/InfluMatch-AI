@@ -1,51 +1,58 @@
-export type Role = "merchant" | "influencer" | "admin";
+export type Role = "merchant" | "influencer" | "admin" | "creative_strategist";
 export type Lang = "en" | "ar";
 
 export type Tier = "PLATINUM" | "GOLD" | "SILVER" | "BRONZE" | "UNRANKED";
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
-  username: string;
+  username?: string;
   role: Role;
+  full_name: string;
   full_name_en?: string;
   full_name_ar?: string;
   phone?: string;
   is_active: boolean;
+  is_verified?: boolean;
   created_at: string;
 }
 
 export interface MerchantProfile {
-  id: number;
-  user_id: number;
-  business_name_en?: string;
+  id: string;
+  user_id: string;
+  business_name: string;
   business_name_ar?: string;
-  industry?: string;
+  business_category: string;
+  description?: string;
+  description_ar?: string;
   website?: string;
   city?: string;
+  total_spent_jod?: number;
+  active_campaigns?: number;
+  is_verified?: boolean;
 }
 
 export interface InfluencerProfile {
-  id: number;
-  user_id: number;
-  bio_en?: string;
+  id: string;
+  user_id: string;
+  display_name: string;
+  bio?: string;
   bio_ar?: string;
-  niche?: string;
   city?: string;
-  instagram_handle?: string;
-  instagram_followers?: number;
-  instagram_engagement_rate?: number;
-  tiktok_handle?: string;
-  tiktok_followers?: number;
-  rate_per_post?: number;
-  rate_per_story?: number;
-  rate_per_reel?: number;
+  social_platforms?: Record<string, { handle?: string; followers?: number; engagement_rate?: number }>;
+  content_categories?: string[];
+  languages?: string[];
+  rate_per_post_jod?: number;
+  rate_per_story_jod?: number;
+  rate_per_reel_jod?: number;
+  total_followers?: number;
+  avg_engagement_rate?: number;
   aria_score?: number;
   aria_tier?: Tier;
-  campaigns_completed?: number;
+  completed_deals?: number;
   is_available?: boolean;
-  audience_gender_split?: { female: number; male: number };
-  audience_age_split?: Record<string, number>;
+  avg_rating?: number;
+  is_verified?: boolean;
   match_score?: number;
 }
 
@@ -164,4 +171,64 @@ export interface MerchantAnalytics {
   completed_campaigns_count: number;
   escrow_locked: number;
   recent_budgets: { title: string; budget: number }[];
+}
+
+export interface CreativeStrategistProfile {
+  id: string;
+  user_id: string;
+  display_name: string;
+  display_name_ar?: string;
+  bio?: string;
+  bio_ar?: string;
+  avatar_url?: string;
+  city?: string;
+  portfolio_url?: string;
+  specializations: string[];
+  languages: string[];
+  consultation_rate_jod: number;
+  completed_engagements: number;
+  milestone_count: number;
+  total_earned_jod: number;
+  avg_rating: number;
+  is_verified: boolean;
+  is_available: boolean;
+  created_at: string;
+}
+
+export type CampaignIdeaStatus = "open" | "in_progress" | "completed" | "withdrawn";
+
+export interface CampaignIdea {
+  id: string;
+  creative_strategist_id: string;
+  title: string;
+  title_ar?: string;
+  description: string;
+  description_ar?: string;
+  target_audience?: string;
+  suggested_platforms: string[];
+  content_format: string[];
+  influencer_type?: string;
+  business_category?: string;
+  estimated_budget_jod?: number;
+  timeline_days?: number;
+  status: CampaignIdeaStatus;
+  view_count: number;
+  adoption_count: number;
+  created_at: string;
+}
+
+export type CreativeEngagementStatus = "pending" | "active" | "completed" | "cancelled";
+
+export interface CreativeEngagement {
+  id: string;
+  campaign_idea_id: string;
+  merchant_id: string;
+  creative_strategist_id: string;
+  status: CreativeEngagementStatus;
+  agreed_fee_jod: number;
+  merchant_notes?: string;
+  strategist_notes?: string;
+  started_at?: string;
+  completed_at?: string;
+  created_at: string;
 }

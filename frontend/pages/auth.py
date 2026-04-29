@@ -64,10 +64,18 @@ def _render_register(is_ar: bool):
         full_name_ar = st.text_input("الاسم الكامل (AR)" if is_ar else "Full Name (AR)")
         email = st.text_input("البريد الإلكتروني" if is_ar else "Email")
         phone = st.text_input("رقم الهاتف" if is_ar else "Phone (optional)")
+        role_options = ["merchant", "influencer", "creative_strategist"]
+        role_labels = {
+            "merchant": "🏪 تاجر" if is_ar else "🏪 Merchant",
+            "influencer": "🌟 مؤثر" if is_ar else "🌟 Influencer",
+            "creative_strategist": "🎨 مستشار إبداعي" if is_ar else "🎨 Creative Strategist",
+        }
+        default_idx = role_options.index(default_role) if default_role in role_options else 0
         role = st.selectbox(
             "نوع الحساب" if is_ar else "Account Type",
-            ["merchant", "influencer"],
-            index=0 if default_role == "merchant" else 1,
+            role_options,
+            index=default_idx,
+            format_func=lambda r: role_labels[r],
         )
         password = st.text_input("كلمة المرور" if is_ar else "Password", type="password")
         submitted = st.form_submit_button("إنشاء الحساب" if is_ar else "Create Account", type="primary")

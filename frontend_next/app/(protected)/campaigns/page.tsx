@@ -52,7 +52,8 @@ export default function CampaignsPage() {
       await applyToCampaign(id);
       toast.success(lang === "ar" ? "تم إرسال طلبك!" : "Application submitted!");
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      const raw = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+      const detail = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.map((e: unknown) => (e as { msg?: string })?.msg ?? "Error").join(" · ") : undefined;
       toast.error(detail ?? (lang === "ar" ? "فشل التقديم" : "Application failed"));
     } finally {
       setApplying(null);

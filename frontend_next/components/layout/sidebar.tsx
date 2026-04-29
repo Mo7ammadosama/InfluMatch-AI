@@ -76,6 +76,15 @@ export function Sidebar({ unread = 0 }: { unread?: number }) {
     { label: tr("analytics", lang), href: "/admin/analytics", icon: <BarChart3 size={16} /> },
   ];
 
+  const creativeStrategistNav: NavItem[] = [
+    { label: tr("dashboard", lang), href: "/creative-strategist/dashboard", icon: <LayoutDashboard size={16} /> },
+    { label: lang === "ar" ? "أفكاري" : "My Ideas", href: "/creative-strategist/ideas", icon: <Star size={16} /> },
+    { label: lang === "ar" ? "نشر فكرة" : "Submit Idea", href: "/creative-strategist/ideas/new", icon: <Zap size={16} /> },
+    { label: lang === "ar" ? "المشاريع" : "Engagements", href: "/creative-strategist/dashboard", icon: <CalendarDays size={16} /> },
+    { label: lang === "ar" ? "ملفي الشخصي" : "My Profile", href: "/creative-strategist/profile", icon: <Settings size={16} /> },
+    { label: lang === "ar" ? "أرباحي" : "Earnings", href: "/wallet", icon: <Wallet size={16} /> },
+  ];
+
   const guestNav: NavItem[] = [
     { label: tr("home", lang), href: "/", icon: <Home size={16} /> },
     { label: tr("login", lang), href: "/login", icon: <LogOut size={16} /> },
@@ -89,6 +98,8 @@ export function Sidebar({ unread = 0 }: { unread?: number }) {
       ? influencerNav
       : role === "admin"
       ? adminNav
+      : role === "creative_strategist"
+      ? creativeStrategistNav
       : guestNav;
 
   const roleColor =
@@ -98,6 +109,8 @@ export function Sidebar({ unread = 0 }: { unread?: number }) {
       ? "text-violet-400"
       : role === "admin"
       ? "text-red-400"
+      : role === "creative_strategist"
+      ? "text-emerald-400"
       : "text-blue-400";
 
   const roleBg =
@@ -107,6 +120,8 @@ export function Sidebar({ unread = 0 }: { unread?: number }) {
       ? "bg-violet-500/10 border-violet-500/20"
       : role === "admin"
       ? "bg-red-500/10 border-red-500/20"
+      : role === "creative_strategist"
+      ? "bg-emerald-500/10 border-emerald-500/20"
       : "bg-blue-500/10 border-blue-500/20";
 
   return (
@@ -130,10 +145,10 @@ export function Sidebar({ unread = 0 }: { unread?: number }) {
       {user && (
         <div className={cn("mx-3 mt-3 px-3 py-2.5 rounded-lg border", roleBg)}>
           <div className="text-white text-sm font-semibold truncate">
-            {lang === "ar" ? user.full_name_ar : user.full_name_en}
+            {lang === "ar" ? (user.full_name_ar ?? user.full_name) : (user.full_name_en ?? user.full_name)}
           </div>
           <div className={cn("text-xs font-medium capitalize mt-0.5", roleColor)}>
-            {user.role} • {user.username}
+            {user.role.replace("_", " ")} • {user.username ?? user.email.split("@")[0]}
           </div>
         </div>
       )}

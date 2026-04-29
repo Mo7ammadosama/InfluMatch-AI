@@ -34,7 +34,7 @@ export default function NewBookingPage() {
     if (raw) {
       const inf = JSON.parse(raw) as InfluencerProfile;
       setInfluencer(inf);
-      setForm((f) => ({ ...f, agreed_rate_jod: String(inf.rate_per_post ?? "") }));
+      setForm((f) => ({ ...f, agreed_rate_jod: String(inf.rate_per_post_jod ?? "") }));
     } else {
       router.replace("/discover");
     }
@@ -82,7 +82,7 @@ export default function NewBookingPage() {
           💳 {lang === "ar" ? "تأكيد الحجز" : "Confirm Booking"}
         </h1>
         <p className="text-white/50 text-sm mt-1">
-          @{influencer.instagram_handle} • {fmtJOD(influencer.rate_per_post ?? 0)} / post
+          {influencer.display_name} • {fmtJOD(influencer.rate_per_post_jod ?? 0)} / post
         </p>
       </div>
 

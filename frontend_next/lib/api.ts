@@ -33,15 +33,11 @@ export function syncToken(token: string) {
 
 // Auth
 export const login = (email: string, password: string) =>
-  api.post(
-    "/v1/auth/login",
-    new URLSearchParams({ username: email, password }),
-    { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-  );
+  api.post("/v1/auth/login", { email, password });
 
 export const register = (data: {
-  email: string; username: string; password: string;
-  full_name_en?: string; full_name_ar?: string; phone?: string; role: string;
+  email: string; username?: string; password: string;
+  full_name?: string; full_name_en?: string; full_name_ar?: string; phone?: string; role: string;
 }) => api.post("/v1/auth/register", data);
 
 export const getMe = () => api.get("/v1/auth/me");
@@ -64,20 +60,20 @@ export const applyToCampaign = (id: number) =>
 // Influencers
 export const getInfluencers = (params?: object) =>
   api.get("/v1/influencers/", { params });
-export const getInfluencerMe = () => api.get("/v1/influencers/me");
+export const getInfluencerMe = () => api.get("/v1/influencers/profile");
 export const updateInfluencerMe = (data: object) =>
-  api.patch("/v1/influencers/me", data);
+  api.patch("/v1/influencers/profile", data);
 export const createInfluencerProfile = (data: object) =>
-  api.post("/v1/influencers/", data);
+  api.post("/v1/influencers/profile", data);
 export const smartSearch = (data: object) =>
   api.post("/v1/influencers/smart-search", data);
 
 // Merchants
-export const getMerchantMe = () => api.get("/v1/merchants/me");
+export const getMerchantMe = () => api.get("/v1/merchants/profile");
 export const createMerchantProfile = (data: object) =>
-  api.post("/v1/merchants/", data);
+  api.post("/v1/merchants/profile", data);
 export const updateMerchantMe = (data: object) =>
-  api.patch("/v1/merchants/me", data);
+  api.patch("/v1/merchants/profile", data);
 export const getMerchantAnalytics = () => api.get("/v1/merchants/analytics");
 
 // Bookings
@@ -104,6 +100,7 @@ export const disputeEscrow = (id: number, data: object) =>
 
 // Wallet
 export const getWallet = () => api.get("/v1/wallet/me");
+export const getWalletTransactions = () => api.get("/v1/wallet/transactions");
 export const redeemPoints = (points: number) =>
   api.post("/v1/wallet/redeem", { points });
 
@@ -119,9 +116,9 @@ export const getAdminUsers       = () => api.get("/v1/admin/users");
 export const getAdminDisputes    = () => api.get("/v1/admin/disputes");
 export const resolveDispute      = (escrowId: number, decision: string, reason: string) =>
   api.post(`/v1/admin/disputes/${escrowId}/resolve`, { decision, reason });
-export const toggleUserActive    = (id: number) => api.patch(`/v1/admin/users/${id}/toggle-active`);
-export const changeUserRole      = (id: number, role: string) => api.patch(`/v1/admin/users/${id}/role`, { role });
-export const deleteUser          = (id: number) => api.delete(`/v1/admin/users/${id}`);
+export const toggleUserActive    = (id: string) => api.patch(`/v1/admin/users/${id}/toggle-active`);
+export const changeUserRole      = (id: string, role: string) => api.patch(`/v1/admin/users/${id}/role`, { role });
+export const deleteUser          = (id: string) => api.delete(`/v1/admin/users/${id}`);
 export const triggerJob          = (job: "scoring" | "escrow_release" | "reaudit") =>
   api.post(`/v1/admin/trigger/${job}`);
 export const rebuildRag          = () => api.post("/v1/admin/rag/rebuild");
@@ -139,3 +136,20 @@ export const getUnreadCount = () => api.get("/v1/messages/unread-count/me");
 // Chatbot  — actual endpoint is /chatbot/chat
 export const askChatbot = (message: string, lang: string) =>
   api.post("/v1/chatbot/chat", { message, language: lang });
+
+// Creative Strategists
+export const getMyStrategistProfile = () => api.get("/v1/creative-strategists/profile/me");
+export const createStrategistProfile = (data: object) => api.post("/v1/creative-strategists/profile", data);
+export const updateStrategistProfile = (data: object) => api.put("/v1/creative-strategists/profile/me", data);
+export const listStrategists = (params?: object) => api.get("/v1/creative-strategists/", { params });
+
+// Campaign Ideas
+export const submitIdea = (data: object) => api.post("/v1/ideas/", data);
+export const getMyIdeas = () => api.get("/v1/ideas/my");
+export const listIdeas = (params?: object) => api.get("/v1/ideas/", { params });
+export const getIdea = (id: string) => api.get(`/v1/ideas/${id}`);
+export const updateIdea = (id: string, data: object) => api.put(`/v1/ideas/${id}`, data);
+export const withdrawIdea = (id: string) => api.delete(`/v1/ideas/${id}`);
+export const engageStrategist = (ideaId: string, data: object) => api.post(`/v1/ideas/${ideaId}/engage`, data);
+export const completeEngagement = (engagementId: string) => api.post(`/v1/ideas/engagements/${engagementId}/complete`);
+export const getMyEngagements = () => api.get("/v1/ideas/engagements/my");

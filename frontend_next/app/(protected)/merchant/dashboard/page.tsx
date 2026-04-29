@@ -86,7 +86,7 @@ export default function MerchantDashboard() {
     );
   }
 
-  const name = lang === "ar" ? user?.full_name_ar : user?.full_name_en;
+  const name = lang === "ar" ? (user?.full_name_ar ?? user?.full_name) : (user?.full_name_en ?? user?.full_name);
   const activeCnt = campaigns.filter((c) => c.status === "ACTIVE" || c.status === "IN_PROGRESS").length;
 
   return (
@@ -108,6 +108,25 @@ export default function MerchantDashboard() {
         <KpiBlock label={lang === "ar" ? "الحملات النشطة" : "Active"} value={activeCnt} accent="green" />
         <KpiBlock label={lang === "ar" ? "المكتملة" : "Completed"} value={analytics?.completed_campaigns ?? 0} accent="blue" />
         <KpiBlock label={lang === "ar" ? "مبالغ محجوزة" : "Escrow Locked"} value={fmtJOD(escrowLocked)} accent="violet" />
+      </div>
+
+      {/* Browse Ideas card */}
+      <div className="aria-card border border-emerald-700/20 bg-emerald-900/10 flex items-center justify-between gap-4">
+        <div>
+          <h3 className="font-semibold text-emerald-400 text-sm">
+            {lang === "ar" ? "🎨 الأفكار الإبداعية" : "🎨 Creative Ideas"}
+          </h3>
+          <p className="text-white/40 text-xs mt-0.5">
+            {lang === "ar"
+              ? "اكتشف أفكار المستشارين الإبداعيين ووظّف أفضلهم لحملتك"
+              : "Discover Creative Strategist pitches and hire them for your campaign"}
+          </p>
+        </div>
+        <Link href="/creative-strategist/ideas">
+          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white shrink-0">
+            {lang === "ar" ? "تصفح الأفكار" : "Browse Ideas"}
+          </Button>
+        </Link>
       </div>
 
       <Tabs defaultValue="campaigns">

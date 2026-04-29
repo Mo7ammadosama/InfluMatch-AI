@@ -7,6 +7,7 @@ const ROLE_PATHS: Record<string, string[]> = {
   merchant: ["/merchant"],
   influencer: ["/influencer", "/open-campaigns"],
   admin: ["/admin"],
+  creative_strategist: ["/creative-strategist"],
 };
 
 export async function middleware(req: NextRequest) {

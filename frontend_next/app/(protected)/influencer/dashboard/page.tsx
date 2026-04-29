@@ -85,7 +85,7 @@ export default function InfluencerDashboard() {
     );
   }
 
-  const name = lang === "ar" ? user?.full_name_ar : user?.full_name_en;
+  const name = lang === "ar" ? (user?.full_name_ar ?? user?.full_name) : (user?.full_name_en ?? user?.full_name);
   const score = profile?.aria_score ?? 0;
 
   return (

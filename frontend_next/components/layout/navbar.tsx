@@ -37,12 +37,12 @@ export function Navbar({ unread = 0 }: { unread?: number }) {
         {user && (
           <div className="flex items-center gap-2 pl-2 border-l border-white/10">
             <div className="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold">
-              {((lang === "ar" ? user.full_name_ar : user.full_name_en) ?? user.username)
+              {(lang === "ar" ? (user.full_name_ar ?? user.full_name) : (user.full_name_en ?? user.full_name))
                 ?.charAt(0)
                 ?.toUpperCase() ?? "U"}
             </div>
             <span className="text-sm text-white/70">
-              {(lang === "ar" ? user.full_name_ar : user.full_name_en) ?? user.username}
+              {lang === "ar" ? (user.full_name_ar ?? user.full_name) : (user.full_name_en ?? user.full_name)}
             </span>
           </div>
         )}

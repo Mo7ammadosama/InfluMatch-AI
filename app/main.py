@@ -11,7 +11,8 @@ import sys
 
 from app.config import settings
 from app.database import create_tables
-from app.routers import auth, merchants, influencers, campaigns, deals, escrow, ai_router
+from app.routers import auth, merchants, influencers, campaigns, deals, escrow, ai_router, wallet
+from app.routers import creative_strategists, campaign_ideas
 from app.middleware.logging_middleware import LoggingMiddleware
 
 
@@ -70,7 +71,10 @@ app.include_router(influencers.router, prefix="/api/v1/influencers", tags=["Infl
 app.include_router(campaigns.router,   prefix="/api/v1/campaigns",   tags=["Campaigns"])
 app.include_router(deals.router,       prefix="/api/v1/deals",       tags=["Deals"])
 app.include_router(escrow.router,      prefix="/api/v1/escrow",      tags=["Escrow & Finance"])
-app.include_router(ai_router.router,   prefix="/api/v1/ai",          tags=["AI Matching"])
+app.include_router(ai_router.router,            prefix="/api/v1/ai",                   tags=["AI Matching"])
+app.include_router(wallet.router,               prefix="/api/v1/wallet",               tags=["Wallet"])
+app.include_router(creative_strategists.router, prefix="/api/v1/creative-strategists", tags=["Creative Strategists"])
+app.include_router(campaign_ideas.router,       prefix="/api/v1/ideas",                tags=["Campaign Ideas"])
 
 
 # --- Health Check ---

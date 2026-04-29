@@ -15,8 +15,8 @@ export default function AdminUsersPage() {
   const { lang } = useApp();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [acting, setActing] = useState<number | null>(null);
-  const [rolePickerId, setRolePickerId] = useState<number | null>(null);
+  const [acting, setActing] = useState<string | null>(null);
+  const [rolePickerId, setRolePickerId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -32,7 +32,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => { load(); }, []);
 
-  async function handleToggle(id: number, name: string) {
+  async function handleToggle(id: string, name: string) {
     setActing(id);
     try {
       const r = await toggleUserActive(id);
@@ -45,7 +45,7 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function handleRole(id: number, newRole: string, currentRole: string) {
+  async function handleRole(id: string, newRole: string, currentRole: string) {
     if (newRole === currentRole) { setRolePickerId(null); return; }
     setRolePickerId(null);
     setActing(id);
@@ -60,7 +60,7 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function handleDelete(id: number, email: string) {
+  async function handleDelete(id: string, email: string) {
     if (!confirm(`Deactivate user: ${email}?`)) return;
     setActing(id);
     try {
@@ -113,8 +113,8 @@ export default function AdminUsersPage() {
           >
             <div className="flex-1 min-w-0">
               <div className="text-white text-sm font-medium">
-                {u.full_name_en ?? u.full_name_ar ?? u.username}
-                <span className="text-white/30 font-normal ml-2">@{u.username}</span>
+                {u.full_name_en ?? u.full_name ?? u.full_name_ar ?? u.username}
+                <span className="text-white/30 font-normal ml-2">@{u.username ?? u.email?.split("@")[0]}</span>
               </div>
               <div className="text-white/40 text-xs mt-0.5">
                 {u.email} · ID #{u.id} · {u.created_at?.slice(0, 10)}

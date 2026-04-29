@@ -36,7 +36,11 @@ function RegisterForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      await register(form);
+      // Map frontend field names to what the app/ backend expects
+      await register({
+        ...form,
+        full_name: form.full_name_en || form.username,
+      });
       const loginRes = await login(form.email, form.password);
       const token: string = loginRes.data.access_token;
       syncToken(token);
@@ -48,9 +52,13 @@ function RegisterForm() {
       toast.success(lang === "ar" ? "تم إنشاء حسابك!" : "Account created!");
       router.push(getDashboardPath(user.role));
     } catch (err: unknown) {
+      const raw = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
       const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? (lang === "ar" ? "فشل التسجيل" : "Registration failed");
+        typeof raw === "string"
+          ? raw
+          : Array.isArray(raw)
+          ? raw.map((e: unknown) => (e as { msg?: string })?.msg ?? "Validation error").join(" · ")
+          : lang === "ar" ? "فشل التسجيل" : "Registration failed";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -74,27 +82,27 @@ function RegisterForm() {
       </p>
 
       {/* Role toggle */}
-      <div className="flex rounded-lg bg-bg-overlay p-1 mb-6">
-        {["merchant", "influencer"].map((r) => (
+      <div className="flex rounded-lg bg-bg-overlay p-1 mb-6 gap-1">
+        {(["merchant", "influencer", "creative_strategist"] as const).map((r) => (
           <button
             key={r}
             type="button"
             onClick={() => update("role", r)}
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+            className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${
               form.role === r
                 ? r === "merchant"
                   ? "bg-amber-500 text-black"
-                  : "bg-violet-600 text-white"
+                  : r === "influencer"
+                  ? "bg-violet-600 text-white"
+                  : "bg-emerald-600 text-white"
                 : "text-white/40 hover:text-white/70"
             }`}
           >
             {r === "merchant"
-              ? lang === "ar"
-                ? "🏪 تاجر"
-                : "🏪 Merchant"
-              : lang === "ar"
-              ? "🌟 مؤثر"
-              : "🌟 Influencer"}
+              ? lang === "ar" ? "🏪 تاجر" : "🏪 Merchant"
+              : r === "influencer"
+              ? lang === "ar" ? "🌟 مؤثر" : "🌟 Influencer"
+              : lang === "ar" ? "🎨 مستشار" : "🎨 Strategist"}
           </button>
         ))}
       </div>

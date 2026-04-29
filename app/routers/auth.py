@@ -8,7 +8,7 @@ from sqlalchemy import select
 from app.database import get_db
 from app.models.user import User
 from app.models.wallet import Wallet
-from app.schemas.user import UserCreate, UserRead, UserLogin, TokenResponse
+from app.schemas.user import UserCreate, UserRead, UserLogin, TokenResponse, UserUpdate
 from app.services.auth_service import hash_password, verify_password, create_access_token, create_refresh_token
 from app.middleware.auth_middleware import get_current_user
 from app.config import settings
@@ -59,4 +59,16 @@ async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)):
 
 @router.get("/me", response_model=UserRead)
 async def me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.patch("/me", response_model=UserRead)
+async def update_me(
+    payload: UserUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    for field, value in payload.model_dump(exclude_none=True).items():
+        setattr(current_user, field, value)
+    await db.flush()
     return current_user
