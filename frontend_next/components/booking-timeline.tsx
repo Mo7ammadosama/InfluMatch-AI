@@ -9,31 +9,31 @@ const STEPS: {
   doneStatuses: BookingStatus[];
 }[] = [
   {
-    status: "PENDING",
+    status: "proposed",
     labelEn: "Booking Created",
     labelAr: "تم الحجز",
-    doneStatuses: ["CONFIRMED", "CONTENT_SUBMITTED", "CONTENT_APPROVED", "RELEASED"],
+    doneStatuses: ["accepted", "in_progress", "content_submitted", "content_approved", "published", "completed"],
   },
   {
-    status: "CONFIRMED",
+    status: "accepted",
     labelEn: "Influencer Confirmed",
     labelAr: "تأكيد من المؤثر",
-    doneStatuses: ["CONTENT_SUBMITTED", "CONTENT_APPROVED", "RELEASED"],
+    doneStatuses: ["in_progress", "content_submitted", "content_approved", "published", "completed"],
   },
   {
-    status: "CONTENT_SUBMITTED",
+    status: "content_submitted",
     labelEn: "Content Submitted",
     labelAr: "تقديم المحتوى",
-    doneStatuses: ["CONTENT_APPROVED", "RELEASED"],
+    doneStatuses: ["content_approved", "published", "completed"],
   },
   {
-    status: "CONTENT_APPROVED",
-    labelEn: "ARIA Review Passed",
-    labelAr: "مراجعة ARIA",
-    doneStatuses: ["RELEASED"],
+    status: "content_approved",
+    labelEn: "Content Approved",
+    labelAr: "الموافقة على المحتوى",
+    doneStatuses: ["published", "completed"],
   },
   {
-    status: "RELEASED",
+    status: "completed",
     labelEn: "Funds Released",
     labelAr: "تحويل المبلغ",
     doneStatuses: [],
@@ -41,7 +41,7 @@ const STEPS: {
 ];
 
 interface Props {
-  currentStatus: BookingStatus;
+  currentStatus: string;
   lang: Lang;
 }
 
@@ -49,7 +49,7 @@ export function BookingTimeline({ currentStatus, lang }: Props) {
   return (
     <div className="booking-timeline">
       {STEPS.map((step, i) => {
-        const isDone = step.doneStatuses.includes(currentStatus);
+        const isDone = step.doneStatuses.includes(currentStatus as BookingStatus);
         const isActive = step.status === currentStatus;
         return (
           <div
@@ -61,21 +61,13 @@ export function BookingTimeline({ currentStatus, lang }: Props) {
               <div
                 className={cn(
                   "text-sm font-medium",
-                  isDone
-                    ? "text-green-400"
-                    : isActive
-                    ? "text-violet-300"
-                    : "text-white/40"
+                  isDone ? "text-green-400" : isActive ? "text-violet-300" : "text-white/40"
                 )}
               >
                 {lang === "ar" ? step.labelAr : step.labelEn}
               </div>
-              {isDone && (
-                <div className="text-[10px] text-green-400/60 mt-0.5">✓ Done</div>
-              )}
-              {isActive && (
-                <div className="text-[10px] text-violet-400/60 mt-0.5">● Current</div>
-              )}
+              {isDone && <div className="text-[10px] text-green-400/60 mt-0.5">✓ Done</div>}
+              {isActive && <div className="text-[10px] text-violet-400/60 mt-0.5">● Current</div>}
             </div>
           </div>
         );

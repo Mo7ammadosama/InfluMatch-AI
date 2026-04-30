@@ -163,7 +163,7 @@ export default function NewBookingPage() {
               <option value="">{lang === "ar" ? "— بدون حملة —" : "— No Campaign —"}</option>
               {campaigns.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {lang === "ar" ? c.title_ar : c.title_en}
+                  {lang === "ar" ? c.title_ar ?? c.title : c.title}
                 </option>
               ))}
             </select>

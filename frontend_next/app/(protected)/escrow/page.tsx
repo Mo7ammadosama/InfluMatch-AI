@@ -89,7 +89,7 @@ export default function EscrowPage() {
                   {lang === "ar" ? `معاملة #${t.id}` : `Transaction #${t.id}`}
                   {t.campaign && (
                     <span className="text-white/40 font-normal">
-                      {" "}— {lang === "ar" ? t.campaign.title_ar : t.campaign.title_en}
+                      {" "}— {lang === "ar" ? t.campaign.title_ar ?? t.campaign.title : t.campaign.title}
                     </span>
                   )}
                 </div>

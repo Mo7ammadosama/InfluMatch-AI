@@ -4,12 +4,22 @@ from app.models.deal import DealStatus
 
 
 class DealCreate(BaseModel):
-    campaign_id: str
+    campaign_id: str | None = None
     influencer_id: str
-    agreed_amount_jod: float = Field(..., ge=1.0)
-    deliverables: dict = Field(default_factory=dict)
+    agreed_amount_jod: float = Field(default=0.0, ge=0.0)
+    agreed_rate_jod: float | None = None  # frontend alias
+    brief: str | None = None              # frontend alias for notes
+    deliverables: list | dict = Field(default_factory=dict)
     deadline: datetime | None = None
     notes: str | None = None
+
+    def model_post_init(self, __context: object) -> None:
+        if self.agreed_rate_jod and not self.agreed_amount_jod:
+            self.agreed_amount_jod = self.agreed_rate_jod
+        if self.brief and not self.notes:
+            self.notes = self.brief
+        if isinstance(self.deliverables, list):
+            self.deliverables = {d: True for d in self.deliverables}
 
 
 class DealUpdate(BaseModel):

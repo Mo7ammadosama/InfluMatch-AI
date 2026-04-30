@@ -44,7 +44,21 @@ export default function InfluencerDashboard() {
       getMyCampaigns().catch(() => null),
       getWallet().catch(() => null),
     ]).then(([p, c, w]) => {
-      if (p) setProfile(p.data);
+      if (p) {
+        const inf = p.data;
+        setProfile(inf);
+        const ig = inf.social_platforms?.instagram ?? {};
+        setProfileForm({
+          instagram_handle: ig.handle ?? inf.display_name ?? "",
+          instagram_followers: String(ig.followers ?? inf.total_followers ?? ""),
+          instagram_engagement_rate: String(ig.engagement_rate ?? inf.avg_engagement_rate ?? ""),
+          niche: inf.content_categories?.[0] ?? "",
+          city: inf.city ?? "",
+          rate_per_post: String(inf.rate_per_post_jod ?? ""),
+          rate_per_story: String(inf.rate_per_story_jod ?? ""),
+          rate_per_reel: String(inf.rate_per_reel_jod ?? ""),
+        });
+      }
       if (c) setCampaigns(Array.isArray(c.data) ? c.data : (c.data?.data ?? []));
       if (w) setWallet(w.data);
     }).finally(() => setLoading(false));
@@ -127,7 +141,7 @@ export default function InfluencerDashboard() {
         />
         <KpiBlock
           label={lang === "ar" ? "الحملات النشطة" : "Active Campaigns"}
-          value={campaigns.filter((c) => c.status === "ACTIVE" || c.status === "IN_PROGRESS").length}
+          value={campaigns.filter((c) => c.status === "active" || c.status === "in_progress").length}
           accent="blue"
         />
       </div>
@@ -159,12 +173,12 @@ export default function InfluencerDashboard() {
               <div key={c.id} className="aria-card flex items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-white text-sm truncate">
-                    {lang === "ar" ? c.title_ar : c.title_en}
+                    {lang === "ar" ? c.title_ar ?? c.title : c.title}
                   </div>
-                  <div className="text-white/40 text-xs mt-0.5">{c.niche} • {c.end_date}</div>
+                  <div className="text-white/40 text-xs mt-0.5">{c.target_categories?.[0] ?? "—"} • {c.end_date ?? "—"}</div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-violet-400 text-sm">{fmtJOD(c.budget_per_influencer ?? 0)}</span>
+                  <span className="text-violet-400 text-sm">{fmtJOD(c.total_budget_jod ?? 0)}</span>
                   <span className={statusClass(c.status)}>{c.status}</span>
                 </div>
               </div>

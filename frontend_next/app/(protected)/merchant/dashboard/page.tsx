@@ -1,20 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/components/layout/providers";
 import { KpiBlock } from "@/components/kpi-block";
+import { InfluencerCard } from "@/components/influencer-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getCampaigns, getMerchantAnalytics, getMyEscrow, createCampaign } from "@/lib/api";
-import { Campaign, EscrowTransaction } from "@/lib/types";
+import { getCampaigns, getMerchantAnalytics, getMyEscrow, createCampaign, getInfluencers, listIdeas } from "@/lib/api";
+import { Campaign, EscrowTransaction, InfluencerProfile, CampaignIdea } from "@/lib/types";
 import { fmtJOD, statusClass } from "@/lib/utils";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Users, Lightbulb, ArrowRight, Tag, Eye } from "lucide-react";
 
 interface AnalyticsData {
   total_budget_jod: number;
@@ -26,26 +28,35 @@ interface AnalyticsData {
 
 export default function MerchantDashboard() {
   const { user, lang } = useApp();
+  const router = useRouter();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [escrow, setEscrow] = useState<EscrowTransaction[]>([]);
+  const [topInfluencers, setTopInfluencers] = useState<InfluencerProfile[]>([]);
+  const [creativeIdeas, setCreativeIdeas] = useState<CampaignIdea[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
   const [newCamp, setNewCamp] = useState({
-    title_en: "", title_ar: "", description_en: "", description_ar: "",
-    niche: "", total_budget: "", budget_per_influencer: "", end_date: "",
+    title: "", title_ar: "", description: "", description_ar: "",
+    target_categories: "", total_budget_jod: "", end_date: "",
+    max_influencers: "1",
   });
 
   useEffect(() => {
-    Promise.all([getCampaigns(), getMerchantAnalytics(), getMyEscrow()])
-      .then(([c, a, e]) => {
-        // campaigns/ returns {data: [...], total, page, ...}
-        setCampaigns(c.data?.data ?? c.data ?? []);
-        setAnalytics(a.data);
-        // escrow/my returns array directly
-        setEscrow(Array.isArray(e.data) ? e.data : (e.data?.data ?? []));
-      })
+    Promise.all([
+      getCampaigns(),
+      getMerchantAnalytics().catch(() => null),
+      getMyEscrow().catch(() => null),
+      getInfluencers({ limit: 6, available_only: true }),
+      listIdeas({ limit: 4 }).catch(() => null),
+    ]).then(([c, a, e, inf, ideas]) => {
+      setCampaigns(c.data?.data ?? c.data ?? []);
+      if (a) setAnalytics(a.data);
+      if (e) setEscrow(Array.isArray(e.data) ? e.data : (e.data?.data ?? []));
+      setTopInfluencers(Array.isArray(inf.data) ? inf.data : (inf.data?.data ?? []));
+      if (ideas) setCreativeIdeas(Array.isArray(ideas.data) ? ideas.data : []);
+    })
       .catch(() => toast.error("Failed to load dashboard"))
       .finally(() => setLoading(false));
   }, []);
@@ -55,9 +66,16 @@ export default function MerchantDashboard() {
     setCreating(true);
     try {
       await createCampaign({
-        ...newCamp,
-        total_budget: parseFloat(newCamp.total_budget) || 0,
-        budget_per_influencer: parseFloat(newCamp.budget_per_influencer) || 0,
+        title: newCamp.title,
+        title_ar: newCamp.title_ar || undefined,
+        description: newCamp.description || undefined,
+        description_ar: newCamp.description_ar || undefined,
+        target_categories: newCamp.target_categories
+          ? newCamp.target_categories.split(",").map((s) => s.trim())
+          : [],
+        total_budget_jod: parseFloat(newCamp.total_budget_jod) || 50,
+        max_influencers: parseInt(newCamp.max_influencers) || 1,
+        end_date: newCamp.end_date || undefined,
       });
       toast.success(lang === "ar" ? "تم إنشاء الحملة!" : "Campaign created!");
       const r = await getCampaigns();
@@ -67,6 +85,11 @@ export default function MerchantDashboard() {
     } finally {
       setCreating(false);
     }
+  }
+
+  function handleBook(influencer: InfluencerProfile) {
+    sessionStorage.setItem("booking_influencer", JSON.stringify(influencer));
+    router.push("/bookings/new");
   }
 
   const escrowLocked = escrow
@@ -87,10 +110,11 @@ export default function MerchantDashboard() {
   }
 
   const name = lang === "ar" ? (user?.full_name_ar ?? user?.full_name) : (user?.full_name_en ?? user?.full_name);
-  const activeCnt = campaigns.filter((c) => c.status === "ACTIVE" || c.status === "IN_PROGRESS").length;
+  const activeCnt = campaigns.filter((c) => c.status === "active" || c.status === "in_progress").length;
 
   return (
     <div className="space-y-6 max-w-6xl">
+      {/* Banner */}
       <div className="merchant-banner flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">
@@ -103,32 +127,109 @@ export default function MerchantDashboard() {
         </Link>
       </div>
 
+      {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiBlock label={lang === "ar" ? "الميزانية المنفقة" : "Budget Spent"} value={fmtJOD(analytics?.total_budget_jod)} accent="amber" />
+        <KpiBlock label={lang === "ar" ? "إجمالي الميزانية" : "Total Budget"} value={fmtJOD(analytics?.total_budget_jod ?? 0)} accent="amber" />
         <KpiBlock label={lang === "ar" ? "الحملات النشطة" : "Active"} value={activeCnt} accent="green" />
         <KpiBlock label={lang === "ar" ? "المكتملة" : "Completed"} value={analytics?.completed_campaigns ?? 0} accent="blue" />
         <KpiBlock label={lang === "ar" ? "مبالغ محجوزة" : "Escrow Locked"} value={fmtJOD(escrowLocked)} accent="violet" />
       </div>
 
-      {/* Browse Ideas card */}
-      <div className="aria-card border border-emerald-700/20 bg-emerald-900/10 flex items-center justify-between gap-4">
-        <div>
-          <h3 className="font-semibold text-emerald-400 text-sm">
-            {lang === "ar" ? "🎨 الأفكار الإبداعية" : "🎨 Creative Ideas"}
-          </h3>
-          <p className="text-white/40 text-xs mt-0.5">
-            {lang === "ar"
-              ? "اكتشف أفكار المستشارين الإبداعيين ووظّف أفضلهم لحملتك"
-              : "Discover Creative Strategist pitches and hire them for your campaign"}
-          </p>
+      {/* ── Available Influencers ── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users size={16} className="text-violet-400" />
+            <h2 className="font-semibold text-white text-sm">
+              {lang === "ar" ? "المؤثرون المتاحون" : "Available Influencers"}
+            </h2>
+            <span className="px-1.5 py-0.5 rounded-full text-xs bg-violet-500/20 text-violet-400 border border-violet-500/30">
+              {topInfluencers.length}
+            </span>
+          </div>
+          <Link href="/discover">
+            <button className="flex items-center gap-1 text-violet-400 hover:text-violet-300 text-xs transition-colors">
+              {lang === "ar" ? "عرض الكل" : "View all"}
+              <ArrowRight size={12} />
+            </button>
+          </Link>
         </div>
-        <Link href="/creative-strategist/ideas">
-          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white shrink-0">
-            {lang === "ar" ? "تصفح الأفكار" : "Browse Ideas"}
-          </Button>
-        </Link>
+        {topInfluencers.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {topInfluencers.map((inf) => (
+              <InfluencerCard key={inf.id} influencer={inf} lang={lang} onBook={handleBook} />
+            ))}
+          </div>
+        ) : (
+          <div className="aria-card text-center py-10 text-white/30 text-sm">
+            {lang === "ar" ? "لا يوجد مؤثرون متاحون حالياً" : "No influencers available right now"}
+          </div>
+        )}
       </div>
 
+      {/* ── Creative Ideas ── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Lightbulb size={16} className="text-emerald-400" />
+            <h2 className="font-semibold text-white text-sm">
+              {lang === "ar" ? "الأفكار الإبداعية" : "Creative Ideas"}
+            </h2>
+          </div>
+          <Link href="/creative-strategist/ideas">
+            <button className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 text-xs transition-colors">
+              {lang === "ar" ? "تصفح الكل" : "Browse all"}
+              <ArrowRight size={12} />
+            </button>
+          </Link>
+        </div>
+        {creativeIdeas.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {creativeIdeas.map((idea) => (
+              <div
+                key={idea.id}
+                className="aria-card border border-white/5 hover:border-emerald-500/20 transition-colors flex flex-col gap-2"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-semibold text-white text-sm leading-snug">
+                    {lang === "ar" ? idea.title_ar ?? idea.title : idea.title}
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                    {idea.status}
+                  </span>
+                </div>
+                <p className="text-white/50 text-xs leading-relaxed line-clamp-2">
+                  {lang === "ar" ? idea.description_ar ?? idea.description : idea.description}
+                </p>
+                <div className="flex items-center justify-between text-xs text-white/30 pt-1 border-t border-white/5">
+                  <div className="flex items-center gap-3">
+                    {idea.business_category && (
+                      <span className="flex items-center gap-1 text-emerald-400/70">
+                        <Tag size={10} />{idea.business_category}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1"><Eye size={10} />{idea.view_count}</span>
+                  </div>
+                  {idea.estimated_budget_jod && (
+                    <span className="text-amber-400 font-semibold">{fmtJOD(idea.estimated_budget_jod)}</span>
+                  )}
+                </div>
+                <Link href="/creative-strategist/ideas">
+                  <Button size="sm" className="w-full h-8 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs mt-1">
+                    {lang === "ar" ? "توظيف المستشار" : "Hire Strategist"}
+                  </Button>
+                </Link>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="aria-card text-center py-8 text-white/30 text-sm border border-emerald-700/10">
+            {lang === "ar" ? "لا توجد أفكار منشورة بعد" : "No creative ideas published yet"}
+          </div>
+        )}
+      </div>
+
+      {/* Tabs: Campaigns / Analytics / New Campaign */}
       <Tabs defaultValue="campaigns">
         <TabsList>
           <TabsTrigger value="campaigns">{lang === "ar" ? "الحملات" : "Campaigns"}</TabsTrigger>
@@ -145,12 +246,14 @@ export default function MerchantDashboard() {
               <div key={c.id} className="aria-card flex items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-white text-sm truncate">
-                    {lang === "ar" ? c.title_ar : c.title_en}
+                    {lang === "ar" ? c.title_ar ?? c.title : c.title}
                   </div>
-                  <div className="text-white/40 text-xs mt-0.5">{c.niche} • {c.end_date}</div>
+                  <div className="text-white/40 text-xs mt-0.5">
+                    {c.target_categories?.[0] ?? "—"} • {c.end_date ?? "—"}
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-amber-400 text-sm font-medium">{fmtJOD(c.total_budget)}</span>
+                  <span className="text-amber-400 text-sm font-medium">{fmtJOD(c.total_budget_jod)}</span>
                   <span className={statusClass(c.status)}>{c.status}</span>
                 </div>
               </div>
@@ -171,12 +274,17 @@ export default function MerchantDashboard() {
                 <BarChart data={chartData}>
                   <XAxis dataKey="name" tick={{ fill: "#ffffff50", fontSize: 11 }} />
                   <YAxis tick={{ fill: "#ffffff50", fontSize: 11 }} />
-                  <Tooltip contentStyle={{ background: "#17171f", border: "1px solid #ffffff10", borderRadius: 8 }} labelStyle={{ color: "#fff" }} />
+                  <Tooltip
+                    contentStyle={{ background: "#17171f", border: "1px solid #ffffff10", borderRadius: 8 }}
+                    labelStyle={{ color: "#fff" }}
+                  />
                   <Bar dataKey="budget" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="text-white/30 text-sm text-center py-8">{lang === "ar" ? "لا توجد بيانات." : "No data yet."}</div>
+              <div className="text-white/30 text-sm text-center py-8">
+                {lang === "ar" ? "لا توجد بيانات." : "No data yet."}
+              </div>
             )}
           </div>
         </TabsContent>
@@ -188,39 +296,77 @@ export default function MerchantDashboard() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Title (EN)</Label>
-                  <Input value={newCamp.title_en} onChange={(e) => setNewCamp((p) => ({ ...p, title_en: e.target.value }))} placeholder="Campaign title" required />
+                  <Input
+                    value={newCamp.title}
+                    onChange={(e) => setNewCamp((p) => ({ ...p, title: e.target.value }))}
+                    placeholder="Campaign title"
+                    required
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Title (AR)</Label>
-                  <Input value={newCamp.title_ar} onChange={(e) => setNewCamp((p) => ({ ...p, title_ar: e.target.value }))} placeholder="عنوان الحملة" dir="rtl" />
+                  <Input
+                    value={newCamp.title_ar}
+                    onChange={(e) => setNewCamp((p) => ({ ...p, title_ar: e.target.value }))}
+                    placeholder="عنوان الحملة"
+                    dir="rtl"
+                  />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label>{lang === "ar" ? "الوصف" : "Description"}</Label>
-                <Textarea value={newCamp.description_en} onChange={(e) => setNewCamp((p) => ({ ...p, description_en: e.target.value }))} placeholder="Campaign brief..." rows={3} />
+                <Textarea
+                  value={newCamp.description}
+                  onChange={(e) => setNewCamp((p) => ({ ...p, description: e.target.value }))}
+                  placeholder="Campaign brief..."
+                  rows={3}
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>{lang === "ar" ? "الميزانية الكلية (JOD)" : "Total Budget (JOD)"}</Label>
-                  <Input type="number" value={newCamp.total_budget} onChange={(e) => setNewCamp((p) => ({ ...p, total_budget: e.target.value }))} placeholder="500" min={0} />
+                  <Input
+                    type="number"
+                    value={newCamp.total_budget_jod}
+                    onChange={(e) => setNewCamp((p) => ({ ...p, total_budget_jod: e.target.value }))}
+                    placeholder="500"
+                    min={50}
+                    required
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>{lang === "ar" ? "ميزانية المؤثر (JOD)" : "Budget / Influencer (JOD)"}</Label>
-                  <Input type="number" value={newCamp.budget_per_influencer} onChange={(e) => setNewCamp((p) => ({ ...p, budget_per_influencer: e.target.value }))} placeholder="100" min={0} />
+                  <Label>{lang === "ar" ? "عدد المؤثرين" : "Max Influencers"}</Label>
+                  <Input
+                    type="number"
+                    value={newCamp.max_influencers}
+                    onChange={(e) => setNewCamp((p) => ({ ...p, max_influencers: e.target.value }))}
+                    placeholder="1"
+                    min={1}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>{lang === "ar" ? "التخصص" : "Niche"}</Label>
-                  <Input value={newCamp.niche} onChange={(e) => setNewCamp((p) => ({ ...p, niche: e.target.value }))} placeholder="fashion, tech..." />
+                  <Label>{lang === "ar" ? "القطاعات (مفصولة بفاصلة)" : "Categories (comma-separated)"}</Label>
+                  <Input
+                    value={newCamp.target_categories}
+                    onChange={(e) => setNewCamp((p) => ({ ...p, target_categories: e.target.value }))}
+                    placeholder="fashion, tech..."
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{lang === "ar" ? "تاريخ الانتهاء" : "End Date"}</Label>
-                  <Input type="date" value={newCamp.end_date} onChange={(e) => setNewCamp((p) => ({ ...p, end_date: e.target.value }))} />
+                  <Input
+                    type="date"
+                    value={newCamp.end_date}
+                    onChange={(e) => setNewCamp((p) => ({ ...p, end_date: e.target.value }))}
+                  />
                 </div>
               </div>
               <Button type="submit" variant="merchant" disabled={creating}>
-                {creating ? (lang === "ar" ? "جار الإنشاء..." : "Creating...") : (lang === "ar" ? "إنشاء الحملة" : "Create Campaign")}
+                {creating
+                  ? lang === "ar" ? "جار الإنشاء..." : "Creating..."
+                  : lang === "ar" ? "إنشاء الحملة" : "Create Campaign"}
               </Button>
             </form>
           </div>

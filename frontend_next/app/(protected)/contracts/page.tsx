@@ -42,9 +42,9 @@ export default function ContractsPage() {
         campaign_details: selectedCampaign
           ? {
               campaign_id: selectedCampaign.id,
-              title: lang === "ar" ? selectedCampaign.title_ar : selectedCampaign.title_en,
-              budget: selectedCampaign.total_budget,
-              niche: selectedCampaign.niche,
+              title: lang === "ar" ? selectedCampaign.title_ar : selectedCampaign.title,
+              budget: selectedCampaign.total_budget_jod,
+              niche: selectedCampaign.target_categories?.[0],
               end_date: selectedCampaign.end_date,
             }
           : { title: "General Campaign" },
@@ -108,7 +108,7 @@ export default function ContractsPage() {
             >
               <option value="">{lang === "ar" ? "— بدون حملة —" : "— No Campaign —"}</option>
               {campaigns.map((c) => (
-                <option key={c.id} value={c.id}>{lang === "ar" ? c.title_ar : c.title_en}</option>
+                <option key={c.id} value={c.id}>{lang === "ar" ? c.title_ar ?? c.title : c.title}</option>
               ))}
             </select>
           </div>

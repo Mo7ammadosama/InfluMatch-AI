@@ -16,9 +16,9 @@ export default function OpenCampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ niche: "", city: "" });
-  const [applying, setApplying] = useState<number | null>(null);
+  const [applying, setApplying] = useState<string | null>(null);
 
-  async function handleApply(campaignId: number) {
+  async function handleApply(campaignId: string) {
     setApplying(campaignId);
     try {
       await applyToCampaign(campaignId);
@@ -32,9 +32,7 @@ export default function OpenCampaignsPage() {
     }
   }
 
-  useEffect(() => {
-    loadCampaigns();
-  }, []);
+  useEffect(() => { loadCampaigns(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function loadCampaigns() {
     setLoading(true);
@@ -50,15 +48,12 @@ export default function OpenCampaignsPage() {
 
   const filtered = campaigns.filter((c) => {
     const n = filters.niche.toLowerCase();
-    const ci = filters.city.toLowerCase();
-    const matchNiche = !n || (c.niche?.toLowerCase().includes(n) ?? false);
-    const matchCity = !ci || ((c as { city?: string }).city?.toLowerCase().includes(ci) ?? false);
-    return matchNiche && matchCity;
+    const matchNiche = !n || (c.target_categories ?? []).some((cat) => cat.toLowerCase().includes(n));
+    return matchNiche;
   });
 
   return (
     <div className="space-y-6 max-w-4xl">
-      {/* Header */}
       <div className="influencer-banner">
         <h1 className="text-2xl font-bold text-white">
           📢 {lang === "ar" ? "الحملات المتاحة" : "Open Campaigns for You"}
@@ -68,7 +63,6 @@ export default function OpenCampaignsPage() {
         </p>
       </div>
 
-      {/* Filters */}
       <div className="aria-card">
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
@@ -90,7 +84,6 @@ export default function OpenCampaignsPage() {
         </div>
       </div>
 
-      {/* Campaign grid */}
       {loading ? (
         <div className="flex items-center justify-center h-40">
           <div className="text-white/40 text-sm">{lang === "ar" ? "جار التحميل..." : "Loading..."}</div>
@@ -102,12 +95,12 @@ export default function OpenCampaignsPage() {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-white text-sm">
-                    {lang === "ar" ? c.title_ar : c.title_en}
+                    {lang === "ar" ? c.title_ar ?? c.title : c.title}
                   </h3>
                   <div className="flex items-center gap-3 mt-1">
-                    {c.niche && (
+                    {c.target_categories?.[0] && (
                       <span className="flex items-center gap-1 text-violet-400 text-xs">
-                        <Tag size={11} /> {c.niche}
+                        <Tag size={11} /> {c.target_categories[0]}
                       </span>
                     )}
                     {c.end_date && (
@@ -121,14 +114,18 @@ export default function OpenCampaignsPage() {
               </div>
 
               <p className="text-white/50 text-xs mb-3 line-clamp-2">
-                {lang === "ar" ? c.description_ar : c.description_en}
+                {lang === "ar" ? c.description_ar ?? c.description : c.description}
               </p>
 
               <div className="flex items-center justify-between">
                 <span className="text-amber-400 font-semibold text-sm">
-                  {fmtJOD(c.budget_per_influencer ?? 0)} / influencer
+                  {fmtJOD(c.total_budget_jod)} {lang === "ar" ? "إجمالي" : "total budget"}
                 </span>
-                <Button size="sm" disabled={applying === c.id} onClick={() => handleApply(c.id)}>
+                <Button
+                  size="sm"
+                  disabled={applying === c.id}
+                  onClick={() => handleApply(c.id)}
+                >
                   {applying === c.id ? "..." : lang === "ar" ? "تقديم" : "Apply"}
                 </Button>
               </div>

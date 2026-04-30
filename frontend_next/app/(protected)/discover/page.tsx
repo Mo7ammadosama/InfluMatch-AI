@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getInfluencers, smartSearch } from "@/lib/api";
+import { getInfluencers } from "@/lib/api";
 import { InfluencerProfile } from "@/lib/types";
 import { toast } from "sonner";
 import { Search } from "lucide-react";
@@ -37,20 +37,31 @@ export default function DiscoverPage() {
   }
 
   async function handleSearch() {
-    if (!query.trim() && !filters.niche && !filters.city && !filters.tier) {
-      await loadInfluencers();
-      return;
-    }
     setLoading(true);
     try {
-      const payload: Record<string, unknown> = { brief: query || "any" };
-      if (filters.niche) payload.niche = filters.niche;
-      if (filters.city) payload.city = filters.city;
-      if (filters.max_budget) payload.max_budget = parseFloat(filters.max_budget);
-      if (filters.tier) payload.tier = filters.tier;
-      const r = await smartSearch(payload);
-      // smart-search returns {results: [...], total, brief}
-      setInfluencers(r.data?.results ?? r.data?.data ?? r.data ?? []);
+      const params: Record<string, unknown> = { limit: 50 };
+      if (filters.city) params.city = filters.city;
+      if (filters.niche) params.category = filters.niche;
+      const r = await getInfluencers(params);
+      let results: InfluencerProfile[] = Array.isArray(r.data) ? r.data : (r.data?.data ?? r.data ?? []);
+
+      if (filters.max_budget) {
+        const max = parseFloat(filters.max_budget);
+        results = results.filter((i) => (i.rate_per_post_jod ?? 0) <= max);
+      }
+      if (filters.tier) {
+        results = results.filter((i) => i.aria_tier === filters.tier);
+      }
+      if (query.trim()) {
+        const q = query.trim().toLowerCase();
+        results = results.filter(
+          (i) =>
+            (i.display_name ?? "").toLowerCase().includes(q) ||
+            (i.content_categories ?? []).some((c) => c.toLowerCase().includes(q)) ||
+            (i.city ?? "").toLowerCase().includes(q)
+        );
+      }
+      setInfluencers(results);
     } catch {
       toast.error("Search failed");
     } finally {

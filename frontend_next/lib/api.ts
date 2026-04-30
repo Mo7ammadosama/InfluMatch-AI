@@ -47,14 +47,14 @@ export const updateMe = (data: object) => api.patch("/v1/auth/me", data);
 export const getCampaigns = (params?: object) =>
   api.get("/v1/campaigns/", { params });
 export const getMyCampaigns = () => api.get("/v1/campaigns/my");
-export const getCampaign = (id: number) => api.get(`/v1/campaigns/${id}`);
+export const getCampaign = (id: string) => api.get(`/v1/campaigns/${id}`);
 export const createCampaign = (data: object) => api.post("/v1/campaigns/", data);
-export const updateCampaign = (id: number, data: object) =>
+export const updateCampaign = (id: string, data: object) =>
   api.patch(`/v1/campaigns/${id}`, data);
-export const deleteCampaign = (id: number) => api.delete(`/v1/campaigns/${id}`);
-export const activateCampaign = (id: number) =>
+export const deleteCampaign = (id: string) => api.delete(`/v1/campaigns/${id}`);
+export const activateCampaign = (id: string) =>
   api.post(`/v1/campaigns/${id}/activate`);
-export const applyToCampaign = (id: number) =>
+export const applyToCampaign = (id: string) =>
   api.post(`/v1/campaigns/${id}/apply`);
 
 // Influencers

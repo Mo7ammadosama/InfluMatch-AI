@@ -84,6 +84,40 @@ async def list_influencers(
     return influencers
 
 
+@router.post("/smart-search")
+async def smart_search(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    query = select(Influencer).where(Influencer.is_available == True)
+    if payload.get("city"):
+        query = query.where(Influencer.city == payload["city"])
+    result = await db.execute(query.limit(30))
+    influencers = result.scalars().all()
+
+    niche = payload.get("niche") or payload.get("category")
+    if niche:
+        influencers = [i for i in influencers if niche.lower() in [c.lower() for c in (i.content_categories or [])]]
+
+    if payload.get("max_budget"):
+        influencers = [i for i in influencers if (i.rate_per_post_jod or 0) <= float(payload["max_budget"])]
+
+    if payload.get("tier"):
+        influencers = [i for i in influencers if i.aria_tier == payload["tier"]]
+
+    brief = (payload.get("brief") or "").lower()
+    if brief and brief != "any":
+        influencers = [
+            i for i in influencers
+            if brief in (i.display_name or "").lower()
+            or any(brief in c.lower() for c in (i.content_categories or []))
+            or brief in (i.city or "").lower()
+        ]
+
+    return {"results": influencers, "total": len(influencers)}
+
+
 @router.get("/{influencer_id}", response_model=InfluencerRead)
 async def get_influencer(
     influencer_id: str,

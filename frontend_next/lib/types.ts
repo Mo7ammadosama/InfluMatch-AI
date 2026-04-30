@@ -57,53 +57,62 @@ export interface InfluencerProfile {
 }
 
 export type CampaignStatus =
-  | "DRAFT"
-  | "ACTIVE"
-  | "IN_PROGRESS"
-  | "COMPLETED"
-  | "DISPUTED";
+  | "draft"
+  | "active"
+  | "in_progress"
+  | "completed"
+  | "cancelled"
+  | "paused";
 
 export interface Campaign {
-  id: number;
-  merchant_id: number;
-  title_en?: string;
+  id: string;
+  merchant_id: string;
+  title: string;
   title_ar?: string;
-  description_en?: string;
+  description?: string;
   description_ar?: string;
-  niche?: string;
-  total_budget?: number;
-  budget_per_influencer?: number;
+  target_categories?: string[];
+  required_platforms?: string[];
+  min_followers?: number;
+  total_budget_jod: number;
+  spent_budget_jod?: number;
+  max_influencers?: number;
   start_date?: string;
   end_date?: string;
-  required_deliverables?: string[];
-  hashtags?: string[];
   status: CampaignStatus;
-  is_featured?: boolean;
+  ai_brief_summary?: string;
+  created_at?: string;
 }
 
 export type BookingStatus =
-  | "PENDING"
-  | "CONFIRMED"
-  | "CONTENT_SUBMITTED"
-  | "CONTENT_APPROVED"
-  | "RELEASED"
-  | "DISPUTED";
+  | "proposed"
+  | "negotiating"
+  | "accepted"
+  | "in_progress"
+  | "content_submitted"
+  | "content_approved"
+  | "published"
+  | "completed"
+  | "disputed"
+  | "cancelled";
 
 export interface Booking {
-  id: number;
-  merchant_id: number;
-  influencer_id: number;
-  campaign_id?: number;
-  agreed_rate_jod: number;
+  id: string;
+  campaign_id?: string;
+  influencer_id: string;
+  agreed_amount_jod: number;
+  agreed_rate_jod?: number;
+  vat_amount_jod?: number;
+  platform_fee_jod?: number;
+  total_amount_jod?: number;
+  notes?: string;
   brief?: string;
-  deliverables?: string[];
+  deliverables?: Record<string, unknown>;
   deadline?: string;
   status: BookingStatus;
-  content_url?: string;
-  ai_review_result?: string;
+  content_urls?: string[];
+  escrow_id?: string;
   created_at: string;
-  influencer?: InfluencerProfile;
-  campaign?: Campaign;
 }
 
 export type EscrowStatus =

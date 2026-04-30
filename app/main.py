@@ -70,6 +70,7 @@ app.include_router(merchants.router,   prefix="/api/v1/merchants",   tags=["Merc
 app.include_router(influencers.router, prefix="/api/v1/influencers", tags=["Influencers"])
 app.include_router(campaigns.router,   prefix="/api/v1/campaigns",   tags=["Campaigns"])
 app.include_router(deals.router,       prefix="/api/v1/deals",       tags=["Deals"])
+app.include_router(deals.router,       prefix="/api/v1/bookings",    tags=["Bookings"])
 app.include_router(escrow.router,      prefix="/api/v1/escrow",      tags=["Escrow & Finance"])
 app.include_router(ai_router.router,            prefix="/api/v1/ai",                   tags=["AI Matching"])
 app.include_router(wallet.router,               prefix="/api/v1/wallet",               tags=["Wallet"])

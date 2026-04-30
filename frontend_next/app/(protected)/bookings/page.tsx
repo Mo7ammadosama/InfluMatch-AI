@@ -19,29 +19,28 @@ export default function BookingsPage() {
   const { user, lang } = useApp();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<number | null>(null);
-  const [messages, setMessages] = useState<Record<number, Message[]>>({});
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [msgInput, setMsgInput] = useState("");
   const [contentUrl, setContentUrl] = useState("");
 
   async function load() {
     const r = await getMyBookings();
-    // bookings/my returns {data: [...], total, page, ...}
     setBookings(r.data?.data ?? r.data ?? []);
   }
 
   useEffect(() => {
     load().catch(() => toast.error("Failed to load bookings")).finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function loadMessages(bookingId: number) {
+  async function loadMessages(bookingId: string) {
     try {
-      const r = await getBookingMessages(bookingId);
+      const r = await getBookingMessages(bookingId as unknown as number);
       setMessages((prev) => ({ ...prev, [bookingId]: r.data ?? [] }));
     } catch {}
   }
 
-  function toggle(id: number) {
+  function toggle(id: string) {
     const next = expanded === id ? null : id;
     setExpanded(next);
     if (next) loadMessages(next);
@@ -57,7 +56,7 @@ export default function BookingsPage() {
     }
   }
 
-  async function handleSendMsg(bookingId: number) {
+  async function handleSendMsg(bookingId: string) {
     if (!msgInput.trim()) return;
     try {
       await sendMessage({ booking_id: bookingId, content: msgInput });
@@ -98,15 +97,18 @@ export default function BookingsPage() {
             <div className="flex items-center gap-4">
               <div>
                 <div className="font-semibold text-white text-sm">
-                  {lang === "ar" ? `حجز #${b.id}` : `Booking #${b.id}`}
+                  {lang === "ar" ? `حجز #${b.id.slice(0, 8)}` : `Booking #${b.id.slice(0, 8)}`}
                 </div>
                 <div className="text-white/40 text-xs mt-0.5">
-                  {fmtJOD(b.agreed_rate_jod)} • {b.deadline ? new Date(b.deadline).toLocaleDateString() : "—"}
+                  {fmtJOD(b.agreed_amount_jod ?? b.agreed_rate_jod ?? 0)} •{" "}
+                  {b.deadline ? new Date(b.deadline).toLocaleDateString() : "—"}
                 </div>
               </div>
               <span className={statusClass(b.status)}>{b.status}</span>
             </div>
-            {expanded === b.id ? <ChevronUp size={16} className="text-white/40" /> : <ChevronDown size={16} className="text-white/40" />}
+            {expanded === b.id
+              ? <ChevronUp size={16} className="text-white/40" />
+              : <ChevronDown size={16} className="text-white/40" />}
           </button>
 
           {expanded === b.id && (
@@ -114,14 +116,14 @@ export default function BookingsPage() {
               <BookingTimeline currentStatus={b.status} lang={lang} />
 
               <div className="flex flex-wrap gap-2">
-                {b.status === "PENDING" && user?.role === "influencer" && (
+                {b.status === "proposed" && user?.role === "influencer" && (
                   <Button size="sm" variant="success"
-                    onClick={() => action(() => confirmBooking(b.id), lang === "ar" ? "تم التأكيد!" : "Confirmed!")}>
+                    onClick={() => action(() => confirmBooking(b.id as unknown as number), lang === "ar" ? "تم التأكيد!" : "Confirmed!")}>
                     ✅ {lang === "ar" ? "تأكيد الحجز" : "Confirm Booking"}
                   </Button>
                 )}
 
-                {b.status === "CONFIRMED" && user?.role === "influencer" && (
+                {b.status === "accepted" && user?.role === "influencer" && (
                   <div className="flex items-center gap-2">
                     <Input
                       placeholder={lang === "ar" ? "رابط المحتوى..." : "Content URL..."}
@@ -130,33 +132,43 @@ export default function BookingsPage() {
                       className="h-8 text-sm w-60"
                     />
                     <Button size="sm"
-                      onClick={() => action(() => submitContent(b.id, { content_url: contentUrl }), lang === "ar" ? "تم الإرسال!" : "Submitted!")}>
+                      onClick={() => action(
+                        () => submitContent(b.id as unknown as number, { content_url: contentUrl }),
+                        lang === "ar" ? "تم الإرسال!" : "Submitted!"
+                      )}>
                       {lang === "ar" ? "إرسال المحتوى" : "Submit Content"}
                     </Button>
                   </div>
                 )}
 
-                {b.status === "CONTENT_SUBMITTED" && user?.role === "merchant" && (
+                {b.status === "content_submitted" && user?.role === "merchant" && (
                   <Button size="sm" variant="success"
-                    onClick={() => action(() => approveContent(b.id), lang === "ar" ? "تمت الموافقة!" : "Approved!")}>
+                    onClick={() => action(() => approveContent(b.id as unknown as number), lang === "ar" ? "تمت الموافقة!" : "Approved!")}>
                     ✅ {lang === "ar" ? "موافقة على المحتوى" : "Approve Content"}
                   </Button>
                 )}
 
-                {["PENDING", "CONFIRMED"].includes(b.status) && user?.role === "merchant" && (
+                {["proposed", "accepted"].includes(b.status) && user?.role === "merchant" && (
                   <Button
                     size="sm"
                     variant="ghost"
                     className="text-red-400/60 hover:text-red-400 hover:bg-red-400/10"
                     onClick={() => {
                       if (!confirm(lang === "ar" ? "إلغاء هذا الحجز؟" : "Cancel this booking?")) return;
-                      action(() => cancelBooking(b.id), lang === "ar" ? "تم الإلغاء!" : "Booking cancelled!");
+                      action(() => cancelBooking(b.id as unknown as number), lang === "ar" ? "تم الإلغاء!" : "Booking cancelled!");
                     }}
                   >
                     ✕ {lang === "ar" ? "إلغاء" : "Cancel"}
                   </Button>
                 )}
               </div>
+
+              {b.notes && (
+                <div className="text-white/50 text-xs bg-white/4 rounded-lg p-3">
+                  <span className="text-white/30">{lang === "ar" ? "الملاحظات: " : "Brief: "}</span>
+                  {b.notes}
+                </div>
+              )}
 
               <div>
                 <Label className="mb-2 block">{lang === "ar" ? "الرسائل" : "Messages"}</Label>
