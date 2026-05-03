@@ -64,11 +64,12 @@ def _render_register(is_ar: bool):
         full_name_ar = st.text_input("الاسم الكامل (AR)" if is_ar else "Full Name (AR)")
         email = st.text_input("البريد الإلكتروني" if is_ar else "Email")
         phone = st.text_input("رقم الهاتف" if is_ar else "Phone (optional)")
-        role_options = ["merchant", "influencer", "creative_strategist"]
+        role_options = ["merchant", "influencer", "creative_strategist", "content_creator"]
         role_labels = {
             "merchant": "🏪 تاجر" if is_ar else "🏪 Merchant",
             "influencer": "🌟 مؤثر" if is_ar else "🌟 Influencer",
             "creative_strategist": "🎨 مستشار إبداعي" if is_ar else "🎨 Creative Strategist",
+            "content_creator": "✍️ منشئ محتوى" if is_ar else "✍️ Content Creator",
         }
         default_idx = role_options.index(default_role) if default_role in role_options else 0
         role = st.selectbox(

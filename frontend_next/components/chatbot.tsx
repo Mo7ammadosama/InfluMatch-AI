@@ -4,7 +4,7 @@ import { useState } from "react";
 import { MessageSquare, X, Send, Zap } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { askChatbot } from "@/lib/api";
+import { onboardingChat } from "@/lib/api";
 import { useApp } from "./layout/providers";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +14,7 @@ interface Message {
 }
 
 export function Chatbot() {
-  const { lang } = useApp();
+  const { lang, user } = useApp();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -27,15 +27,15 @@ export function Chatbot() {
     setMessages((prev) => [...prev, { role: "user", content: msg }]);
     setLoading(true);
     try {
-      const res = await askChatbot(msg, lang);
+      const res = await onboardingChat(msg, user?.role);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: res.data.response ?? res.data.answer ?? "..." },
+        { role: "assistant", content: res.data.reply ?? "..." },
       ]);
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: lang === "ar" ? "حدث خطأ." : "An error occurred." },
+        { role: "assistant", content: lang === "ar" ? "حدث خطأ. حاول مرة أخرى." : "An error occurred. Please try again." },
       ]);
     } finally {
       setLoading(false);
@@ -58,16 +58,23 @@ export function Chatbot() {
           {/* Header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-violet-600/20">
             <Zap size={16} className="text-violet-400" />
-            <span className="text-sm font-semibold text-white">
-              {lang === "ar" ? "وصل AI GPT" : "WaslAI GPT"}
-            </span>
+            <div>
+              <span className="text-sm font-semibold text-white">
+                {lang === "ar" ? "مساعد WaslAI" : "WaslAI Assistant"}
+              </span>
+              <div className="text-xs text-white/40">
+                {lang === "ar" ? "مساعد التأهيل" : "Onboarding Guide"}
+              </div>
+            </div>
           </div>
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-72">
             {messages.length === 0 && (
-              <div className="text-white/30 text-xs text-center mt-4">
-                {lang === "ar" ? "اسألني أي شيء..." : "Ask me anything..."}
+              <div className="text-white/30 text-xs text-center mt-4 leading-relaxed">
+                {lang === "ar"
+                  ? "مرحباً! أنا هنا لمساعدتك في فهم المنصة. اسألني أي شيء عن WaslAI."
+                  : "Hi! I'm here to help you get started on WaslAI. Ask me anything about the platform."}
               </div>
             )}
             {messages.map((m, i) => (
@@ -84,7 +91,7 @@ export function Chatbot() {
               </div>
             ))}
             {loading && (
-              <div className="bg-bg-raised text-white/50 text-xs px-3 py-2 rounded-lg w-fit">
+              <div className="bg-bg-raised text-white/50 text-xs px-3 py-2 rounded-lg w-fit animate-pulse">
                 ...
               </div>
             )}
@@ -99,7 +106,7 @@ export function Chatbot() {
               placeholder={lang === "ar" ? "اكتب سؤالك..." : "Type a message..."}
               className="flex-1 h-8 text-xs"
             />
-            <Button size="icon" className="h-8 w-8 flex-shrink-0" onClick={send}>
+            <Button size="icon" className="h-8 w-8 flex-shrink-0" onClick={send} disabled={loading}>
               <Send size={14} />
             </Button>
           </div>

@@ -82,19 +82,19 @@ function RegisterForm() {
       </p>
 
       {/* Role toggle */}
-      <div className="flex rounded-lg bg-bg-overlay p-1 mb-6 gap-1">
-        {(["merchant", "influencer", "creative_strategist"] as const).map((r) => (
+      <div className="grid grid-cols-3 rounded-lg bg-bg-overlay p-1 mb-6 gap-1">
+        {(["merchant", "influencer", "content_creator"] as const).map((r) => (
           <button
             key={r}
             type="button"
             onClick={() => update("role", r)}
-            className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${
+            className={`py-2 text-xs font-medium rounded-md transition-all ${
               form.role === r
                 ? r === "merchant"
                   ? "bg-amber-500 text-black"
                   : r === "influencer"
                   ? "bg-violet-600 text-white"
-                  : "bg-emerald-600 text-white"
+                  : "bg-pink-600 text-white"
                 : "text-white/40 hover:text-white/70"
             }`}
           >
@@ -102,7 +102,7 @@ function RegisterForm() {
               ? lang === "ar" ? "🏪 تاجر" : "🏪 Merchant"
               : r === "influencer"
               ? lang === "ar" ? "🌟 مؤثر" : "🌟 Influencer"
-              : lang === "ar" ? "🎨 مستشار" : "🎨 Strategist"}
+              : lang === "ar" ? "✍️ منشئ محتوى" : "✍️ Content Creator"}
           </button>
         ))}
       </div>

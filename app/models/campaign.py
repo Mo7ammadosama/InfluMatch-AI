@@ -56,6 +56,9 @@ class Campaign(Base):
     ai_brief_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     embedding_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
+    # Linked Content Creator engagement (optional)
+    cc_engagement_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("cc_engagements.id"), nullable=True)
+
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -63,6 +66,7 @@ class Campaign(Base):
     # Relationships
     merchant: Mapped["Merchant"] = relationship("Merchant", back_populates="campaigns")
     deals: Mapped[list["Deal"]] = relationship("Deal", back_populates="campaign")
+    cc_engagement: Mapped["CCEngagement | None"] = relationship("CCEngagement", back_populates="campaign", foreign_keys=[cc_engagement_id])
 
     def __repr__(self) -> str:
         return f"<Campaign '{self.title}' [{self.status}] {self.total_budget_jod} JOD>"

@@ -62,6 +62,7 @@ async def update_profile(
     return influencer
 
 
+@router.get("", response_model=list[InfluencerRead])
 @router.get("/", response_model=list[InfluencerRead])
 async def list_influencers(
     skip: int = 0,

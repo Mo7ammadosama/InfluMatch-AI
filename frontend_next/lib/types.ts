@@ -1,4 +1,4 @@
-export type Role = "merchant" | "influencer" | "admin" | "creative_strategist";
+export type Role = "merchant" | "influencer" | "admin" | "creative_strategist" | "content_creator";
 export type Lang = "en" | "ar";
 
 export type Tier = "PLATINUM" | "GOLD" | "SILVER" | "BRONZE" | "UNRANKED";
@@ -81,6 +81,7 @@ export interface Campaign {
   end_date?: string;
   status: CampaignStatus;
   ai_brief_summary?: string;
+  cc_engagement_id?: string;
   created_at?: string;
 }
 
@@ -237,6 +238,99 @@ export interface CreativeEngagement {
   agreed_fee_jod: number;
   merchant_notes?: string;
   strategist_notes?: string;
+  started_at?: string;
+  completed_at?: string;
+  created_at: string;
+}
+
+// ── Content Creator types ──────────────────────────────────────────────────────
+
+export interface ContentCreatorProfile {
+  id: string;
+  user_id: string;
+  display_name: string;
+  display_name_ar?: string;
+  bio?: string;
+  bio_ar?: string;
+  avatar_url?: string;
+  city?: string;
+  portfolio_url?: string;
+  specializations: string[];
+  languages: string[];
+  content_categories: string[];
+  consultation_rate_jod: number;
+  completed_engagements: number;
+  total_earned_jod: number;
+  avg_rating: number;
+  is_verified: boolean;
+  is_available: boolean;
+  created_at: string;
+}
+
+export interface ContentCreatorSummary {
+  id: string;
+  display_name: string;
+  display_name_ar?: string;
+  avatar_url?: string;
+  city?: string;
+  specializations: string[];
+  avg_rating: number;
+  completed_engagements: number;
+  is_available: boolean;
+}
+
+export interface PortfolioItem {
+  id: string;
+  content_creator_id: string;
+  title: string;
+  title_ar?: string;
+  description?: string;
+  description_ar?: string;
+  campaign_type?: string;
+  business_categories: string[];
+  platforms: string[];
+  content_formats: string[];
+  example_concept?: string;
+  example_concept_ar?: string;
+  view_count: number;
+  is_published: boolean;
+  created_at: string;
+}
+
+export type BookingRequestStatus = "pending" | "accepted" | "declined" | "expired";
+
+export interface BookingRequest {
+  id: string;
+  merchant_id: string;
+  content_creator_id: string;
+  portfolio_item_id?: string;
+  business_description?: string;
+  business_description_ar?: string;
+  campaign_goal?: string;
+  target_audience?: string;
+  budget_jod?: number;
+  timeline_days?: number;
+  status: BookingRequestStatus;
+  merchant_notes?: string;
+  creator_response?: string;
+  created_at: string;
+}
+
+export type CCEngagementStatus = "active" | "idea_submitted" | "idea_approved" | "completed" | "cancelled";
+
+export interface CCEngagement {
+  id: string;
+  booking_request_id: string;
+  merchant_id: string;
+  content_creator_id: string;
+  campaign_id?: string;
+  status: CCEngagementStatus;
+  agreed_fee_jod: number;
+  platform_share_percent: number;
+  idea_brief?: string;
+  idea_brief_ar?: string;
+  merchant_feedback?: string;
+  creator_rating?: number;
   started_at?: string;
   completed_at?: string;
   created_at: string;

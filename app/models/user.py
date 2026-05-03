@@ -14,7 +14,7 @@ class UserRole(str, enum.Enum):
     MERCHANT = "merchant"
     INFLUENCER = "influencer"
     ADMIN = "admin"
-    CREATIVE_STRATEGIST = "creative_strategist"
+    CONTENT_CREATOR = "content_creator"
 
 
 class User(Base):
@@ -35,7 +35,7 @@ class User(Base):
     # Relationships
     merchant_profile: Mapped["Merchant"] = relationship("Merchant", back_populates="user", uselist=False)
     influencer_profile: Mapped["Influencer"] = relationship("Influencer", back_populates="user", uselist=False)
-    creative_strategist_profile: Mapped["CreativeStrategist"] = relationship("CreativeStrategist", back_populates="user", uselist=False)
+    content_creator_profile: Mapped["ContentCreator"] = relationship("ContentCreator", back_populates="user", uselist=False)
     wallet: Mapped["Wallet"] = relationship("Wallet", back_populates="user", uselist=False)
 
     def __repr__(self) -> str:

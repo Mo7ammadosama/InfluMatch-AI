@@ -9,7 +9,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from frontend.components.navbar import render_navbar
-from frontend.pages import landing, auth, merchant_dashboard, influencer_dashboard, creative_strategist_dashboard
+from frontend.pages import landing, auth, merchant_dashboard, influencer_dashboard, creative_strategist_dashboard, content_creator_dashboard
 
 st.set_page_config(
     page_title="WaslAI.jo | منصة المؤثرين",
@@ -59,5 +59,7 @@ else:
         influencer_dashboard.render()
     elif role == "creative_strategist":
         creative_strategist_dashboard.render()
+    elif role == "content_creator":
+        content_creator_dashboard.render()
     else:
         st.error("Unknown role. Please contact support.")

@@ -19,6 +19,7 @@ class CampaignCreate(BaseModel):
     max_influencers: int = Field(default=1, ge=1)
     start_date: date | None = None
     end_date: date | None = None
+    cc_engagement_id: str | None = None
 
 
 class CampaignUpdate(BaseModel):
@@ -45,6 +46,7 @@ class CampaignRead(BaseModel):
     end_date: date | None
     status: CampaignStatus
     ai_brief_summary: str | None
+    cc_engagement_id: str | None
     created_at: datetime
 
     model_config = {"from_attributes": True}

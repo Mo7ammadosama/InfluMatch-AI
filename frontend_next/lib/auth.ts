@@ -45,6 +45,7 @@ export function getDashboardPath(role: string): string {
   if (role === "merchant") return "/merchant/dashboard";
   if (role === "influencer") return "/influencer/dashboard";
   if (role === "admin") return "/admin";
+  if (role === "content_creator") return "/content-creator/dashboard";
   if (role === "creative_strategist") return "/creative-strategist/dashboard";
   return "/";
 }

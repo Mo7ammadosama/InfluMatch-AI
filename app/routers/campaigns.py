@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models.user import User, UserRole
 from app.models.merchant import Merchant
 from app.models.campaign import Campaign, CampaignStatus
+from app.models.cc_engagement import CCEngagement, CCEngagementStatus
 from app.schemas.campaign import CampaignCreate, CampaignRead, CampaignUpdate
 from app.middleware.auth_middleware import get_current_user, require_role
 
@@ -26,10 +27,32 @@ async def create_campaign(
     if not merchant:
         raise HTTPException(status_code=404, detail="Merchant profile required before creating campaigns")
 
+    cc_engagement_id = payload.cc_engagement_id
+
+    # Validate the cc_engagement belongs to this merchant and is approved
+    if cc_engagement_id:
+        eng_result = await db.execute(
+            select(CCEngagement).where(
+                CCEngagement.id == cc_engagement_id,
+                CCEngagement.merchant_id == merchant.id,
+            )
+        )
+        cc_eng = eng_result.scalar_one_or_none()
+        if not cc_eng:
+            raise HTTPException(status_code=404, detail="CC Engagement not found or not yours")
+        if cc_eng.status not in (CCEngagementStatus.IDEA_APPROVED, CCEngagementStatus.ACTIVE):
+            raise HTTPException(status_code=400, detail="Engagement must be in idea_approved or active status to link")
+
     campaign = Campaign(merchant_id=merchant.id, **payload.model_dump())
     db.add(campaign)
     merchant.active_campaigns += 1
-    await db.flush()
+    await db.flush()  # assign campaign.id
+
+    # Back-link the engagement to this campaign
+    if cc_engagement_id and cc_eng:
+        cc_eng.campaign_id = campaign.id
+        await db.flush()
+
     return campaign
 
 

@@ -9,7 +9,7 @@ import { User } from "@/lib/types";
 import { toast } from "sonner";
 import { UserCheck, UserX, Trash2, RefreshCw } from "lucide-react";
 
-const ROLES = ["merchant", "influencer", "admin"];
+const ROLES = ["merchant", "influencer", "content_creator", "admin"];
 
 export default function AdminUsersPage() {
   const { lang } = useApp();

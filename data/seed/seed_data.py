@@ -12,6 +12,7 @@ from app.database import AsyncSessionLocal, create_tables
 from app.models.user import User, UserRole
 from app.models.merchant import Merchant
 from app.models.influencer import Influencer
+from app.models.content_creator import ContentCreator
 from app.models.wallet import Wallet
 from app.services.auth_service import hash_password
 
@@ -73,6 +74,31 @@ SEED_INFLUENCERS = [
     },
 ]
 
+SEED_CONTENT_CREATORS = [
+    {
+        "user": {"email": "rania.creator@test.com", "full_name": "Rania Al-Zubi", "full_name_ar": "رانيا الزعبي", "role": UserRole.CONTENT_CREATOR, "phone": "+96279333001"},
+        "creator": {
+            "display_name": "Rania Creates", "display_name_ar": "رانيا تبدع",
+            "bio": "Brand strategist & visual content creator based in Amman",
+            "bio_ar": "مستراتيجية علامات تجارية ومبدعة محتوى بصري من عمان",
+            "city": "Amman", "specializations": ["branding", "photography", "social media"],
+            "content_categories": ["fashion", "food", "lifestyle"],
+            "languages": ["Arabic", "English"], "consultation_rate_jod": 120.0, "is_available": True,
+        },
+    },
+    {
+        "user": {"email": "kareem.content@test.com", "full_name": "Kareem Nasser", "full_name_ar": "كريم ناصر", "role": UserRole.CONTENT_CREATOR, "phone": "+96279333002"},
+        "creator": {
+            "display_name": "Kareem Nasser", "display_name_ar": "كريم ناصر",
+            "bio": "Video producer & copywriter specializing in tech and fintech brands",
+            "bio_ar": "منتج فيديو وكاتب إعلاني متخصص في العلامات التقنية والمالية",
+            "city": "Amman", "specializations": ["video production", "copywriting"],
+            "content_categories": ["tech", "finance", "business"],
+            "languages": ["Arabic", "English"], "consultation_rate_jod": 180.0, "is_available": True,
+        },
+    },
+]
+
 DEFAULT_PASSWORD = "WaslAI@2024"
 
 
@@ -103,8 +129,19 @@ async def seed():
             db.add(wallet)
             print(f"  ✅ Influencer: {u_data['full_name']}")
 
+        for c_data in SEED_CONTENT_CREATORS:
+            u_data = c_data["user"]
+            user = User(hashed_password=hash_password(DEFAULT_PASSWORD), is_verified=True, **u_data)
+            db.add(user)
+            await db.flush()
+            creator = ContentCreator(user_id=user.id, **c_data["creator"])
+            db.add(creator)
+            wallet = Wallet(user_id=user.id)
+            db.add(wallet)
+            print(f"  ✅ Content Creator: {u_data['full_name']}")
+
         await db.commit()
-        print(f"\n🎉 Seeded {len(SEED_MERCHANTS)} merchants + {len(SEED_INFLUENCERS)} influencers")
+        print(f"\n🎉 Seeded {len(SEED_MERCHANTS)} merchants + {len(SEED_INFLUENCERS)} influencers + {len(SEED_CONTENT_CREATORS)} content creators")
         print(f"   Default password: {DEFAULT_PASSWORD}")
 
 

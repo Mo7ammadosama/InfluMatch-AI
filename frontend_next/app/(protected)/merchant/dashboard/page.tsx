@@ -10,13 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getCampaigns, getMerchantAnalytics, getMyEscrow, createCampaign, getInfluencers, listIdeas } from "@/lib/api";
-import { Campaign, EscrowTransaction, InfluencerProfile, CampaignIdea } from "@/lib/types";
+import { getMyCampaigns, getMerchantAnalytics, getMyEscrow, createCampaign, getInfluencers, listIdeas, listCreators } from "@/lib/api";
+import { Campaign, EscrowTransaction, InfluencerProfile, CampaignIdea, ContentCreatorSummary } from "@/lib/types";
 import { fmtJOD, statusClass } from "@/lib/utils";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import Link from "next/link";
-import { Plus, Users, Lightbulb, ArrowRight, Tag, Eye } from "lucide-react";
+import { Plus, Users, Lightbulb, ArrowRight, Tag, Eye, Star, CheckCircle2, MapPin, PenLine } from "lucide-react";
 
 interface AnalyticsData {
   total_budget_jod: number;
@@ -33,6 +33,7 @@ export default function MerchantDashboard() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [escrow, setEscrow] = useState<EscrowTransaction[]>([]);
   const [topInfluencers, setTopInfluencers] = useState<InfluencerProfile[]>([]);
+  const [topCreators, setTopCreators] = useState<ContentCreatorSummary[]>([]);
   const [creativeIdeas, setCreativeIdeas] = useState<CampaignIdea[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -45,17 +46,19 @@ export default function MerchantDashboard() {
 
   useEffect(() => {
     Promise.all([
-      getCampaigns(),
+      getMyCampaigns().catch(() => ({ data: [] })),
       getMerchantAnalytics().catch(() => null),
       getMyEscrow().catch(() => null),
-      getInfluencers({ limit: 6, available_only: true }),
+      getInfluencers({ limit: 6, available_only: true }).catch(() => ({ data: [] })),
       listIdeas({ limit: 4 }).catch(() => null),
-    ]).then(([c, a, e, inf, ideas]) => {
-      setCampaigns(c.data?.data ?? c.data ?? []);
+      listCreators({ limit: 4, is_available: true }).catch(() => ({ data: [] })),
+    ]).then(([c, a, e, inf, ideas, creators]) => {
+      setCampaigns(Array.isArray(c.data) ? c.data : (c.data?.data ?? []));
       if (a) setAnalytics(a.data);
       if (e) setEscrow(Array.isArray(e.data) ? e.data : (e.data?.data ?? []));
       setTopInfluencers(Array.isArray(inf.data) ? inf.data : (inf.data?.data ?? []));
       if (ideas) setCreativeIdeas(Array.isArray(ideas.data) ? ideas.data : []);
+      setTopCreators(Array.isArray(creators.data) ? creators.data : []);
     })
       .catch(() => toast.error("Failed to load dashboard"))
       .finally(() => setLoading(false));
@@ -78,7 +81,7 @@ export default function MerchantDashboard() {
         end_date: newCamp.end_date || undefined,
       });
       toast.success(lang === "ar" ? "تم إنشاء الحملة!" : "Campaign created!");
-      const r = await getCampaigns();
+      const r = await getMyCampaigns();
       setCampaigns(r.data?.data ?? r.data ?? []);
     } catch {
       toast.error(lang === "ar" ? "فشل الإنشاء" : "Failed to create campaign");
@@ -228,6 +231,106 @@ export default function MerchantDashboard() {
           </div>
         )}
       </div>
+
+      {/* ── Content Creators ── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <PenLine size={16} className="text-pink-400" />
+            <h2 className="font-semibold text-white text-sm">
+              {lang === "ar" ? "منشئو المحتوى المتاحون" : "Available Content Creators"}
+            </h2>
+            <span className="px-1.5 py-0.5 rounded-full text-xs bg-pink-500/20 text-pink-400 border border-pink-500/30">
+              {topCreators.length}
+            </span>
+          </div>
+          <Link href="/discover/creators">
+            <button className="flex items-center gap-1 text-pink-400 hover:text-pink-300 text-xs transition-colors">
+              {lang === "ar" ? "عرض الكل" : "View all"}
+              <ArrowRight size={12} />
+            </button>
+          </Link>
+        </div>
+
+        {topCreators.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {topCreators.map((creator) => (
+              <div key={creator.id} className="aria-card border border-white/5 hover:border-pink-500/20 transition-colors flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-pink-500/20 flex items-center justify-center text-pink-400 font-bold text-base shrink-0">
+                    {creator.avatar_url
+                      ? <img src={creator.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                      : (lang === "ar" ? creator.display_name_ar ?? creator.display_name : creator.display_name).charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-white text-sm truncate">
+                      {lang === "ar" ? creator.display_name_ar ?? creator.display_name : creator.display_name}
+                    </div>
+                    {creator.city && (
+                      <div className="flex items-center gap-1 text-white/40 text-xs mt-0.5">
+                        <MapPin size={9} />{creator.city}
+                      </div>
+                    )}
+                  </div>
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${creator.is_available ? "bg-emerald-400" : "bg-white/20"}`} />
+                </div>
+
+                {creator.specializations?.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {creator.specializations.slice(0, 2).map((s) => (
+                      <span key={s} className="px-2 py-0.5 rounded-full text-xs bg-pink-500/10 text-pink-400 border border-pink-500/20">{s}</span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1 text-amber-400">
+                    <Star size={10} />{creator.avg_rating?.toFixed(1) ?? "—"}
+                  </div>
+                  <div className="flex items-center gap-1 text-white/40">
+                    <CheckCircle2 size={10} />{creator.completed_engagements}
+                  </div>
+                </div>
+
+                <Link href={`/discover/creators/${creator.id}`}>
+                  <button className="w-full py-1.5 rounded-lg bg-pink-600/20 hover:bg-pink-600/40 text-pink-400 text-xs font-medium transition border border-pink-500/20">
+                    {lang === "ar" ? "عرض الملف" : "View Profile"}
+                  </button>
+                </Link>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="aria-card text-center py-8 text-white/30 text-sm border border-pink-700/10">
+            <p>{lang === "ar" ? "لا يوجد منشئو محتوى متاحون حالياً" : "No content creators available right now"}</p>
+            <Link href="/discover/creators">
+              <button className="mt-3 text-pink-400 hover:text-pink-300 text-xs underline underline-offset-2 transition">
+                {lang === "ar" ? "تصفح جميع منشئي المحتوى" : "Browse all content creators"}
+              </button>
+            </Link>
+          </div>
+        )}
+      </div>
+
+      {/* ── Content Creator Engagements shortcut ── */}
+      <Link href="/merchant/cc-engagements">
+        <div className="flex items-center justify-between p-4 rounded-xl border border-rose-500/15 bg-rose-900/10 hover:border-rose-500/30 transition cursor-pointer">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-rose-500/20 flex items-center justify-center text-lg shrink-0">📋</div>
+            <div>
+              <h3 className="font-medium text-white text-sm">
+                {lang === "ar" ? "إدارة مشاركات منشئي المحتوى" : "Manage CC Engagements"}
+              </h3>
+              <p className="text-white/40 text-xs">
+                {lang === "ar"
+                  ? "راجع الأفكار وأنشئ الحملات"
+                  : "Review ideas, approve & create campaigns"}
+              </p>
+            </div>
+          </div>
+          <ArrowRight size={16} className="text-rose-400 shrink-0" />
+        </div>
+      </Link>
 
       {/* Tabs: Campaigns / Analytics / New Campaign */}
       <Tabs defaultValue="campaigns">

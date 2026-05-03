@@ -133,9 +133,9 @@ export const getBookingMessages = (bookingId: number) =>
 export const sendMessage = (data: object) => api.post("/v1/messages/", data);
 export const getUnreadCount = () => api.get("/v1/messages/unread-count/me");
 
-// Chatbot  — actual endpoint is /chatbot/chat
+// Chatbot
 export const askChatbot = (message: string, lang: string) =>
-  api.post("/v1/chatbot/chat", { message, language: lang });
+  api.post("/v1/chat/onboarding", { message, language: lang });
 
 // Creative Strategists
 export const getMyStrategistProfile = () => api.get("/v1/creative-strategists/profile/me");
@@ -153,3 +153,37 @@ export const withdrawIdea = (id: string) => api.delete(`/v1/ideas/${id}`);
 export const engageStrategist = (ideaId: string, data: object) => api.post(`/v1/ideas/${ideaId}/engage`, data);
 export const completeEngagement = (engagementId: string) => api.post(`/v1/ideas/engagements/${engagementId}/complete`);
 export const getMyEngagements = () => api.get("/v1/ideas/engagements/my");
+
+// Content Creators
+export const getMyCreatorProfile = () => api.get("/v1/content-creators/profile/me");
+export const createCreatorProfile = (data: object) => api.post("/v1/content-creators/profile", data);
+export const updateCreatorProfile = (data: object) => api.put("/v1/content-creators/profile/me", data);
+export const listCreators = (params?: object) => api.get("/v1/content-creators/", { params });
+export const getCreator = (id: string) => api.get(`/v1/content-creators/${id}`);
+
+// Booking Requests
+export const sendBookingRequest = (data: object) => api.post("/v1/content-creators/booking-requests", data);
+export const getReceivedBookings = () => api.get("/v1/content-creators/booking-requests/received");
+export const getSentBookings = () => api.get("/v1/content-creators/booking-requests/sent");
+export const acceptBooking = (id: string) => api.put(`/v1/content-creators/booking-requests/${id}/accept`);
+export const declineBooking = (id: string) => api.put(`/v1/content-creators/booking-requests/${id}/decline`);
+
+// CC Engagements
+export const getMyCCEngagements = () => api.get("/v1/content-creators/engagements/");
+export const getCCEngagement = (id: string) => api.get(`/v1/content-creators/engagements/${id}`);
+export const submitIdeaBrief = (id: string, data: object) => api.put(`/v1/content-creators/engagements/${id}/submit-idea`, data);
+export const approveIdeaBrief = (id: string) => api.put(`/v1/content-creators/engagements/${id}/approve-idea`);
+export const completeCCEngagement = (id: string) => api.put(`/v1/content-creators/engagements/${id}/complete`);
+export const rateCCCreator = (id: string, data: object) => api.put(`/v1/content-creators/engagements/${id}/rate`, data);
+
+// Portfolio Items
+export const createPortfolioItem = (data: object) => api.post("/v1/portfolio/", data);
+export const listPortfolioItems = (params?: object) => api.get("/v1/portfolio/", { params });
+export const getMyPortfolio = () => api.get("/v1/portfolio/mine");
+export const getPortfolioItem = (id: string) => api.get(`/v1/portfolio/${id}`);
+export const updatePortfolioItem = (id: string, data: object) => api.put(`/v1/portfolio/${id}`, data);
+export const deletePortfolioItem = (id: string) => api.delete(`/v1/portfolio/${id}`);
+
+// Onboarding Chat
+export const onboardingChat = (message: string, role?: string) =>
+  api.post("/v1/chat/onboarding", { message, role });

@@ -12,7 +12,7 @@ import sys
 from app.config import settings
 from app.database import create_tables
 from app.routers import auth, merchants, influencers, campaigns, deals, escrow, ai_router, wallet
-from app.routers import creative_strategists, campaign_ideas
+from app.routers import content_creators, portfolio_items, chat, admin
 from app.middleware.logging_middleware import LoggingMiddleware
 
 
@@ -52,6 +52,7 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json",
     lifespan=lifespan,
+    redirect_slashes=False,
 )
 
 # --- Middleware Stack ---
@@ -74,8 +75,10 @@ app.include_router(deals.router,       prefix="/api/v1/bookings",    tags=["Book
 app.include_router(escrow.router,      prefix="/api/v1/escrow",      tags=["Escrow & Finance"])
 app.include_router(ai_router.router,            prefix="/api/v1/ai",                   tags=["AI Matching"])
 app.include_router(wallet.router,               prefix="/api/v1/wallet",               tags=["Wallet"])
-app.include_router(creative_strategists.router, prefix="/api/v1/creative-strategists", tags=["Creative Strategists"])
-app.include_router(campaign_ideas.router,       prefix="/api/v1/ideas",                tags=["Campaign Ideas"])
+app.include_router(content_creators.router,     prefix="/api/v1/content-creators",     tags=["Content Creators"])
+app.include_router(portfolio_items.router,      prefix="/api/v1/portfolio",             tags=["Portfolio"])
+app.include_router(chat.router,                 prefix="/api/v1/chat",                  tags=["Onboarding Chat"])
+app.include_router(admin.router,               prefix="/api/v1/admin",                 tags=["Admin"])
 
 
 # --- Health Check ---

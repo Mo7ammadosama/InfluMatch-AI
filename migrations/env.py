@@ -7,21 +7,23 @@ from alembic import context
 import sys
 import os
 
-# Ensure project root is on path so waslai package is importable
+# Ensure project root is on path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import Base and all models so Alembic can detect schema changes
-from waslai.backend.core.database import Base  # noqa: E402
-from waslai.backend.models import (  # noqa: F401,E402
-    User, Merchant, Influencer,
-    Campaign, CampaignStatus, CampaignInfluencer,
-    Contract, ContractStatus,
-    EscrowTransaction, EscrowStatus,
-    LoyaltyWallet, WalletTransaction, TransactionType,
-    CampaignMilestone, MilestoneStatus,
-    CampaignReport, ReportStatus,
-    Booking, BookingStatus,
-    Message,
+from app.database import Base  # noqa: E402
+from app.models import (  # noqa: F401,E402
+    User, UserRole,
+    Merchant,
+    Influencer,
+    ContentCreator,
+    PortfolioItem,
+    BookingRequest, BookingRequestStatus,
+    CCEngagement, CCEngagementStatus,
+    Campaign, CampaignStatus,
+    Deal, DealStatus,
+    EscrowTransaction, EscrowState,
+    Wallet, WalletTransaction,
 )
 
 config = context.config

@@ -15,6 +15,22 @@ from app.services.escrow_service import escrow_service
 router = APIRouter()
 
 
+@router.get("/my", response_model=list[EscrowRead])
+async def get_my_escrows(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    from app.models.merchant import Merchant
+    result = await db.execute(select(Merchant).where(Merchant.user_id == current_user.id))
+    merchant = result.scalar_one_or_none()
+    if not merchant:
+        return []
+    result = await db.execute(
+        select(EscrowTransaction).where(EscrowTransaction.merchant_id == merchant.id)
+    )
+    return result.scalars().all()
+
+
 @router.get("/{escrow_id}", response_model=EscrowRead)
 async def get_escrow(
     escrow_id: str,

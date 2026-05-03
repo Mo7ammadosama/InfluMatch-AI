@@ -85,6 +85,14 @@ export function Sidebar({ unread = 0 }: { unread?: number }) {
     { label: lang === "ar" ? "أرباحي" : "Earnings", href: "/wallet", icon: <Wallet size={16} /> },
   ];
 
+  const contentCreatorNav: NavItem[] = [
+    { label: tr("dashboard", lang), href: "/content-creator/dashboard", icon: <LayoutDashboard size={16} /> },
+    { label: lang === "ar" ? "ملفي الشخصي" : "My Profile", href: "/content-creator/profile", icon: <Settings size={16} /> },
+    { label: lang === "ar" ? "معرض أعمالي" : "Portfolio", href: "/content-creator/dashboard", icon: <Star size={16} /> },
+    { label: lang === "ar" ? "طلبات الحجز" : "Booking Requests", href: "/content-creator/dashboard", icon: <CalendarDays size={16} /> },
+    { label: lang === "ar" ? "أرباحي" : "Earnings", href: "/wallet", icon: <Wallet size={16} /> },
+  ];
+
   const guestNav: NavItem[] = [
     { label: tr("home", lang), href: "/", icon: <Home size={16} /> },
     { label: tr("login", lang), href: "/login", icon: <LogOut size={16} /> },
@@ -100,6 +108,8 @@ export function Sidebar({ unread = 0 }: { unread?: number }) {
       ? adminNav
       : role === "creative_strategist"
       ? creativeStrategistNav
+      : role === "content_creator"
+      ? contentCreatorNav
       : guestNav;
 
   const roleColor =
@@ -111,6 +121,8 @@ export function Sidebar({ unread = 0 }: { unread?: number }) {
       ? "text-red-400"
       : role === "creative_strategist"
       ? "text-emerald-400"
+      : role === "content_creator"
+      ? "text-pink-400"
       : "text-blue-400";
 
   const roleBg =
@@ -122,6 +134,8 @@ export function Sidebar({ unread = 0 }: { unread?: number }) {
       ? "bg-red-500/10 border-red-500/20"
       : role === "creative_strategist"
       ? "bg-emerald-500/10 border-emerald-500/20"
+      : role === "content_creator"
+      ? "bg-pink-500/10 border-pink-500/20"
       : "bg-blue-500/10 border-blue-500/20";
 
   return (
