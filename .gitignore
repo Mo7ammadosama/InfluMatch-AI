@@ -33,6 +33,17 @@ data/chroma_db/
 # Logs
 logs/*.log
 logs/*.json
+*.log
+
+# Claude Code (local AI assistant workspace)
+.claude/
+
+# Windows crash dumps
+*.stackdump
+
+# Next.js build cache
+frontend_next/tsconfig.tsbuildinfo
+frontend_next/test-results/
 
 # Testing
 .pytest_cache/

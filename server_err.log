@@ -1,9 +1,0 @@
-[32m2026-04-20 01:13:13.229[0m | [32m[1mSUCCESS [0m | [36minflumatch.backend.agents.guardian_agent[0m:[36m_setup_system_jobs[0m:[36m21[0m - [32m[1m[ARIA::GUARDIAN] System jobs registered[0m
-C:\Users\Hp\AppData\Local\Programs\Python\Python311\Lib\site-packages\requests\__init__.py:109: RequestsDependencyWarning: urllib3 (2.1.0) or chardet (7.0.1)/charset_normalizer (3.3.2) doesn't match a supported version!
-  warnings.warn(
-Failed to send telemetry event ClientStartEvent: capture() takes 1 positional argument but 3 were given
-Failed to send telemetry event ClientCreateCollectionEvent: capture() takes 1 positional argument but 3 were given
-Failed to send telemetry event ClientCreateCollectionEvent: capture() takes 1 positional argument but 3 were given
-Failed to send telemetry event ClientCreateCollectionEvent: capture() takes 1 positional argument but 3 were given
-[32m2026-04-20 01:14:10.848[0m | [32m[1mSUCCESS [0m | [36minflumatch.backend.services.rag.vector_store[0m:[36m_init_collections[0m:[36m26[0m - [32m[1m[ARIA::RAG] Vector store initialized[0m
-ERROR:    [Errno 10048] error while attempting to bind on address ('127.0.0.1', 8080): only one usage of each socket address (protocol/network address/port) is normally permitted
