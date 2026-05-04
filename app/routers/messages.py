@@ -19,11 +19,15 @@ class MessageCreate(BaseModel):
     content: str
 
 
-def _msg(m: Message) -> dict:
+def _msg(m: Message, sender: User | None = None) -> dict:
+    name = None
+    if sender:
+        name = sender.full_name_en or sender.username or sender.email
     return {
         "id": m.id,
         "booking_id": m.deal_id,
         "sender_id": m.sender_id,
+        "sender_name": name,
         "content": m.content,
         "created_at": m.created_at.isoformat() if m.created_at else None,
         "read_at": m.read_at.isoformat() if m.read_at else None,
@@ -56,7 +60,11 @@ async def get_booking_messages(
         .where(Message.deal_id == booking_id)
         .order_by(Message.created_at)
     )
-    return [_msg(m) for m in result.scalars().all()]
+    msgs = result.scalars().all()
+    sender_ids = list({m.sender_id for m in msgs})
+    users_result = await db.execute(select(User).where(User.id.in_(sender_ids)))
+    users_map = {u.id: u for u in users_result.scalars().all()}
+    return [_msg(m, users_map.get(m.sender_id)) for m in msgs]
 
 
 @router.post("/")
@@ -69,4 +77,4 @@ async def send_message(
     msg = Message(deal_id=payload.deal_id, sender_id=current_user.id, content=payload.content)
     db.add(msg)
     await db.flush()
-    return _msg(msg)
+    return _msg(msg, current_user)

@@ -52,6 +52,7 @@ async def propose_deal(
     )
     db.add(deal)
     await db.flush()
+    await db.refresh(deal)
     return deal
 
 
@@ -96,6 +97,7 @@ async def confirm_deal(
         raise HTTPException(status_code=400, detail="Deal is not in PROPOSED state")
     deal.status = DealStatus.ACCEPTED
     await db.flush()
+    await db.refresh(deal)
     return deal
 
 
@@ -113,6 +115,7 @@ async def cancel_deal(
         raise HTTPException(status_code=400, detail="Deal already finalized")
     deal.status = DealStatus.CANCELLED
     await db.flush()
+    await db.refresh(deal)
     return deal
 
 
@@ -132,6 +135,7 @@ async def submit_content(
         deal.content_urls = [*deal.content_urls, url]
     deal.status = DealStatus.CONTENT_SUBMITTED
     await db.flush()
+    await db.refresh(deal)
     return deal
 
 
@@ -149,6 +153,7 @@ async def approve_content(
         raise HTTPException(status_code=400, detail="No content submitted yet")
     deal.status = DealStatus.CONTENT_APPROVED
     await db.flush()
+    await db.refresh(deal)
     return deal
 
 
@@ -165,4 +170,6 @@ async def update_deal(
         raise HTTPException(status_code=404, detail="Deal not found")
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(deal, field, value)
+    await db.flush()
+    await db.refresh(deal)
     return deal

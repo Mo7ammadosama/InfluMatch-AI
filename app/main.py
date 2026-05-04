@@ -1,6 +1,7 @@
 """
 WaslAI.jo — FastAPI Application Entry Point
 ARIA v3.0.0 | Jordan Market B2B Platform
+# reload trigger: deals refresh fix
 """
 from contextlib import asynccontextmanager
 from fastapi import FastAPI

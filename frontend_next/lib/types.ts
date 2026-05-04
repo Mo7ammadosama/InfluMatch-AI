@@ -157,7 +157,8 @@ export interface Contract {
 export interface Message {
   id: number;
   booking_id: number;
-  sender_id: number;
+  sender_id: string;
+  sender_name?: string;
   content: string;
   created_at: string;
   read_at?: string;

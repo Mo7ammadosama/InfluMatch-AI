@@ -73,6 +73,14 @@ export default function BookingsPage() {
     );
   }
 
+  const STATUS_AR: Record<string, string> = {
+    proposed: "مقترح", pending: "قيد الانتظار", accepted: "مقبول",
+    confirmed: "مؤكد", content_submitted: "محتوى مُرسل",
+    content_approved: "محتوى مُوافق عليه", completed: "مكتمل", cancelled: "ملغى",
+  };
+  const statusLabel = (s: string) =>
+    lang === "ar" ? (STATUS_AR[s.toLowerCase()] ?? s) : s;
+
   const bannerClass = user?.role === "merchant" ? "merchant-banner" : "influencer-banner";
 
   return (
@@ -104,7 +112,7 @@ export default function BookingsPage() {
                   {b.deadline ? new Date(b.deadline).toLocaleDateString() : "—"}
                 </div>
               </div>
-              <span className={statusClass(b.status)}>{b.status}</span>
+              <span className={statusClass(b.status)}>{statusLabel(b.status)}</span>
             </div>
             {expanded === b.id
               ? <ChevronUp size={16} className="text-white/40" />
@@ -175,7 +183,7 @@ export default function BookingsPage() {
                 <div className="bg-bg-overlay rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto mb-2">
                   {(messages[b.id] ?? []).map((m) => (
                     <div key={m.id} className="text-sm">
-                      <span className="text-violet-400 text-xs">#{m.sender_id}: </span>
+                      <span className="text-violet-400 text-xs">{m.sender_name ?? `#${m.sender_id.slice(0, 8)}`}: </span>
                       <span className="text-white/70">{m.content}</span>
                     </div>
                   ))}
