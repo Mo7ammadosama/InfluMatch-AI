@@ -12,7 +12,7 @@ import sys
 from app.config import settings
 from app.database import create_tables
 from app.routers import auth, merchants, influencers, campaigns, deals, escrow, ai_router, wallet
-from app.routers import content_creators, portfolio_items, chat, admin
+from app.routers import content_creators, portfolio_items, chat, admin, messages, ideas
 from app.middleware.logging_middleware import LoggingMiddleware
 
 
@@ -79,6 +79,8 @@ app.include_router(content_creators.router,     prefix="/api/v1/content-creators
 app.include_router(portfolio_items.router,      prefix="/api/v1/portfolio",             tags=["Portfolio"])
 app.include_router(chat.router,                 prefix="/api/v1/chat",                  tags=["Onboarding Chat"])
 app.include_router(admin.router,               prefix="/api/v1/admin",                 tags=["Admin"])
+app.include_router(messages.router,            prefix="/api/v1/messages",              tags=["Messages"])
+app.include_router(ideas.router,               prefix="/api/v1/ideas",                 tags=["Ideas"])
 
 
 # --- Health Check ---

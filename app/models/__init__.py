@@ -9,6 +9,8 @@ from app.models.campaign import Campaign, CampaignStatus
 from app.models.deal import Deal, DealStatus
 from app.models.escrow import EscrowTransaction, EscrowState
 from app.models.wallet import Wallet, WalletTransaction
+from app.models.message import Message
+from app.models.campaign_idea import CampaignIdea, IdeaStatus, CreativeEngagement, CreativeEngagementStatus
 
 __all__ = [
     "User", "UserRole",
@@ -22,4 +24,7 @@ __all__ = [
     "Deal", "DealStatus",
     "EscrowTransaction", "EscrowState",
     "Wallet", "WalletTransaction",
+    "Message",
+    "CampaignIdea", "IdeaStatus",
+    "CreativeEngagement", "CreativeEngagementStatus",
 ]
