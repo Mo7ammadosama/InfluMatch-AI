@@ -32,7 +32,7 @@ class DealUpdate(BaseModel):
 
 class DealRead(BaseModel):
     id: str
-    campaign_id: str
+    campaign_id: str | None
     influencer_id: str
     agreed_amount_jod: float
     vat_amount_jod: float

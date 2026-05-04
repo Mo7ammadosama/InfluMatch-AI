@@ -27,7 +27,7 @@ class Deal(Base):
     __tablename__ = "deals"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    campaign_id: Mapped[str] = mapped_column(String(36), ForeignKey("campaigns.id"), nullable=False)
+    campaign_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("campaigns.id"), nullable=True)
     influencer_id: Mapped[str] = mapped_column(String(36), ForeignKey("influencers.id"), nullable=False)
 
     # Terms
