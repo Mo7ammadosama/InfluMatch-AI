@@ -58,6 +58,36 @@ async def get_my_wallet(
     return await _get_wallet(current_user.id, db)
 
 
+class RedeemRequest(BaseModel):
+    points: int
+
+
+@router.post("/redeem")
+async def redeem_points(
+    payload: RedeemRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    wallet = await _get_wallet(current_user.id, db)
+    if payload.points <= 0:
+        raise HTTPException(status_code=400, detail="Points must be positive")
+    if wallet.points_balance < payload.points:
+        raise HTTPException(status_code=400, detail="Insufficient points balance")
+    jod_value = round(payload.points * wallet.points_to_jod_rate, 3)
+    wallet.points_balance -= payload.points
+    wallet.available_balance_jod += jod_value
+    tx = WalletTransaction(
+        wallet_id=wallet.id,
+        transaction_type=TransactionType.POINTS_REDEEMED,
+        amount_jod=jod_value,
+        points_delta=-payload.points,
+        balance_after_jod=wallet.available_balance_jod,
+        description=f"Redeemed {payload.points} points for {jod_value:.3f} JOD",
+    )
+    db.add(tx)
+    return {"redeemed_points": payload.points, "jod_credited": jod_value, "new_balance_jod": wallet.available_balance_jod}
+
+
 @router.get("/transactions", response_model=list[TransactionRead])
 async def get_my_transactions(
     skip: int = 0,

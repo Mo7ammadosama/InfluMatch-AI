@@ -218,6 +218,24 @@ async def trigger_job(
     return {"status": "triggered", "job": job, "message": job_messages[job]}
 
 
+@router.patch("/campaigns/{campaign_id}/status")
+async def force_update_campaign_status(
+    campaign_id: str,
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(_require_admin),
+):
+    result = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    campaign = result.scalar_one_or_none()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    try:
+        campaign.status = CampaignStatus(payload.get("status", ""))
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid status: {payload.get('status')}")
+    return {"id": campaign.id, "status": campaign.status}
+
+
 @router.post("/rag/rebuild")
 async def rebuild_rag(
     _: User = Depends(_require_admin),

@@ -117,3 +117,54 @@ async def update_campaign(
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(campaign, field, value)
     return campaign
+
+
+@router.post("/{campaign_id}/activate", response_model=CampaignRead)
+async def activate_campaign(
+    campaign_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.MERCHANT)),
+):
+    result = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    campaign = result.scalar_one_or_none()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    result2 = await db.execute(select(Merchant).where(Merchant.user_id == current_user.id))
+    merchant = result2.scalar_one_or_none()
+    if not merchant or campaign.merchant_id != merchant.id:
+        raise HTTPException(status_code=403, detail="Not your campaign")
+    campaign.status = CampaignStatus.ACTIVE
+    return campaign
+
+
+@router.post("/{campaign_id}/apply")
+async def apply_to_campaign(
+    campaign_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.INFLUENCER)),
+):
+    result = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    campaign = result.scalar_one_or_none()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    if campaign.status != CampaignStatus.ACTIVE:
+        raise HTTPException(status_code=400, detail="Campaign is not accepting applications")
+    return {"message": "Application submitted", "campaign_id": campaign_id}
+
+
+@router.delete("/{campaign_id}", status_code=204)
+async def delete_campaign(
+    campaign_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.MERCHANT)),
+):
+    result = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    campaign = result.scalar_one_or_none()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    result2 = await db.execute(select(Merchant).where(Merchant.user_id == current_user.id))
+    merchant = result2.scalar_one_or_none()
+    if not merchant or campaign.merchant_id != merchant.id:
+        raise HTTPException(status_code=403, detail="Not your campaign")
+    campaign.status = CampaignStatus.CANCELLED
+    merchant.active_campaigns = max(0, merchant.active_campaigns - 1)

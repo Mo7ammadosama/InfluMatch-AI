@@ -13,6 +13,7 @@ from app.config import settings
 from app.database import create_tables
 from app.routers import auth, merchants, influencers, campaigns, deals, escrow, ai_router, wallet
 from app.routers import content_creators, portfolio_items, chat, admin, messages, ideas
+from app.routers import contracts, creative_strategists
 from app.middleware.logging_middleware import LoggingMiddleware
 
 
@@ -81,6 +82,8 @@ app.include_router(chat.router,                 prefix="/api/v1/chat",          
 app.include_router(admin.router,               prefix="/api/v1/admin",                 tags=["Admin"])
 app.include_router(messages.router,            prefix="/api/v1/messages",              tags=["Messages"])
 app.include_router(ideas.router,               prefix="/api/v1/ideas",                 tags=["Ideas"])
+app.include_router(contracts.router,           prefix="/api/v1/contracts",             tags=["Contracts"])
+app.include_router(creative_strategists.router, prefix="/api/v1/creative-strategists", tags=["Creative Strategists"])
 
 
 # --- Health Check ---

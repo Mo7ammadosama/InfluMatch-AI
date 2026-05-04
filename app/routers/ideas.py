@@ -78,6 +78,32 @@ def _eng_out(eng: CreativeEngagement) -> dict:
 
 # ── Routes — order matters: specific before parameterised ──────────────────────
 
+@router.post("/engagements/{engagement_id}/complete")
+async def complete_engagement(
+    engagement_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(CreativeEngagement).where(CreativeEngagement.id == engagement_id)
+    )
+    eng = result.scalar_one_or_none()
+    if not eng:
+        raise HTTPException(status_code=404, detail="Engagement not found")
+    if eng.strategist_user_id != current_user.id and eng.merchant_id:
+        from app.models.merchant import Merchant as _Merchant
+        merch_r = await db.execute(
+            select(_Merchant).where(_Merchant.user_id == current_user.id)
+        )
+        merchant = merch_r.scalar_one_or_none()
+        if not merchant or eng.merchant_id != merchant.id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    from datetime import datetime as _dt
+    eng.status = CreativeEngagementStatus.COMPLETED
+    eng.completed_at = _dt.utcnow()
+    return _eng_out(eng)
+
+
 @router.get("/engagements/my")
 async def get_my_engagements(
     db: AsyncSession = Depends(get_db),
