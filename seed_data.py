@@ -124,7 +124,7 @@ async def main():
                     completed_engagements, created_at, updated_at)
                 VALUES (:id, :uid, 'Lina Bakri',
                     'Professional content creator specializing in video & photography for brands.',
-                    'Amman', :specs, '["ar","en"]', :cats, 300.0, 1, 1, 4.8, 0.0, 0, :now, :now)
+                    'Amman', :specs, '["ar","en"]', :cats, 300.0, 1, 0, 4.8, 0.0, 0, :now, :now)
             """), {
                 "id": ccid, "uid": creator_uid,
                 "specs": json.dumps(["video_production", "photography", "copywriting"]),

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 from app.models.deal import DealStatus
 
@@ -50,3 +50,10 @@ class DealRead(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_validator("deliverables", mode="before")
+    @classmethod
+    def coerce_deliverables(cls, v):
+        if isinstance(v, list):
+            return {item: True for item in v}
+        return v or {}

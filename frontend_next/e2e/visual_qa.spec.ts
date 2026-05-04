@@ -68,6 +68,7 @@ async function login(page: Page, role: keyof typeof CREDS) {
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
   await page.click('button[type="submit"]');
+  // Strategist has INFLUENCER role → redirects to /influencer/dashboard
   await page.waitForURL(/\/(merchant|influencer|admin|content-creator|creative-strategist)/, {
     timeout: 20_000,
   });
@@ -77,6 +78,9 @@ async function login(page: Page, role: keyof typeof CREDS) {
 async function navTo(page: Page, url: string, label: string): Promise<string> {
   await page.goto(url);
   await page.waitForLoadState("load");
+  // Wait for React's async data loading spinner to disappear (max 10s)
+  await page.locator("text=Loading...").waitFor({ state: "hidden", timeout: 10_000 }).catch(() => {});
+  await page.locator("text=جار التحميل").waitFor({ state: "hidden", timeout: 5_000 }).catch(() => {});
   return snap(page, label);
 }
 
@@ -90,51 +94,51 @@ test.describe("Visual QA — Merchant", () => {
   });
 
   test("Merchant dashboard loads", async ({ page }) => {
-    const ss = await navTo(page, "/merchant", "merchant_dashboard");
+    const ss = await navTo(page, "/merchant/dashboard", "merchant_dashboard");
     const heading = page.getByRole("heading").first();
     if (!(await heading.isVisible())) {
-      logBug("/merchant", "h1/h2", "No heading visible on dashboard", ss);
+      logBug("/merchant/dashboard", "h1/h2", "No heading visible on dashboard", ss);
     }
     await expect(page).toHaveURL(/merchant/);
   });
 
   test("Merchant campaigns page", async ({ page }) => {
-    const ss = await navTo(page, "/merchant/campaigns", "merchant_campaigns");
+    const ss = await navTo(page, "/campaigns", "merchant_campaigns");
     const btn = page.getByRole("button", { name: /new campaign|create|إنشاء/i }).first();
     if (!(await btn.isVisible().catch(() => false))) {
-      logBug("/merchant/campaigns", "Create Campaign button", "Button not found", ss);
+      logBug("/campaigns", "Create Campaign button", "Button not found", ss);
     }
   });
 
   test("Merchant bookings page", async ({ page }) => {
-    const ss = await navTo(page, "/merchant/bookings", "merchant_bookings");
+    const ss = await navTo(page, "/bookings", "merchant_bookings");
     await expect(page).toHaveURL(/bookings/);
     await snap(page, "merchant_bookings_loaded");
   });
 
   test("Merchant escrow page", async ({ page }) => {
-    const ss = await navTo(page, "/merchant/escrow", "merchant_escrow");
+    const ss = await navTo(page, "/escrow", "merchant_escrow");
     const heading = page.getByRole("heading", { name: /escrow|الضمان/i }).first();
     if (!(await heading.isVisible().catch(() => false))) {
-      logBug("/merchant/escrow", "Escrow heading", "Heading not visible", ss);
+      logBug("/escrow", "Escrow heading", "Heading not visible", ss);
     }
   });
 
   test("Merchant discover influencers", async ({ page }) => {
-    const ss = await navTo(page, "/merchant/discover", "merchant_discover");
+    const ss = await navTo(page, "/discover", "merchant_discover");
     await snap(page, "merchant_discover_loaded");
   });
 
   test("Merchant wallet page", async ({ page }) => {
-    const ss = await navTo(page, "/merchant/wallet", "merchant_wallet");
+    const ss = await navTo(page, "/wallet", "merchant_wallet");
     await snap(page, "merchant_wallet_loaded");
   });
 
-  test("Merchant profile page", async ({ page }) => {
-    const ss = await navTo(page, "/merchant/profile", "merchant_profile");
+  test("Merchant settings/profile page", async ({ page }) => {
+    const ss = await navTo(page, "/settings", "merchant_settings");
     const form = page.locator("form").first();
     if (!(await form.isVisible().catch(() => false))) {
-      logBug("/merchant/profile", "profile form", "Form not rendered", ss);
+      logBug("/settings", "profile form", "Form not rendered", ss);
     }
   });
 });
@@ -149,28 +153,28 @@ test.describe("Visual QA — Influencer", () => {
   });
 
   test("Influencer dashboard loads", async ({ page }) => {
-    const ss = await navTo(page, "/influencer", "influencer_dashboard");
+    const ss = await navTo(page, "/influencer/dashboard", "influencer_dashboard");
     await expect(page).toHaveURL(/influencer/);
   });
 
-  test("Influencer campaigns browse", async ({ page }) => {
-    const ss = await navTo(page, "/influencer/campaigns", "influencer_campaigns");
-    await snap(page, "influencer_campaigns_loaded");
+  test("Influencer open campaigns browse", async ({ page }) => {
+    const ss = await navTo(page, "/open-campaigns", "influencer_open_campaigns");
+    await snap(page, "influencer_open_campaigns_loaded");
   });
 
   test("Influencer bookings/deals", async ({ page }) => {
-    const ss = await navTo(page, "/influencer/bookings", "influencer_bookings");
+    const ss = await navTo(page, "/bookings", "influencer_bookings");
     await snap(page, "influencer_bookings_loaded");
   });
 
   test("Influencer wallet", async ({ page }) => {
-    const ss = await navTo(page, "/influencer/wallet", "influencer_wallet");
+    const ss = await navTo(page, "/wallet", "influencer_wallet");
     await snap(page, "influencer_wallet_loaded");
   });
 
-  test("Influencer profile", async ({ page }) => {
-    const ss = await navTo(page, "/influencer/profile", "influencer_profile");
-    await snap(page, "influencer_profile_loaded");
+  test("Influencer settings/profile", async ({ page }) => {
+    const ss = await navTo(page, "/settings", "influencer_settings");
+    await snap(page, "influencer_settings_loaded");
   });
 });
 
@@ -190,9 +194,12 @@ test.describe("Visual QA — Admin", () => {
 
   test("Admin users page", async ({ page }) => {
     const ss = await navTo(page, "/admin/users", "admin_users");
-    const table = page.locator("table, [role='table'], .user-list").first();
-    if (!(await table.isVisible().catch(() => false))) {
-      logBug("/admin/users", "users table", "No table or list visible", ss);
+    // Page renders aria-card divs (not a table) — check for heading or any user card
+    const heading = page.getByRole("heading", { name: /user|مستخدم/i }).first();
+    const anyCard = page.locator(".aria-card").first();
+    const visible = await heading.isVisible().catch(() => false) || await anyCard.isVisible().catch(() => false);
+    if (!visible) {
+      logBug("/admin/users", "users list", "No heading or user cards visible", ss);
     }
   });
 
@@ -217,17 +224,19 @@ test.describe("Visual QA — Content Creator", () => {
   });
 
   test("Content creator dashboard", async ({ page }) => {
-    const ss = await navTo(page, "/content-creator", "creator_dashboard");
+    const ss = await navTo(page, "/content-creator/dashboard", "creator_dashboard");
     await expect(page).toHaveURL(/content-creator/);
   });
 
   test("Content creator portfolio page", async ({ page }) => {
-    const ss = await navTo(page, "/content-creator/portfolio", "creator_portfolio");
+    // Portfolio list is displayed on the dashboard; /new is the create page
+    const ss = await navTo(page, "/content-creator/dashboard", "creator_portfolio");
     await snap(page, "creator_portfolio_loaded");
   });
 
   test("Content creator bookings received", async ({ page }) => {
-    const ss = await navTo(page, "/content-creator/bookings", "creator_bookings");
+    // Booking requests are shown on the dashboard
+    const ss = await navTo(page, "/content-creator/dashboard", "creator_bookings");
     await snap(page, "creator_bookings_loaded");
   });
 
@@ -247,7 +256,8 @@ test.describe("Visual QA — Creative Strategist", () => {
   });
 
   test("Strategist dashboard loads", async ({ page }) => {
-    const ss = await navTo(page, "/creative-strategist", "strategist_dashboard");
+    // Strategist uses INFLUENCER role — navigate directly to creative-strategist dashboard
+    const ss = await navTo(page, "/creative-strategist/dashboard", "strategist_dashboard");
     await expect(page).toHaveURL(/creative-strategist/);
   });
 
@@ -256,8 +266,9 @@ test.describe("Visual QA — Creative Strategist", () => {
     await snap(page, "strategist_ideas_loaded");
   });
 
-  test("Strategist engagements page", async ({ page }) => {
-    const ss = await navTo(page, "/creative-strategist/engagements", "strategist_engagements");
+  test("Strategist engagements (dashboard)", async ({ page }) => {
+    // Engagements are shown on the dashboard (no separate /engagements route)
+    const ss = await navTo(page, "/creative-strategist/dashboard", "strategist_engagements");
     await snap(page, "strategist_engagements_loaded");
   });
 

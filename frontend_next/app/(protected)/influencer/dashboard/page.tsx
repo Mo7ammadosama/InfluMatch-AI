@@ -11,19 +11,19 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   getInfluencerMe,
-  getMyCampaigns,
+  getMyBookings,
   getWallet,
   createInfluencerProfile,
   updateInfluencerMe,
 } from "@/lib/api";
-import { InfluencerProfile, Campaign, Wallet } from "@/lib/types";
+import { InfluencerProfile, Booking, Wallet } from "@/lib/types";
 import { fmtJOD, fmtNum, statusClass } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function InfluencerDashboard() {
   const { user, lang } = useApp();
   const [profile, setProfile] = useState<InfluencerProfile | null>(null);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileForm, setProfileForm] = useState({
@@ -41,9 +41,9 @@ export default function InfluencerDashboard() {
   useEffect(() => {
     Promise.all([
       getInfluencerMe().catch(() => null),
-      getMyCampaigns().catch(() => null),
+      getMyBookings().catch(() => null),
       getWallet().catch(() => null),
-    ]).then(([p, c, w]) => {
+    ]).then(([p, b, w]) => {
       if (p) {
         const inf = p.data;
         setProfile(inf);
@@ -59,7 +59,7 @@ export default function InfluencerDashboard() {
           rate_per_reel: String(inf.rate_per_reel_jod ?? ""),
         });
       }
-      if (c) setCampaigns(Array.isArray(c.data) ? c.data : (c.data?.data ?? []));
+      if (b) setBookings(Array.isArray(b.data) ? b.data : (b.data?.data ?? []));
       if (w) setWallet(w.data);
     }).finally(() => setLoading(false));
   }, []);
@@ -140,8 +140,8 @@ export default function InfluencerDashboard() {
           accent="green"
         />
         <KpiBlock
-          label={lang === "ar" ? "الحملات النشطة" : "Active Campaigns"}
-          value={campaigns.filter((c) => c.status === "active" || c.status === "in_progress").length}
+          label={lang === "ar" ? "الصفقات النشطة" : "Active Deals"}
+          value={bookings.filter((b) => b.status === "ACCEPTED" || b.status === "IN_PROGRESS").length}
           accent="blue"
         />
       </div>
@@ -160,32 +160,35 @@ export default function InfluencerDashboard() {
         </div>
       )}
 
-      <Tabs defaultValue={profile ? "campaigns" : "profile"}>
+      <Tabs defaultValue={profile ? "bookings" : "profile"}>
         <TabsList>
-          <TabsTrigger value="campaigns">{lang === "ar" ? "حملاتي" : "My Campaigns"}</TabsTrigger>
+          <TabsTrigger value="bookings">{lang === "ar" ? "صفقاتي" : "My Deals"}</TabsTrigger>
           <TabsTrigger value="profile">{lang === "ar" ? "ملفي الشخصي" : "My Profile"}</TabsTrigger>
         </TabsList>
 
-        {/* Campaigns */}
-        <TabsContent value="campaigns">
+        {/* Deals/Bookings */}
+        <TabsContent value="bookings">
           <div className="space-y-3">
-            {campaigns.map((c) => (
-              <div key={c.id} className="aria-card flex items-center justify-between gap-4">
+            {bookings.map((b) => (
+              <div key={b.id} className="aria-card flex items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-white text-sm truncate">
-                    {lang === "ar" ? c.title_ar ?? c.title : c.title}
+                    {lang === "ar" ? "صفقة" : "Deal"} #{b.id.slice(0, 8)}
                   </div>
-                  <div className="text-white/40 text-xs mt-0.5">{c.target_categories?.[0] ?? "—"} • {c.end_date ?? "—"}</div>
+                  <div className="text-white/40 text-xs mt-0.5">
+                    {b.deadline ? new Date(b.deadline).toLocaleDateString() : "—"}
+                    {b.notes ? ` · ${b.notes}` : ""}
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-violet-400 text-sm">{fmtJOD(c.total_budget_jod ?? 0)}</span>
-                  <span className={statusClass(c.status)}>{c.status}</span>
+                  <span className="text-violet-400 text-sm">{fmtJOD(b.agreed_amount_jod ?? 0)}</span>
+                  <span className={statusClass(b.status)}>{b.status}</span>
                 </div>
               </div>
             ))}
-            {campaigns.length === 0 && (
+            {bookings.length === 0 && (
               <div className="text-white/30 text-sm text-center py-8">
-                {lang === "ar" ? "لا توجد حملات بعد." : "No campaigns yet."}
+                {lang === "ar" ? "لا توجد صفقات بعد." : "No deals yet."}
               </div>
             )}
           </div>
