@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
+from typing import Optional
 from app.models.deal import DealStatus
 
 
@@ -32,20 +33,20 @@ class DealUpdate(BaseModel):
 
 class DealRead(BaseModel):
     id: str
-    campaign_id: str | None
+    campaign_id: Optional[str] = None
     influencer_id: str
     agreed_amount_jod: float
     vat_amount_jod: float
     platform_fee_jod: float
     total_amount_jod: float
     deliverables: dict
-    deadline: datetime | None
+    deadline: Optional[datetime] = None
     status: DealStatus
     content_urls: list
     content_verified_by_ai: bool
-    merchant_rating: float | None
-    influencer_rating: float | None
-    escrow_id: str | None
+    merchant_rating: Optional[float] = None
+    influencer_rating: Optional[float] = None
+    escrow_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

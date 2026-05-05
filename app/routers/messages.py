@@ -22,7 +22,7 @@ class MessageCreate(BaseModel):
 def _msg(m: Message, sender: User | None = None) -> dict:
     name = None
     if sender:
-        name = sender.full_name_en or sender.username or sender.email
+        name = sender.full_name or sender.email
     return {
         "id": m.id,
         "booking_id": m.deal_id,
