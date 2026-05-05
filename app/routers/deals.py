@@ -26,12 +26,18 @@ async def propose_deal(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.MERCHANT)),
 ):
+    # Resolve merchant profile ID (FK target in escrow/deal tables)
+    merch_result = await db.execute(select(Merchant).where(Merchant.user_id == current_user.id))
+    merchant = merch_result.scalar_one_or_none()
+    if not merchant:
+        raise HTTPException(status_code=404, detail="Merchant profile not found — complete your profile first")
+
     vat = round(payload.agreed_amount_jod * settings.vat_rate, 3)
     fee = round(payload.agreed_amount_jod * settings.escrow_fee_percent, 3)
     total = round(payload.agreed_amount_jod + vat + fee, 3)
 
     escrow = await escrow_service.create_escrow(
-        merchant_id=current_user.id,
+        merchant_id=merchant.id,
         influencer_id=payload.influencer_id,
         agreed_amount_jod=payload.agreed_amount_jod,
         db=db,

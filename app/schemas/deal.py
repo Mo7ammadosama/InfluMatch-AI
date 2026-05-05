@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
 from app.models.deal import DealStatus
 
@@ -11,7 +11,7 @@ class DealCreate(BaseModel):
     agreed_rate_jod: float | None = None  # frontend alias
     brief: str | None = None              # frontend alias for notes
     deliverables: list | dict = Field(default_factory=dict)
-    deadline: datetime | None = None
+    deadline: datetime | date | str | None = None
     notes: str | None = None
 
     def model_post_init(self, __context: object) -> None:
@@ -21,6 +21,13 @@ class DealCreate(BaseModel):
             self.notes = self.brief
         if isinstance(self.deliverables, list):
             self.deliverables = {d: True for d in self.deliverables}
+        # Normalise date-only string to datetime
+        if isinstance(self.deadline, (str, date)) and not isinstance(self.deadline, datetime):
+            try:
+                d = self.deadline if isinstance(self.deadline, date) else date.fromisoformat(str(self.deadline))
+                self.deadline = datetime(d.year, d.month, d.day)
+            except (ValueError, TypeError):
+                self.deadline = None
 
 
 class DealUpdate(BaseModel):

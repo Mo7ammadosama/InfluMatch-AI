@@ -59,9 +59,9 @@ export default function NewBookingPage() {
         influencer_id: influencer.id,
         agreed_rate_jod: parseFloat(form.agreed_rate_jod),
         brief: form.brief,
-        deadline: form.deadline,
+        deadline: form.deadline ? `${form.deadline}T00:00:00` : undefined,
         deliverables: form.deliverables,
-        campaign_id: form.campaign_id ? parseInt(form.campaign_id) : undefined,
+        campaign_id: form.campaign_id || undefined,
       });
       sessionStorage.removeItem("booking_influencer");
       toast.success(lang === "ar" ? "تم الحجز وتجميد المبلغ!" : "Booking created & funds locked!");
