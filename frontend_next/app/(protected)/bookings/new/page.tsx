@@ -53,6 +53,10 @@ export default function NewBookingPage() {
   async function handleBook(e: React.FormEvent) {
     e.preventDefault();
     if (!influencer) return;
+    if (form.deliverables.length === 0) {
+      toast.error(lang === "ar" ? "يرجى اختيار مخرج واحد على الأقل" : "Select at least one deliverable");
+      return;
+    }
     setLoading(true);
     try {
       await createBooking({

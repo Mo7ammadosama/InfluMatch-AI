@@ -22,7 +22,7 @@ export default function BookingsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [msgInput, setMsgInput] = useState("");
-  const [contentUrl, setContentUrl] = useState("");
+  const [contentUrls, setContentUrls] = useState<Record<string, string>>({});
 
   async function load() {
     const r = await getMyBookings();
@@ -135,15 +135,18 @@ export default function BookingsPage() {
                   <div className="flex items-center gap-2">
                     <Input
                       placeholder={lang === "ar" ? "رابط المحتوى..." : "Content URL..."}
-                      value={contentUrl}
-                      onChange={(e) => setContentUrl(e.target.value)}
+                      value={contentUrls[b.id] ?? ""}
+                      onChange={(e) => setContentUrls((prev) => ({ ...prev, [b.id]: e.target.value }))}
                       className="h-8 text-sm w-60"
                     />
                     <Button size="sm"
-                      onClick={() => action(
-                        () => submitContent(b.id as unknown as number, { content_url: contentUrl }),
-                        lang === "ar" ? "تم الإرسال!" : "Submitted!"
-                      )}>
+                      onClick={async () => {
+                        await action(
+                          () => submitContent(b.id as unknown as number, { content_url: contentUrls[b.id] ?? "" }),
+                          lang === "ar" ? "تم الإرسال!" : "Submitted!"
+                        );
+                        setContentUrls((prev) => { const n = { ...prev }; delete n[b.id]; return n; });
+                      }}>
                       {lang === "ar" ? "إرسال المحتوى" : "Submit Content"}
                     </Button>
                   </div>

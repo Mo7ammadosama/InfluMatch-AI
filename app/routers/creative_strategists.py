@@ -59,11 +59,13 @@ async def update_strategist_profile(
         raise HTTPException(status_code=404, detail="Profile not found")
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(influencer, field, value)
+    await db.flush()
+    await db.refresh(influencer)
     return influencer
 
 
-@router.get("")
-@router.get("/")
+@router.get("", response_model=list[InfluencerRead])
+@router.get("/", response_model=list[InfluencerRead])
 async def list_strategists(
     skip: int = 0,
     limit: int = 20,

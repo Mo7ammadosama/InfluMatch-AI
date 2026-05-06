@@ -56,6 +56,8 @@ async def update_profile(
 
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(merchant, field, value)
+    await db.flush()
+    await db.refresh(merchant)
     return merchant
 
 

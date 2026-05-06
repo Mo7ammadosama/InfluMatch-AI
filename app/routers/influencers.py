@@ -59,6 +59,8 @@ async def update_profile(
         raise HTTPException(status_code=404, detail="Profile not found")
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(influencer, field, value)
+    await db.flush()
+    await db.refresh(influencer)
     return influencer
 
 

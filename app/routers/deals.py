@@ -12,6 +12,7 @@ from app.models.deal import Deal, DealStatus
 from app.models.campaign import Campaign
 from app.models.merchant import Merchant
 from app.models.influencer import Influencer
+from app.models.escrow import EscrowTransaction
 from app.schemas.deal import DealCreate, DealRead, DealUpdate
 from app.middleware.auth_middleware import get_current_user, require_role
 from app.services.escrow_service import escrow_service
@@ -78,14 +79,15 @@ async def my_deals(
         merch = merch_result.scalar_one_or_none()
         if not merch:
             return []
-        camp_result = await db.execute(select(Campaign).where(Campaign.merchant_id == merch.id))
-        campaigns = camp_result.scalars().all()
-        camp_ids = [c.id for c in campaigns]
-        if not camp_ids:
+        escrow_result = await db.execute(
+            select(EscrowTransaction.id).where(EscrowTransaction.merchant_id == merch.id)
+        )
+        escrow_ids = [row[0] for row in escrow_result.all()]
+        if not escrow_ids:
             return []
-        result = await db.execute(select(Deal).where(Deal.campaign_id.in_(camp_ids)))
+        result = await db.execute(select(Deal).where(Deal.escrow_id.in_(escrow_ids)))
     else:
-        result = await db.execute(select(Deal))
+        return []
     return result.scalars().all()
 
 

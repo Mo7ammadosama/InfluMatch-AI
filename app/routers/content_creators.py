@@ -124,6 +124,8 @@ async def update_my_profile(
     creator = await _get_creator_profile(current_user, db)
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(creator, field, value)
+    await db.flush()
+    await db.refresh(creator)
     return creator
 
 

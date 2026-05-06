@@ -53,6 +53,7 @@ class DealRead(BaseModel):
     content_verified_by_ai: bool
     merchant_rating: Optional[float] = None
     influencer_rating: Optional[float] = None
+    notes: Optional[str] = None
     escrow_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
