@@ -317,6 +317,8 @@ export interface BookingRequest {
   created_at: string;
   merchant_business_name?: string;
   merchant_business_name_ar?: string;
+  creator_display_name?: string;
+  creator_display_name_ar?: string;
 }
 
 export type CCEngagementStatus = "active" | "idea_submitted" | "idea_approved" | "completed" | "cancelled";

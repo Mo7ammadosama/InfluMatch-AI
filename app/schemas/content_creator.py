@@ -159,6 +159,8 @@ class BookingRequestRead(BaseModel):
     # Enriched fields (populated at router layer)
     merchant_business_name: Optional[str] = None
     merchant_business_name_ar: Optional[str] = None
+    creator_display_name: Optional[str] = None
+    creator_display_name_ar: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

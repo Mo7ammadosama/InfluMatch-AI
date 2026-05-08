@@ -197,7 +197,23 @@ async def get_sent_requests(
         .where(BookingRequest.merchant_id == merchant.id)
         .order_by(BookingRequest.created_at.desc())
     )
-    return r.scalars().all()
+    reqs = r.scalars().all()
+
+    creator_ids = {req.content_creator_id for req in reqs}
+    creators_by_id: dict = {}
+    if creator_ids:
+        cr = await db.execute(select(ContentCreator).where(ContentCreator.id.in_(creator_ids)))
+        creators_by_id = {c.id: c for c in cr.scalars().all()}
+
+    enriched = []
+    for req in reqs:
+        data = BookingRequestRead.model_validate(req)
+        c = creators_by_id.get(req.content_creator_id)
+        if c:
+            data.creator_display_name = c.display_name
+            data.creator_display_name_ar = c.display_name_ar
+        enriched.append(data)
+    return enriched
 
 
 @router.put("/booking-requests/{request_id}/accept", response_model=BookingRequestRead)

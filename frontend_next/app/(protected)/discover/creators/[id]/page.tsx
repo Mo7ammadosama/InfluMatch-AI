@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useApp } from "@/components/layout/providers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { Star, MapPin, CheckCircle2, Globe, LayoutGrid, X } from "lucide-react";
 export default function CreatorPublicProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { user, lang } = useApp();
+  const router = useRouter();
   const [creator, setCreator] = useState<ContentCreatorProfile | null>(null);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +75,7 @@ export default function CreatorPublicProfilePage() {
       });
       toast.success(lang === "ar" ? "تم إرسال طلب الحجز!" : "Booking request sent!");
       setShowModal(false);
+      router.push("/merchant/cc-bookings");
     } catch (err) {
       const detail = axios.isAxiosError(err)
         ? err.response?.data?.detail ?? (lang === "ar" ? "فشل إرسال الطلب" : "Failed to send request")

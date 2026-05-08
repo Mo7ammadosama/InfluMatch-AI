@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import {
   Home, LayoutDashboard, Search, CalendarDays, ShieldCheck,
   FileText, Wallet, Settings, LogOut, Users, Megaphone,
-  Scale, BarChart3, Zap, Star, Globe,
+  Scale, BarChart3, Zap, Star, Globe, Send,
 } from "lucide-react";
 
 interface NavItem {
@@ -52,6 +52,8 @@ export function Sidebar({ unread = 0 }: { unread?: number }) {
     { label: tr("campaigns", lang), href: "/campaigns", icon: <Megaphone size={16} /> },
     { label: tr("discover", lang), href: "/discover", icon: <Search size={16} /> },
     { label: tr("bookings", lang), href: "/bookings", icon: <CalendarDays size={16} />, badge: unread },
+    { label: lang === "ar" ? "طلبات المنشئين" : "Creator Requests", href: "/merchant/cc-bookings", icon: <Send size={16} /> },
+    { label: lang === "ar" ? "مشاركات المنشئين" : "CC Engagements", href: "/merchant/cc-engagements", icon: <Star size={16} /> },
     { label: tr("escrow", lang), href: "/escrow", icon: <ShieldCheck size={16} /> },
     { label: tr("contracts", lang), href: "/contracts", icon: <FileText size={16} /> },
     { label: tr("wallet", lang), href: "/wallet", icon: <Wallet size={16} /> },
