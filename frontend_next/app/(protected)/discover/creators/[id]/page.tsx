@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { getCreator, listPortfolioItems, sendBookingRequest } from "@/lib/api";
 import { ContentCreatorProfile, PortfolioItem } from "@/lib/types";
 import { fmtJOD } from "@/lib/utils";
+import axios from "axios";
 import { toast } from "sonner";
 import { Star, MapPin, CheckCircle2, Globe, LayoutGrid, X } from "lucide-react";
 
@@ -54,6 +55,11 @@ export default function CreatorPublicProfilePage() {
 
   async function handleSendBooking(e: React.FormEvent) {
     e.preventDefault();
+    const budgetVal = bookingForm.budget_jod ? parseFloat(bookingForm.budget_jod) : undefined;
+    if (budgetVal !== undefined && budgetVal < 0) {
+      toast.error(lang === "ar" ? "الميزانية لا يمكن أن تكون سالبة" : "Budget cannot be negative");
+      return;
+    }
     setSubmitting(true);
     try {
       await sendBookingRequest({
@@ -62,14 +68,17 @@ export default function CreatorPublicProfilePage() {
         business_description: bookingForm.business_description || undefined,
         campaign_goal: bookingForm.campaign_goal || undefined,
         target_audience: bookingForm.target_audience || undefined,
-        budget_jod: bookingForm.budget_jod ? parseFloat(bookingForm.budget_jod) : undefined,
+        budget_jod: budgetVal,
         timeline_days: bookingForm.timeline_days ? parseInt(bookingForm.timeline_days) : undefined,
         merchant_notes: bookingForm.merchant_notes || undefined,
       });
       toast.success(lang === "ar" ? "تم إرسال طلب الحجز!" : "Booking request sent!");
       setShowModal(false);
-    } catch {
-      toast.error(lang === "ar" ? "فشل إرسال الطلب" : "Failed to send request");
+    } catch (err) {
+      const detail = axios.isAxiosError(err)
+        ? err.response?.data?.detail ?? (lang === "ar" ? "فشل إرسال الطلب" : "Failed to send request")
+        : (lang === "ar" ? "فشل إرسال الطلب" : "Failed to send request");
+      toast.error(typeof detail === "string" ? detail : JSON.stringify(detail));
     } finally {
       setSubmitting(false);
     }
@@ -240,7 +249,7 @@ export default function CreatorPublicProfilePage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>{lang === "ar" ? "الميزانية (JOD) - اختياري" : "Budget (JOD) — optional"}</Label>
-                  <Input type="number" value={bookingForm.budget_jod}
+                  <Input type="number" min="0" value={bookingForm.budget_jod}
                     onChange={(e) => setBookingForm((f) => ({ ...f, budget_jod: e.target.value }))} placeholder="100" />
                 </div>
                 <div className="space-y-1.5">
