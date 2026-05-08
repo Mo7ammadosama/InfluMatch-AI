@@ -32,13 +32,17 @@ export default function CreatorPublicProfilePage() {
   });
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       getCreator(id),
       listPortfolioItems({ limit: 50 }),
-    ]).then(([c, p]) => {
-      setCreator(c.data);
-      const items = (Array.isArray(p.data) ? p.data : []) as PortfolioItem[];
-      setPortfolio(items.filter((i) => i.content_creator_id === id));
+    ]).then(([creatorResult, portfolioResult]) => {
+      if (creatorResult.status === "fulfilled") {
+        setCreator(creatorResult.value.data);
+      }
+      if (portfolioResult.status === "fulfilled") {
+        const items = (Array.isArray(portfolioResult.value.data) ? portfolioResult.value.data : []) as PortfolioItem[];
+        setPortfolio(items.filter((i) => i.content_creator_id === id));
+      }
     }).finally(() => setLoading(false));
   }, [id]);
 

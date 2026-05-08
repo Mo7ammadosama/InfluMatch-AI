@@ -36,6 +36,7 @@ async def create_portfolio_item(
     return item
 
 
+@router.get("", response_model=list[PortfolioItemRead])
 @router.get("/", response_model=list[PortfolioItemRead])
 async def list_portfolio_items(
     category: str | None = Query(default=None),
