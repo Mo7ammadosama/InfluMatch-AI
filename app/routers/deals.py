@@ -21,6 +21,7 @@ from app.config import settings
 router = APIRouter()
 
 
+@router.post("", response_model=DealRead, status_code=201)
 @router.post("/", response_model=DealRead, status_code=201)
 async def propose_deal(
     payload: DealCreate,

@@ -54,7 +54,6 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json",
     lifespan=lifespan,
-    redirect_slashes=False,
 )
 
 # --- Middleware Stack ---
