@@ -208,6 +208,11 @@ export default function ContentCreatorDashboard() {
               <div key={req.id} className="p-3 rounded-xl bg-white/4 border border-white/5">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex-1 min-w-0">
+                    <div className="text-pink-400 text-xs font-semibold truncate mb-0.5">
+                      {lang === "ar"
+                        ? req.merchant_business_name_ar ?? req.merchant_business_name ?? (lang === "ar" ? "تاجر" : "Merchant")
+                        : req.merchant_business_name ?? "Merchant"}
+                    </div>
                     <div className="text-white/80 text-xs font-medium truncate">
                       {req.campaign_goal ?? (lang === "ar" ? "طلب حجز" : "Booking Request")}
                     </div>

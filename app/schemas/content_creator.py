@@ -156,6 +156,9 @@ class BookingRequestRead(BaseModel):
     merchant_notes: Optional[str]
     creator_response: Optional[str]
     created_at: datetime
+    # Enriched fields (populated at router layer)
+    merchant_business_name: Optional[str] = None
+    merchant_business_name_ar: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -193,5 +196,8 @@ class CCEngagementRead(BaseModel):
     started_at: Optional[datetime]
     completed_at: Optional[datetime]
     created_at: datetime
+    # Enriched fields (populated at router layer)
+    creator_display_name: Optional[str] = None
+    merchant_business_name: Optional[str] = None
 
     model_config = {"from_attributes": True}

@@ -169,7 +169,21 @@ async def get_received_requests(
         .where(BookingRequest.content_creator_id == creator.id)
         .order_by(BookingRequest.created_at.desc())
     )
-    return r.scalars().all()
+    reqs = r.scalars().all()
+    merchant_ids = {req.merchant_id for req in reqs}
+    merchants_by_id: dict = {}
+    if merchant_ids:
+        mr = await db.execute(select(Merchant).where(Merchant.id.in_(merchant_ids)))
+        merchants_by_id = {m.id: m for m in mr.scalars().all()}
+    enriched = []
+    for req in reqs:
+        data = BookingRequestRead.model_validate(req)
+        m = merchants_by_id.get(req.merchant_id)
+        if m:
+            data.merchant_business_name = m.business_name
+            data.merchant_business_name_ar = m.business_name_ar
+        enriched.append(data)
+    return enriched
 
 
 @router.get("/booking-requests/sent", response_model=list[BookingRequestRead])
@@ -242,6 +256,7 @@ async def decline_booking_request(
 
 # ── Engagement endpoints ───────────────────────────────────────────────────────
 
+@router.get("/engagements", response_model=list[CCEngagementRead])
 @router.get("/engagements/", response_model=list[CCEngagementRead])
 async def list_my_engagements(
     db: AsyncSession = Depends(get_db),
@@ -258,7 +273,20 @@ async def list_my_engagements(
             .order_by(CCEngagement.created_at.desc())
         )
         engagements = r.scalars().all()
-        return [_strip_idea_brief(e, None, creator.id) for e in engagements]
+        # Enrich with merchant business names
+        merchant_ids = {e.merchant_id for e in engagements}
+        merchants_by_id: dict = {}
+        if merchant_ids:
+            mr = await db.execute(select(Merchant).where(Merchant.id.in_(merchant_ids)))
+            merchants_by_id = {m.id: m for m in mr.scalars().all()}
+        result_list = []
+        for e in engagements:
+            data = _strip_idea_brief(e, None, creator.id)
+            m = merchants_by_id.get(e.merchant_id)
+            if m:
+                data.merchant_business_name = m.business_name
+            result_list.append(data)
+        return result_list
 
     if current_user.role == UserRole.MERCHANT:
         result = await db.execute(select(Merchant).where(Merchant.user_id == current_user.id))
@@ -271,7 +299,20 @@ async def list_my_engagements(
             .order_by(CCEngagement.created_at.desc())
         )
         engagements = r.scalars().all()
-        return [_strip_idea_brief(e, merchant.id, None) for e in engagements]
+        # Enrich with creator display names
+        creator_ids = {e.content_creator_id for e in engagements}
+        creators_by_id: dict = {}
+        if creator_ids:
+            cr = await db.execute(select(ContentCreator).where(ContentCreator.id.in_(creator_ids)))
+            creators_by_id = {c.id: c for c in cr.scalars().all()}
+        result_list = []
+        for e in engagements:
+            data = _strip_idea_brief(e, merchant.id, None)
+            c = creators_by_id.get(e.content_creator_id)
+            if c:
+                data.creator_display_name = c.display_name
+            result_list.append(data)
+        return result_list
 
     raise HTTPException(status_code=403, detail="Not authorized")
 

@@ -315,6 +315,8 @@ export interface BookingRequest {
   merchant_notes?: string;
   creator_response?: string;
   created_at: string;
+  merchant_business_name?: string;
+  merchant_business_name_ar?: string;
 }
 
 export type CCEngagementStatus = "active" | "idea_submitted" | "idea_approved" | "completed" | "cancelled";
@@ -335,4 +337,6 @@ export interface CCEngagement {
   started_at?: string;
   completed_at?: string;
   created_at: string;
+  creator_display_name?: string;
+  merchant_business_name?: string;
 }

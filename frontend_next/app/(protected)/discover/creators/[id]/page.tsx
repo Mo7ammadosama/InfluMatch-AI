@@ -90,7 +90,7 @@ export default function CreatorPublicProfilePage() {
       <div className="glass-card p-6">
         <div className="flex items-start gap-4">
           <div className="w-20 h-20 rounded-2xl bg-pink-500/20 flex items-center justify-center text-pink-400 font-bold text-3xl shrink-0">
-            {creator.avatar_url
+            {creator.avatar_url && creator.avatar_url !== ""
               ? <img src={creator.avatar_url} alt="" className="w-full h-full rounded-2xl object-cover" />
               : displayName.charAt(0).toUpperCase()}
           </div>

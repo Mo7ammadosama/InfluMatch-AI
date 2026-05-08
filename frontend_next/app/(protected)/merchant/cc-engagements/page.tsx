@@ -146,7 +146,7 @@ export default function MerchantCCEngagementsPage() {
                   }`} />
                   <div>
                     <div className="text-white text-sm font-medium">
-                      #{eng.id.slice(0, 8)}
+                      {eng.creator_display_name ?? `#${eng.id.slice(0, 8)}`}
                     </div>
                     <div className="text-white/40 text-xs">
                       {eng.status.replace(/_/g, " ")} · {fmtJOD(eng.agreed_fee_jod)}

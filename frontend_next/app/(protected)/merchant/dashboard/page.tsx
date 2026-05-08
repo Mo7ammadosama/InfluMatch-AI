@@ -258,7 +258,7 @@ export default function MerchantDashboard() {
               <div key={creator.id} className="aria-card border border-white/5 hover:border-pink-500/20 transition-colors flex flex-col gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-pink-500/20 flex items-center justify-center text-pink-400 font-bold text-base shrink-0">
-                    {creator.avatar_url
+                    {creator.avatar_url && creator.avatar_url !== ""
                       ? <img src={creator.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                       : (lang === "ar" ? creator.display_name_ar ?? creator.display_name : creator.display_name).charAt(0).toUpperCase()}
                   </div>
@@ -278,7 +278,9 @@ export default function MerchantDashboard() {
                 {creator.specializations?.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {creator.specializations.slice(0, 2).map((s) => (
-                      <span key={s} className="px-2 py-0.5 rounded-full text-xs bg-pink-500/10 text-pink-400 border border-pink-500/20">{s}</span>
+                      <span key={s} className="px-2 py-0.5 rounded-full text-xs bg-pink-500/10 text-pink-400 border border-pink-500/20">
+                        {s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                      </span>
                     ))}
                   </div>
                 )}

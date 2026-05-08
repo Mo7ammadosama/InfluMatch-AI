@@ -8,6 +8,10 @@ import { listCreators } from "@/lib/api";
 import { ContentCreatorSummary } from "@/lib/types";
 import { Star, MapPin, CheckCircle2 } from "lucide-react";
 
+function fmtSpec(s: string) {
+  return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function DiscoverCreatorsPage() {
   const { lang } = useApp();
   const [creators, setCreators] = useState<ContentCreatorSummary[]>([]);
@@ -89,7 +93,7 @@ export default function DiscoverCreatorsPage() {
             <div key={creator.id} className="glass-card p-5 flex flex-col gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-pink-500/20 flex items-center justify-center text-pink-400 font-bold text-lg shrink-0">
-                  {creator.avatar_url
+                  {creator.avatar_url && creator.avatar_url !== ""
                     ? <img src={creator.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                     : (lang === "ar" ? creator.display_name_ar ?? creator.display_name : creator.display_name).charAt(0).toUpperCase()}
                 </div>
@@ -110,7 +114,7 @@ export default function DiscoverCreatorsPage() {
               {creator.specializations?.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {creator.specializations.slice(0, 3).map((s) => (
-                    <span key={s} className="px-2 py-0.5 rounded-full text-xs bg-pink-500/10 text-pink-400 border border-pink-500/20">{s}</span>
+                    <span key={s} className="px-2 py-0.5 rounded-full text-xs bg-pink-500/10 text-pink-400 border border-pink-500/20">{fmtSpec(s)}</span>
                   ))}
                 </div>
               )}
