@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Toaster } from "sonner";
 import { User } from "@/lib/types";
-import { getUser, setUser as storeUser } from "@/lib/auth";
+import { getUser, getToken, setUser as storeUser } from "@/lib/auth";
+import { getMe } from "@/lib/api";
 import { Lang } from "@/lib/i18n";
 
 interface AppContextType {
@@ -46,6 +47,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const saved = (localStorage.getItem("waslai_lang") as Lang) || "en";
     setLangState(saved);
     applyLang(saved);
+
+    // Always sync with server — prevents stale role data when switching accounts
+    const token = getToken();
+    if (token) {
+      getMe()
+        .then((r) => { setUser(r.data); })
+        .catch(() => {});
+    }
   }, []);
 
   // Apply direction/font on every lang change
