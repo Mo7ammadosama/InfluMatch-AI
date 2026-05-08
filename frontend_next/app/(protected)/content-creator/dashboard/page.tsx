@@ -73,11 +73,17 @@ export default function ContentCreatorDashboard() {
     }
   }
 
+  async function refreshEngagements() {
+    const e = await getMyCCEngagements().catch(() => null);
+    if (e) setEngagements(Array.isArray(e.data) ? e.data : []);
+  }
+
   async function handleAccept(id: string) {
     try {
       await acceptBooking(id);
       setBookings((b) => b.map((r) => r.id === id ? { ...r, status: "accepted" } : r));
-      toast.success(lang === "ar" ? "تم قبول الطلب" : "Booking accepted");
+      toast.success(lang === "ar" ? "تم قبول الطلب! سيظهر في المشاركات النشطة" : "Booking accepted! It will appear in Active Engagements");
+      await refreshEngagements();
     } catch {
       toast.error(lang === "ar" ? "فشل القبول" : "Accept failed");
     }
@@ -103,6 +109,7 @@ export default function ContentCreatorDashboard() {
 
   const name = lang === "ar" ? (user?.full_name_ar ?? user?.full_name) : user?.full_name;
   const pendingBookings = bookings.filter((b) => b.status === "pending");
+  const recentBookings = bookings.filter((b) => b.status !== "pending");
   const activeEngagements = engagements.filter((e) => e.status === "active" || e.status === "idea_submitted");
 
   return (
@@ -205,12 +212,12 @@ export default function ContentCreatorDashboard() {
           </div>
           <div className="space-y-2">
             {pendingBookings.map((req) => (
-              <div key={req.id} className="p-3 rounded-xl bg-white/4 border border-white/5">
+              <div key={req.id} className="p-3 rounded-xl bg-pink-500/5 border border-pink-500/15">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex-1 min-w-0">
                     <div className="text-pink-400 text-xs font-semibold truncate mb-0.5">
                       {lang === "ar"
-                        ? req.merchant_business_name_ar ?? req.merchant_business_name ?? (lang === "ar" ? "تاجر" : "Merchant")
+                        ? req.merchant_business_name_ar ?? req.merchant_business_name ?? "تاجر"
                         : req.merchant_business_name ?? "Merchant"}
                     </div>
                     <div className="text-white/80 text-xs font-medium truncate">
@@ -222,27 +229,50 @@ export default function ContentCreatorDashboard() {
                   </div>
                   <StatusBadge status={req.status} />
                 </div>
-                {req.status === "pending" && (
-                  <div className="flex gap-2">
-                    <Button size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-500 text-white flex-1"
-                      onClick={() => handleAccept(req.id)}>
-                      {lang === "ar" ? "قبول" : "Accept"}
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-7 text-xs text-red-400 hover:text-red-300 flex-1"
-                      onClick={() => handleDecline(req.id)}>
-                      {lang === "ar" ? "رفض" : "Decline"}
-                    </Button>
-                  </div>
-                )}
+                <div className="flex gap-2">
+                  <Button size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-500 text-white flex-1"
+                    onClick={() => handleAccept(req.id)}>
+                    {lang === "ar" ? "قبول" : "Accept"}
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs text-red-400 hover:text-red-300 flex-1"
+                    onClick={() => handleDecline(req.id)}>
+                    {lang === "ar" ? "رفض" : "Decline"}
+                  </Button>
+                </div>
               </div>
             ))}
-            {pendingBookings.length === 0 && (
+            {pendingBookings.length === 0 && recentBookings.length === 0 && (
               <div className="text-center py-8">
                 <Briefcase size={24} className="mx-auto mb-2 text-white/15" />
                 <div className="text-white/30 text-xs">
                   {lang === "ar" ? "لا توجد طلبات حجز" : "No booking requests yet"}
                 </div>
               </div>
+            )}
+            {recentBookings.length > 0 && (
+              <>
+                {pendingBookings.length > 0 && <div className="border-t border-white/5 pt-2" />}
+                <div className="text-[10px] uppercase tracking-wider text-white/20 px-1 pb-1">
+                  {lang === "ar" ? "السابقة" : "History"}
+                </div>
+                {recentBookings.map((req) => (
+                  <div key={req.id} className="p-3 rounded-xl bg-white/3 border border-white/5 opacity-70">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white/50 text-xs font-semibold truncate mb-0.5">
+                          {lang === "ar"
+                            ? req.merchant_business_name_ar ?? req.merchant_business_name ?? "تاجر"
+                            : req.merchant_business_name ?? "Merchant"}
+                        </div>
+                        <div className="text-white/40 text-xs truncate">
+                          {req.campaign_goal ?? (lang === "ar" ? "طلب حجز" : "Booking Request")}
+                        </div>
+                      </div>
+                      <StatusBadge status={req.status} />
+                    </div>
+                  </div>
+                ))}
+              </>
             )}
           </div>
         </div>
@@ -262,8 +292,10 @@ export default function ContentCreatorDashboard() {
               <Link key={eng.id} href={`/content-creator/engagements/${eng.id}`}>
                 <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/4 border border-white/5 hover:bg-white/8 transition cursor-pointer">
                   <div className="flex-1 min-w-0">
-                    <div className="text-white/80 text-xs font-medium">
-                      {lang === "ar" ? "مشاركة" : "Engagement"} #{eng.id.slice(0, 6)}
+                    <div className="text-white/80 text-xs font-medium truncate">
+                      {eng.merchant_business_name
+                        ? (lang === "ar" ? eng.merchant_business_name ?? eng.merchant_business_name : eng.merchant_business_name)
+                        : `${lang === "ar" ? "مشاركة" : "Engagement"} #${eng.id.slice(0, 6)}`}
                     </div>
                     <div className="text-emerald-400 text-xs mt-0.5">{fmtJOD(eng.agreed_fee_jod)}</div>
                   </div>
