@@ -4,10 +4,27 @@ Role-aware stateless chatbot powered by Claude Haiku.
 Only answers questions about the InfluMatch platform.
 """
 import os
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.middleware.auth_middleware import get_current_user
 from app.models.user import User
+from app.config import settings
+
+def _get_api_key() -> str:
+    """Return ANTHROPIC_API_KEY from settings, os.environ, or .env file fallback."""
+    if settings.anthropic_api_key:
+        return settings.anthropic_api_key
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return os.environ["ANTHROPIC_API_KEY"]
+    # Absolute-path fallback: walk up from this file to find .env
+    env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+    if env_path.exists():
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line.startswith("ANTHROPIC_API_KEY=") and not line.startswith("#"):
+                return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return ""
 
 router = APIRouter()
 
@@ -71,9 +88,9 @@ async def onboarding_chat(
     except ImportError:
         raise HTTPException(status_code=503, detail="Anthropic SDK not installed")
 
-    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    api_key = _get_api_key()
     if not api_key:
-        raise HTTPException(status_code=503, detail="Anthropic API key not configured")
+        raise HTTPException(status_code=503, detail="Anthropic API key not configured [v2]")
 
     role = payload.role or current_user.role.value
     system_prompt = SYSTEM_PROMPTS.get(role, SYSTEM_PROMPTS["default"])

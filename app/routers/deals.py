@@ -166,6 +166,39 @@ async def approve_content(
     return deal
 
 
+@router.post("/{deal_id}/release-funds", response_model=DealRead)
+async def release_funds(
+    deal_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.MERCHANT)),
+):
+    result = await db.execute(select(Deal).where(Deal.id == deal_id))
+    deal = result.scalar_one_or_none()
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    if deal.status != DealStatus.CONTENT_APPROVED:
+        raise HTTPException(status_code=400, detail="Content must be approved before releasing funds")
+
+    if deal.escrow_id:
+        escrow_result = await db.execute(
+            select(EscrowTransaction).where(EscrowTransaction.id == deal.escrow_id)
+        )
+        escrow = escrow_result.scalar_one_or_none()
+        if escrow:
+            from app.models.escrow import EscrowState
+            if escrow.state == EscrowState.PENDING:
+                await escrow_service.transition(deal.escrow_id, EscrowState.FUNDED, db)
+                await escrow_service.transition(deal.escrow_id, EscrowState.LOCKED, db)
+            elif escrow.state == EscrowState.FUNDED:
+                await escrow_service.transition(deal.escrow_id, EscrowState.LOCKED, db)
+            await escrow_service.transition(deal.escrow_id, EscrowState.RELEASED, db, reason="merchant approved content")
+
+    deal.status = DealStatus.AMOUNT_TRANSFERRED
+    await db.flush()
+    await db.refresh(deal)
+    return deal
+
+
 @router.patch("/{deal_id}", response_model=DealRead)
 async def update_deal(
     deal_id: str,

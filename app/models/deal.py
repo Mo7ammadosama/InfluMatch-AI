@@ -17,6 +17,7 @@ class DealStatus(str, enum.Enum):
     IN_PROGRESS = "in_progress"
     CONTENT_SUBMITTED = "content_submitted"
     CONTENT_APPROVED = "content_approved"
+    AMOUNT_TRANSFERRED = "amount_transferred"
     PUBLISHED = "published"
     COMPLETED = "completed"
     DISPUTED = "disputed"

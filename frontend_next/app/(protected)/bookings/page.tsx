@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   getMyBookings, confirmBooking, cancelBooking, submitContent, approveContent,
-  getBookingMessages, sendMessage,
+  releaseFunds, getBookingMessages, sendMessage,
 } from "@/lib/api";
 import { Booking, Message } from "@/lib/types";
 import { fmtJOD, statusClass } from "@/lib/utils";
@@ -59,7 +59,7 @@ export default function BookingsPage() {
   async function handleSendMsg(bookingId: string) {
     if (!msgInput.trim()) return;
     try {
-      await sendMessage({ booking_id: bookingId, content: msgInput });
+      await sendMessage({ deal_id: bookingId, content: msgInput });
       setMsgInput("");
       await loadMessages(bookingId);
     } catch {}
@@ -76,7 +76,8 @@ export default function BookingsPage() {
   const STATUS_AR: Record<string, string> = {
     proposed: "مقترح", pending: "قيد الانتظار", accepted: "مقبول",
     confirmed: "مؤكد", content_submitted: "محتوى مُرسل",
-    content_approved: "محتوى مُوافق عليه", completed: "مكتمل", cancelled: "ملغى",
+    content_approved: "محتوى مُوافق عليه", amount_transferred: "تم تحويل المبلغ",
+    completed: "مكتمل", cancelled: "ملغى",
   };
   const statusLabel = (s: string) =>
     lang === "ar" ? (STATUS_AR[s.toLowerCase()] ?? s) : s;
@@ -124,14 +125,14 @@ export default function BookingsPage() {
               <BookingTimeline currentStatus={b.status} lang={lang} />
 
               <div className="flex flex-wrap gap-2">
-                {b.status === "proposed" && user?.role === "influencer" && (
+                {b.status.toLowerCase() === "proposed" && user?.role === "influencer" && (
                   <Button size="sm" variant="success"
                     onClick={() => action(() => confirmBooking(b.id as unknown as number), lang === "ar" ? "تم التأكيد!" : "Confirmed!")}>
                     ✅ {lang === "ar" ? "تأكيد الحجز" : "Confirm Booking"}
                   </Button>
                 )}
 
-                {b.status === "accepted" && user?.role === "influencer" && (
+                {b.status.toLowerCase() === "accepted" && user?.role === "influencer" && (
                   <div className="flex items-center gap-2">
                     <Input
                       placeholder={lang === "ar" ? "رابط المحتوى..." : "Content URL..."}
@@ -152,14 +153,24 @@ export default function BookingsPage() {
                   </div>
                 )}
 
-                {b.status === "content_submitted" && user?.role === "merchant" && (
+                {b.status.toLowerCase() === "content_submitted" && user?.role === "merchant" && (
                   <Button size="sm" variant="success"
                     onClick={() => action(() => approveContent(b.id as unknown as number), lang === "ar" ? "تمت الموافقة!" : "Approved!")}>
                     ✅ {lang === "ar" ? "موافقة على المحتوى" : "Approve Content"}
                   </Button>
                 )}
 
-                {["proposed", "accepted"].includes(b.status) && user?.role === "merchant" && (
+                {b.status.toLowerCase() === "content_approved" && user?.role === "merchant" && (
+                  <Button size="sm" variant="success"
+                    onClick={() => {
+                      if (!confirm(lang === "ar" ? "تأكيد تحويل المبلغ للمؤثر؟" : "Release funds to the influencer?")) return;
+                      action(() => releaseFunds(b.id as unknown as number), lang === "ar" ? "تم تحويل المبلغ!" : "Funds released!");
+                    }}>
+                    💸 {lang === "ar" ? "تحويل المبلغ" : "Release Funds"}
+                  </Button>
+                )}
+
+                {["proposed", "accepted"].includes(b.status.toLowerCase()) && user?.role === "merchant" && (
                   <Button
                     size="sm"
                     variant="ghost"

@@ -144,11 +144,25 @@ export default function LoginPage() {
       </p>
 
       {/* Test credentials */}
-      <div className="mt-6 p-3 bg-bg-overlay rounded-lg border border-white/5 text-xs text-white/30 space-y-1">
-        <div className="font-medium text-white/50 mb-1">
-          {lang === "ar" ? "حسابات تجريبية:" : "Test account (just created):"}
+      <div className="mt-6 p-3 bg-bg-overlay rounded-lg border border-white/5 text-xs space-y-2">
+        <div className="font-medium text-white/50 mb-2">
+          {lang === "ar" ? "حسابات تجريبية (اضغط للملء):" : "Test accounts (click to fill):"}
         </div>
-        <div>test@waslai.jo / Test@1234</div>
+        {[
+          { role: lang === "ar" ? "🏪 تاجر" : "🏪 Merchant", email: "merchant@waslai.jo", password: "Test@1234" },
+          { role: lang === "ar" ? "⭐ مؤثر" : "⭐ Influencer", email: "influencer@waslai.jo", password: "Test@1234" },
+          { role: lang === "ar" ? "⚡ أدمن" : "⚡ Admin", email: "admin@waslai.jo", password: "Test@1234" },
+        ].map((acc) => (
+          <button
+            key={acc.email}
+            type="button"
+            onClick={() => { setEmail(acc.email); setPassword(acc.password); }}
+            className="w-full flex items-center justify-between px-2 py-1.5 rounded-md bg-white/5 hover:bg-white/10 transition-colors text-left cursor-pointer"
+          >
+            <span className="text-white/60 font-medium">{acc.role}</span>
+            <span className="text-white/30">{acc.email}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

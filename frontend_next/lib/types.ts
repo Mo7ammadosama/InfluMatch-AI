@@ -92,6 +92,7 @@ export type BookingStatus =
   | "in_progress"
   | "content_submitted"
   | "content_approved"
+  | "amount_transferred"
   | "published"
   | "completed"
   | "disputed"

@@ -1,29 +1,44 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/components/layout/providers";
 import { Button } from "@/components/ui/button";
-import { getCampaigns, getMyCampaigns, activateCampaign, deleteCampaign, applyToCampaign } from "@/lib/api";
+import { getCampaigns, getMyCampaigns, getMyBookings, getCampaign, activateCampaign, deleteCampaign } from "@/lib/api";
 import { Campaign } from "@/lib/types";
 import { fmtJOD, statusClass } from "@/lib/utils";
 import { toast } from "sonner";
 import { Tag, Calendar, Trash2, Zap } from "lucide-react";
-import Link from "next/link";
 
 export default function CampaignsPage() {
+  const router = useRouter();
   const { user, lang } = useApp();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
-  const [applying, setApplying] = useState<string | null>(null);
+  const [applying, setApplying] = useState<string | null>(null); // used by admin apply
 
   const isMerchant = user?.role === "merchant";
   const isAdmin    = user?.role === "admin";
+  const isInfluencer = user?.role === "influencer";
 
   async function load() {
     setLoading(true);
     try {
-      const r = isMerchant ? await getMyCampaigns() : await getCampaigns(isAdmin ? {} : { status: "active" });
-      const list = Array.isArray(r.data) ? r.data : (r.data?.data ?? []);
+      let list: Campaign[] = [];
+      if (isMerchant) {
+        const r = await getMyCampaigns();
+        list = Array.isArray(r.data) ? r.data : (r.data?.data ?? []);
+      } else if (isInfluencer) {
+        // Show campaigns the influencer is booked into
+        const br = await getMyBookings();
+        const bookings: { campaign_id: string | null }[] = Array.isArray(br.data) ? br.data : (br.data?.data ?? []);
+        const ids = [...new Set(bookings.map(b => b.campaign_id).filter(Boolean))] as string[];
+        const fetched = await Promise.all(ids.map(id => getCampaign(id).then(r => r.data).catch(() => null)));
+        list = fetched.filter(Boolean) as Campaign[];
+      } else {
+        const r = await getCampaigns({});
+        list = Array.isArray(r.data) ? r.data : (r.data?.data ?? []);
+      }
       setCampaigns(list);
     } catch {
       toast.error("Failed to load campaigns");
@@ -32,7 +47,7 @@ export default function CampaignsPage() {
     }
   }
 
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (user) load(); }, [user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleActivate(id: string) {
     try {
@@ -81,14 +96,14 @@ export default function CampaignsPage() {
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">
-          📢 {isMerchant
+          📢 {isMerchant || isInfluencer
             ? lang === "ar" ? "حملاتي" : "My Campaigns"
-            : lang === "ar" ? "الحملات المتاحة" : "Open Campaigns"}
+            : lang === "ar" ? "الحملات" : "Campaigns"}
         </h1>
         {isMerchant && (
-          <Link href="/merchant/dashboard">
-            <Button variant="merchant">+ {lang === "ar" ? "حملة جديدة" : "New Campaign"}</Button>
-          </Link>
+          <Button variant="merchant" onClick={() => router.push("/campaigns/create")}>
+            + {lang === "ar" ? "حملة جديدة" : "New Campaign"}
+          </Button>
         )}
       </div>
 
@@ -137,7 +152,7 @@ export default function CampaignsPage() {
                     <Trash2 size={13} />
                   </Button>
                 )}
-                {!isMerchant && c.status === "active" && (
+                {!isMerchant && !isInfluencer && c.status === "active" && (
                   <Button size="sm" disabled={applying === c.id} onClick={() => handleApply(c.id)}>
                     {applying === c.id ? "..." : lang === "ar" ? "تقديم" : "Apply"}
                   </Button>
@@ -150,7 +165,9 @@ export default function CampaignsPage() {
           <div className="text-white/30 text-sm text-center py-12">
             {isMerchant
               ? lang === "ar" ? "لا توجد حملات. أنشئ أولى حملاتك!" : "No campaigns yet. Create your first one!"
-              : lang === "ar" ? "لا توجد حملات متاحة." : "No open campaigns available."}
+              : isInfluencer
+              ? lang === "ar" ? "لم تنضم إلى أي حملات بعد." : "You haven't joined any campaigns yet."
+              : lang === "ar" ? "لا توجد حملات." : "No campaigns available."}
           </div>
         )}
       </div>

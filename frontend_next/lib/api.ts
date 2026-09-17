@@ -88,6 +88,8 @@ export const submitContent = (id: number, data: object) =>
   api.post(`/v1/bookings/${id}/submit-content`, data);
 export const approveContent = (id: number) =>
   api.post(`/v1/bookings/${id}/approve-content`);
+export const releaseFunds = (id: number) =>
+  api.post(`/v1/bookings/${id}/release-funds`);
 
 // Escrow
 export const getMyEscrow = () => api.get("/v1/escrow/my");

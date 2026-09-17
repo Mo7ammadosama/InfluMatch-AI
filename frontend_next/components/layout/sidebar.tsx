@@ -90,8 +90,8 @@ export function Sidebar({ unread = 0 }: { unread?: number }) {
   const contentCreatorNav: NavItem[] = [
     { label: tr("dashboard", lang), href: "/content-creator/dashboard", icon: <LayoutDashboard size={16} /> },
     { label: lang === "ar" ? "ملفي الشخصي" : "My Profile", href: "/content-creator/profile", icon: <Settings size={16} /> },
-    { label: lang === "ar" ? "معرض أعمالي" : "Portfolio", href: "/content-creator/dashboard", icon: <Star size={16} /> },
-    { label: lang === "ar" ? "طلبات الحجز" : "Booking Requests", href: "/content-creator/dashboard", icon: <CalendarDays size={16} /> },
+    { label: lang === "ar" ? "معرض أعمالي" : "Portfolio", href: "/content-creator/portfolio/new", icon: <Star size={16} /> },
+    { label: lang === "ar" ? "طلبات الحجز" : "Booking Requests", href: "/content-creator/bookings", icon: <CalendarDays size={16} /> },
     { label: lang === "ar" ? "أرباحي" : "Earnings", href: "/wallet", icon: <Wallet size={16} /> },
   ];
 

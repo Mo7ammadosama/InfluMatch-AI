@@ -15,6 +15,8 @@ import {
   getWallet,
   createInfluencerProfile,
   updateInfluencerMe,
+  confirmBooking,
+  submitContent,
 } from "@/lib/api";
 import { InfluencerProfile, Booking, Wallet } from "@/lib/types";
 import { fmtJOD, fmtNum, statusClass } from "@/lib/utils";
@@ -37,6 +39,7 @@ export default function InfluencerDashboard() {
     rate_per_reel: "",
   });
   const [saving, setSaving] = useState(false);
+  const [contentUrls, setContentUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     Promise.all([
@@ -63,6 +66,17 @@ export default function InfluencerDashboard() {
       if (w) setWallet(w.data);
     }).finally(() => setLoading(false));
   }, []);
+
+  async function dealAction(fn: () => Promise<unknown>, successMsg: string) {
+    try {
+      await fn();
+      toast.success(successMsg);
+      const b = await getMyBookings().catch(() => null);
+      if (b) setBookings(Array.isArray(b.data) ? b.data : (b.data?.data ?? []));
+    } catch {
+      toast.error(lang === "ar" ? "فشلت العملية" : "Action failed");
+    }
+  }
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -141,7 +155,7 @@ export default function InfluencerDashboard() {
         />
         <KpiBlock
           label={lang === "ar" ? "الصفقات النشطة" : "Active Deals"}
-          value={bookings.filter((b) => b.status === "ACCEPTED" || b.status === "IN_PROGRESS").length}
+          value={bookings.filter((b) => b.status.toLowerCase() === "accepted" || b.status.toLowerCase() === "in_progress").length}
           accent="blue"
         />
       </div>
@@ -170,20 +184,53 @@ export default function InfluencerDashboard() {
         <TabsContent value="bookings">
           <div className="space-y-3">
             {bookings.map((b) => (
-              <div key={b.id} className="aria-card flex items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-white text-sm truncate">
-                    {lang === "ar" ? "صفقة" : "Deal"} #{b.id.slice(0, 8)}
+              <div key={b.id} className="aria-card space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-white text-sm truncate">
+                      {lang === "ar" ? "صفقة" : "Deal"} #{b.id.slice(0, 8)}
+                    </div>
+                    <div className="text-white/40 text-xs mt-0.5">
+                      {b.deadline ? new Date(b.deadline).toLocaleDateString() : "—"}
+                      {b.notes ? ` · ${b.notes}` : ""}
+                    </div>
                   </div>
-                  <div className="text-white/40 text-xs mt-0.5">
-                    {b.deadline ? new Date(b.deadline).toLocaleDateString() : "—"}
-                    {b.notes ? ` · ${b.notes}` : ""}
+                  <div className="flex items-center gap-3">
+                    <span className="text-violet-400 text-sm">{fmtJOD(b.agreed_amount_jod ?? 0)}</span>
+                    <span className={statusClass(b.status)}>{b.status}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-violet-400 text-sm">{fmtJOD(b.agreed_amount_jod ?? 0)}</span>
-                  <span className={statusClass(b.status)}>{b.status}</span>
-                </div>
+
+                {b.status.toLowerCase() === "proposed" && (
+                  <Button size="sm" variant="success"
+                    onClick={() => dealAction(
+                      () => confirmBooking(b.id as unknown as number),
+                      lang === "ar" ? "تم قبول الحجز!" : "Booking confirmed!"
+                    )}>
+                    ✅ {lang === "ar" ? "قبول الحجز" : "Accept Booking"}
+                  </Button>
+                )}
+
+                {b.status.toLowerCase() === "accepted" && (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder={lang === "ar" ? "رابط المحتوى..." : "Content URL..."}
+                      value={contentUrls[b.id] ?? ""}
+                      onChange={(e) => setContentUrls((prev) => ({ ...prev, [b.id]: e.target.value }))}
+                      className="h-8 text-sm flex-1"
+                    />
+                    <Button size="sm"
+                      onClick={async () => {
+                        await dealAction(
+                          () => submitContent(b.id as unknown as number, { content_url: contentUrls[b.id] ?? "" }),
+                          lang === "ar" ? "تم إرسال المحتوى!" : "Content submitted!"
+                        );
+                        setContentUrls((prev) => { const n = { ...prev }; delete n[b.id]; return n; });
+                      }}>
+                      {lang === "ar" ? "إرسال المحتوى" : "Submit Content"}
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
             {bookings.length === 0 && (
