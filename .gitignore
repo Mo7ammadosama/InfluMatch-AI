@@ -68,3 +68,6 @@ desktop.ini
 # Migrations (keep structure, ignore auto-generated)
 migrations/versions/*.pyc
 frontend_next/e2e/screenshots/
+logs/
+*.docx
+.env.local

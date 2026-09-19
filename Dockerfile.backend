@@ -1,6 +1,5 @@
 # ============================================================
-# Dockerfile.backend — InfluMatch.jo Backend
-# FastAPI + ARIA Agents
+# Dockerfile.backend — InfluMatch AI backend (FastAPI)
 # ============================================================
 
 FROM python:3.11-slim
@@ -17,9 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN mkdir -p data/chroma_db logs data/contracts data/policies data/uploads
+RUN mkdir -p data/chroma_db logs
 
 EXPOSE 8000
 
-CMD ["uvicorn", "influmatch.backend.main:app", \
-     "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
